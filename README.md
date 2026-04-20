@@ -1,31 +1,33 @@
 # onder balta
 
-Personal portfolio site built as a static front-end project.
+This is the current front-end for my personal site.
 
-The site combines a video-driven ASCII hero, a scroll-revealed gallery, and project overlays for videos, websites, and playable experiments. Media is loaded from external sources such as Cloudinary, and the front end is kept lightweight with plain HTML, CSS, and JavaScript.
+It is a static site built with plain HTML, CSS, and JavaScript. The main page uses a video-driven ASCII hero, followed by a gallery of posts. Each post opens in an overlay and can show different types of content depending on the item: video, image, carousel, website preview, or embedded game build.
 
-## Features
+## What is in the project
 
-- Live ASCII-rendered hero section based on video frames
-- Layered visual treatment with background media and custom typography
-- Gallery layout for video, image, website, and game entries
-- Overlay-based project view with support for video, image, carousel, and embedded game content
-- External links for portfolio items, social profiles, and project destinations
+- `index.html`
+  Main page structure, overlay markup, hidden source video, and social links.
 
-## Project Structure
+- `styles.css`
+  All visual styling, layout, gallery grid, overlay styles, and responsive behavior.
 
-```text
-.
-├─ index.html
-├─ styles.css
-├─ script.js
-├─ server.js
-└─ assets/
-```
+- `script.js`
+  ASCII rendering logic, gallery rendering, post data, overlay behavior, carousel handling, and media/game embedding.
 
-## Running Locally
+- `server.js`
+  Small local server for running the site without `file://` issues.
 
-The site should be served through a local server instead of opening `index.html` directly, since some browsers restrict video and canvas behavior over `file://`.
+- `assets/`
+  Local assets such as fonts and icon files.
+
+## Media
+
+Most project media is loaded from external URLs, mainly Cloudinary. Some items also use external platforms such as itch.io or separately hosted WebGL builds.
+
+## Running locally
+
+Serve the project locally instead of opening `index.html` directly.
 
 ```powershell
 cd C:\Users\onder\Documents\GitHub\onderbalta.com
@@ -40,6 +42,6 @@ http://localhost:5500
 
 ## Notes
 
-- This project is front-end only.
-- Some media and embedded content depend on third-party hosting.
-- Certain game builds may require their own hosting setup instead of direct embedding from itch.io.
+- This is not a framework-based app.
+- A large part of the site content is driven directly from the post data inside `script.js`.
+- Some embedded game content depends on third-party hosting behavior, so not every external build can be embedded reliably without hosting it separately.
