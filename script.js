@@ -46,13 +46,14 @@ const cursorNoiseScale = 0.22;
 const introAsciiPatterns = {
   minimal: " .,:;",
   geometric: " .:-=+*#%@",
-  technical: " .,:;i|/\\+=*",
+  technical: " .`':;i!+=x#",
   organic: " .`'^~*:ox",
 };
 const activeIntroAsciiPattern = introAsciiPatterns.technical;
 const galleryAsciiPreviewCleanups = [];
 const postCarouselCleanups = [];
 let postCarouselIndex = 0;
+const introAsciiVideoSrc = "https://res.cloudinary.com/ddvaepjce/video/upload/v1776767453/From_KlickPin_CF_Pin_de_angelina_em_Videos_pt_2___Dia_da_dan%C3%A7a_Cen%C3%A1rio_para_v%C3%ADdeos_Guia_de_fotografia_agywq4.mp4";
 const galleryPosts = [
     {
       type: "intro",
@@ -233,6 +234,12 @@ let firstFrameReady = false;
 let uiReady = false;
 let introAsciiEl = null;
 let introCardEl = null;
+let introVideoBgEl = null;
+let introVideoEl = null;
+let introCanvasEl = null;
+let introCanvasCtx = null;
+let introVideoBgCtx = null;
+let introVideoBgAnimationHandle = null;
 let introAsciiFrame = 0;
 let introAsciiLastTime = 0;
 let introPointerActive = false;
@@ -262,6 +269,9 @@ function renderGallery() {
       ${post.mediaType === "game" ? "" : ""}
       ${post.type === "intro" ? `
         <article class="gallery-card gallery-card-intro">
+          <video class="gallery-intro-video hidden-video" src="${introAsciiVideoSrc}" muted autoplay loop playsinline crossorigin="anonymous"></video>
+          <canvas class="gallery-intro-video-bg" aria-hidden="true"></canvas>
+          <canvas class="gallery-intro-canvas hidden-video"></canvas>
           <pre class="gallery-intro-ascii" aria-hidden="true"></pre>
           <div class="gallery-intro-inner">
             <div class="gallery-intro-body">
@@ -294,8 +304,18 @@ function renderGallery() {
 
   introAsciiEl = galleryGrid.querySelector(".gallery-intro-ascii");
   introCardEl = galleryGrid.querySelector(".gallery-card-intro");
+  introVideoBgEl = galleryGrid.querySelector(".gallery-intro-video-bg");
+  introVideoEl = galleryGrid.querySelector(".gallery-intro-video");
+  introCanvasEl = galleryGrid.querySelector(".gallery-intro-canvas");
+  introCanvasCtx = introCanvasEl ? introCanvasEl.getContext("2d", { willReadFrequently: true }) : null;
+  introVideoBgCtx = introVideoBgEl ? introVideoBgEl.getContext("2d") : null;
   introAsciiMetrics = null;
   setupGalleryAsciiPreviews();
+
+  if (introVideoEl) {
+    introVideoEl.play().catch(() => {});
+  }
+
 
   if (introCardEl) {
     introCardEl.addEventListener("mousemove", (event) => {
@@ -638,58 +658,110 @@ function getIntroAsciiMetrics(targetEl) {
   const style = window.getComputedStyle(targetEl);
   const fontSize = Number.parseFloat(style.fontSize) || 16;
   const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 0.92;
-  const visibleColumns = Math.max(18, Math.ceil(width / (fontSize * 0.56)));
-  const visibleRows = Math.max(10, Math.ceil(height / (lineHeight * 0.96)));
-  const overscanColumns = 6;
-  const overscanRows = 4;
+  const columns = Math.max(22, Math.ceil(width / (fontSize * 0.56)));
+  const rows = Math.max(12, Math.ceil(height / (lineHeight * 0.96)));
 
   introAsciiMetrics = {
     width,
     height,
     fontSize,
     lineHeight,
-    visibleColumns,
-    visibleRows,
-    overscanColumns,
-    overscanRows,
-    columns: visibleColumns + overscanColumns,
-    rows: visibleRows + overscanRows,
+    columns,
+    rows,
   };
 
   return introAsciiMetrics;
 }
 
-function buildAsciiPatternFrame(targetEl, frame) {
-  if (!targetEl) return "";
+function getIntroSourceRect(video, targetAspect) {
+  const sourceAspect = video.videoWidth / video.videoHeight;
+  let sx = 0;
+  let sy = 0;
+  let sw = video.videoWidth;
+  let sh = video.videoHeight;
+
+  if (sourceAspect > targetAspect) {
+    sw = Math.round(video.videoHeight * targetAspect);
+    sx = Math.round((video.videoWidth - sw) / 2);
+  } else {
+    sh = Math.round(video.videoWidth / targetAspect);
+    sy = Math.round((video.videoHeight - sh) / 2);
+  }
+
+  return { sx, sy, sw, sh };
+}
+
+function renderIntroAsciiFrame() {
+  if (!introAsciiEl) return;
 
   const pattern = activeIntroAsciiPattern;
-  const metrics = getIntroAsciiMetrics(targetEl);
-  if (!metrics) return "";
+  const metrics = getIntroAsciiMetrics(introAsciiEl);
+  if (!metrics) return;
 
-  const {
-    columns,
-    rows,
-    visibleColumns,
-    visibleRows,
-    overscanColumns,
-    overscanRows,
-  } = metrics;
-  const pointerGridX = (overscanColumns / 2) + introPointerSmoothX * Math.max(0, visibleColumns - 1);
-  const pointerGridY = (overscanRows / 2) + introPointerSmoothY * Math.max(0, visibleRows - 1);
-  let output = "";
+  const { columns, rows, width, height } = metrics;
+  const hasVideo = introVideoEl &&
+    introCanvasEl &&
+    introCanvasCtx &&
+    introVideoBgEl &&
+    introVideoBgCtx &&
+    introVideoEl.videoWidth &&
+    introVideoEl.videoHeight &&
+    introVideoEl.readyState >= 2;
+
+  let videoData = null;
+
+  if (hasVideo) {
+    const targetAspect = columns / rows;
+    const { sx, sy, sw, sh } = getIntroSourceRect(introVideoEl, targetAspect);
+
+    if (introCanvasEl.width !== columns || introCanvasEl.height !== rows) {
+      introCanvasEl.width = columns;
+      introCanvasEl.height = rows;
+    }
+
+    if (introVideoBgEl.width !== columns || introVideoBgEl.height !== rows) {
+      introVideoBgEl.width = columns;
+      introVideoBgEl.height = rows;
+    }
+
+    introCanvasCtx.drawImage(introVideoEl, sx, sy, sw, sh, 0, 0, columns, rows);
+    videoData = introCanvasCtx.getImageData(0, 0, columns, rows).data;
+
+    introVideoBgCtx.imageSmoothingEnabled = true;
+    introVideoBgCtx.clearRect(0, 0, columns, rows);
+    introVideoBgCtx.drawImage(introVideoEl, sx, sy, sw, sh, 0, 0, columns, rows);
+  }
+
+  const pointerGridX = introPointerSmoothX * Math.max(0, columns - 1);
+  const pointerGridY = introPointerSmoothY * Math.max(0, rows - 1);
 
   function getPatternChar(sampleX, sampleY) {
-    const waveA = Math.sin((sampleX * 0.65) + (frame * 0.08));
-    const waveB = Math.cos((sampleY * 0.72) - (frame * 0.06));
-    const waveC = Math.sin((sampleX + sampleY) * 0.3 + frame * 0.04);
+    const waveA = Math.sin((sampleX * 0.65) + (introAsciiFrame * 0.08));
+    const waveB = Math.cos((sampleY * 0.72) - (introAsciiFrame * 0.06));
+    const waveC = Math.sin((sampleX + sampleY) * 0.3 + introAsciiFrame * 0.04);
     const mix = (waveA + waveB + waveC + 3) / 6;
     const index = Math.max(0, Math.min(pattern.length - 1, Math.floor(mix * pattern.length)));
     return pattern[index];
   }
 
+  function getVideoChar(sampleX, sampleY) {
+    if (!videoData) return null;
+    const clampedX = Math.max(0, Math.min(columns - 1, sampleX));
+    const clampedY = Math.max(0, Math.min(rows - 1, sampleY));
+    const offset = (clampedY * columns + clampedX) * 4;
+    const r = videoData[offset];
+    const g = videoData[offset + 1];
+    const b = videoData[offset + 2];
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    const index = Math.max(0, Math.min(pattern.length - 1, Math.floor(Math.pow(luminance, 0.9) * pattern.length)));
+    return pattern[index];
+  }
+
+  let output = "";
+
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < columns; x += 1) {
-      let nextChar = getPatternChar(x, y);
+      let nextChar = getVideoChar(x, y) ?? getPatternChar(x, y);
 
       if (introPointerActive) {
         const dx = x - pointerGridX;
@@ -700,14 +772,14 @@ function buildAsciiPatternFrame(targetEl, frame) {
           const force = 1 - distance / cursorRadius;
           const easedForce = force * force * (3 - 2 * force);
           const angle = Math.atan2(dy, dx);
-          const swirl = angle + Math.sin(frame * 0.045 + x * 0.09 + y * 0.05) * 1.2;
-          const noiseX = Math.sin((x + frame * 0.8) * cursorNoiseScale + y * 0.07);
-          const noiseY = Math.cos((y - frame * 0.6) * cursorNoiseScale + x * 0.06);
+          const swirl = angle + Math.sin(introAsciiFrame * 0.045 + x * 0.09 + y * 0.05) * 1.2;
+          const noiseX = Math.sin((x + introAsciiFrame * 0.8) * cursorNoiseScale + y * 0.07);
+          const noiseY = Math.cos((y - introAsciiFrame * 0.6) * cursorNoiseScale + x * 0.06);
           const flowX = Math.cos(swirl) * easedForce * cursorFlowStrength + noiseX * easedForce * 1.4;
           const flowY = Math.sin(swirl) * easedForce * cursorFlowStrength + noiseY * easedForce * 1.2;
           const shiftedX = Math.max(0, Math.min(columns - 1, Math.round(x + flowX)));
           const shiftedY = Math.max(0, Math.min(rows - 1, Math.round(y + flowY)));
-          const scatteredChar = getPatternChar(shiftedX, shiftedY);
+          const scatteredChar = getVideoChar(shiftedX, shiftedY) ?? getPatternChar(shiftedX, shiftedY);
           const scatteredIndex = Math.max(0, pattern.indexOf(scatteredChar));
 
           if (easedForce > 0.82) {
@@ -725,11 +797,13 @@ function buildAsciiPatternFrame(targetEl, frame) {
     output += "\n";
   }
 
-  return output;
+  introAsciiEl.textContent = output;
+  introVideoBgEl.style.width = `${width}px`;
+  introVideoBgEl.style.height = `${height}px`;
 }
 
 function animateIntroAscii(timestamp) {
-  const frameInterval = introPointerActive ? 34 : 90;
+  const frameInterval = introPointerActive ? 34 : 50;
 
   if (timestamp - introAsciiLastTime > frameInterval) {
     introAsciiFrame += 1;
@@ -741,14 +815,12 @@ function animateIntroAscii(timestamp) {
       introPointerSmoothX += (0.5 - introPointerSmoothX) * 0.06;
       introPointerSmoothY += (0.5 - introPointerSmoothY) * 0.06;
     }
-    if (introAsciiEl) {
-      introAsciiEl.textContent = buildAsciiPatternFrame(introAsciiEl, introAsciiFrame);
-    }
+
+    renderIntroAsciiFrame();
   }
 
   window.requestAnimationFrame(animateIntroAscii);
 }
-
 function revealUiIfReady() {
   if (uiReady || !backgroundReady || !firstFrameReady) return;
   uiReady = true;
@@ -1116,5 +1188,6 @@ bgImage.onerror = () => {
 bgImage.src = "https://res.cloudinary.com/ddvaepjce/image/upload/v1776680183/Gemini_Generated_Image_y68dxay68dxay68d_o18s0q.png";
 sourceVideo.load();
 sourceVideo.play().catch(() => {});
+
 
 

@@ -364,13 +364,13 @@ body {
 
 .gallery-intro-ascii {
   position: absolute;
-  inset: -32px;
-  z-index: 0;
+  inset: 0;
+  z-index: 1;
   margin: 0;
   padding: 0;
   overflow: hidden;
   background: transparent;
-  color: rgba(220, 205, 182, 0.1);
+  color: rgba(220, 205, 182, 0.16);
   font-family: "IBM Plex Mono", monospace;
   font-size: 16px;
   line-height: 0.92;
@@ -379,9 +379,22 @@ body {
   pointer-events: none;
   user-select: none;
   opacity: 1;
-  transform: scale(1.08);
-  transform-origin: center;
   filter: contrast(1.08);
+}
+
+.gallery-intro-video-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  display: block;
+  width: 102%;
+  height: 102%;
+  transform: translate(-49.1%, -48.9%);
+  opacity: 0.28;
+  filter: saturate(0.78) contrast(1.06);
+  image-rendering: auto;
+  pointer-events: none;
 }
 
 .gallery-thumb-wrap::after {
