@@ -54,6 +54,87 @@ const galleryAsciiPreviewCleanups = [];
 const postCarouselCleanups = [];
 let postCarouselIndex = 0;
 const introAsciiVideoSrc = "https://res.cloudinary.com/ddvaepjce/video/upload/v1776767453/From_KlickPin_CF_Pin_de_angelina_em_Videos_pt_2___Dia_da_dan%C3%A7a_Cen%C3%A1rio_para_v%C3%ADdeos_Guia_de_fotografia_agywq4.mp4";
+const managedVideos = new Set();
+
+function safePlayVideo(video) {
+  if (!video || video.hidden || !video.isConnected) return;
+
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+
+  const playPromise = video.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      window.setTimeout(() => {
+        if (!video.hidden && video.isConnected) {
+          video.play().catch(() => {});
+        }
+      }, 260);
+    });
+  }
+}
+
+function watchVideo(video) {
+  if (!video || managedVideos.has(video)) return;
+  managedVideos.add(video);
+
+  video.addEventListener("pause", () => {
+    if (!video.dataset.allowPause) {
+      safePlayVideo(video);
+    }
+  });
+
+  video.addEventListener("ended", () => {
+    if (!video.dataset.allowPause) {
+      video.currentTime = 0;
+      safePlayVideo(video);
+    }
+  });
+
+  video.addEventListener("stalled", () => safePlayVideo(video));
+  video.addEventListener("suspend", () => safePlayVideo(video));
+  video.addEventListener("waiting", () => safePlayVideo(video));
+}
+
+function ensureAllVideosPlaying() {
+  document.querySelectorAll("video").forEach((video) => {
+    if (video.hidden || !video.isConnected) return;
+    watchVideo(video);
+    if (video.paused || video.ended || video.readyState < 2) {
+      safePlayVideo(video);
+    }
+  });
+
+  if (!isRendering && sourceVideo && sourceVideo.readyState >= 2) {
+    startRendering();
+  }
+}
+
+function ensureHeroRendering() {
+  if (!sourceVideo) return;
+
+  watchVideo(sourceVideo);
+
+  if (sourceVideo.readyState >= 2) {
+    if (sourceVideo.paused || sourceVideo.ended) {
+      safePlayVideo(sourceVideo);
+    }
+
+    if (!isRendering) {
+      startRendering();
+    }
+
+    if (!hasLoadedFrame) {
+      hasLoadedFrame = true;
+      firstFrameReady = true;
+      revealUiIfReady();
+    }
+  } else {
+    sourceVideo.load();
+    safePlayVideo(sourceVideo);
+  }
+}
 const galleryPosts = [
     {
       type: "intro",
@@ -313,7 +394,8 @@ function renderGallery() {
   setupGalleryAsciiPreviews();
 
   if (introVideoEl) {
-    introVideoEl.play().catch(() => {});
+    watchVideo(introVideoEl);
+    safePlayVideo(introVideoEl);
   }
 
 
@@ -419,7 +501,8 @@ function setupGalleryAsciiPreviews() {
 
     const onLoaded = () => {
       measureCell();
-      video.play().catch(() => {});
+      watchVideo(video);
+      safePlayVideo(video);
       draw();
       if (frameTimer) clearInterval(frameTimer);
       frameTimer = setInterval(draw, 1000 / 20);
@@ -441,6 +524,7 @@ function setupGalleryAsciiPreviews() {
       video.removeEventListener("loadedmetadata", onLoaded);
       window.removeEventListener("resize", onResize);
       if (frameTimer) clearInterval(frameTimer);
+      video.dataset.allowPause = "true";
       video.pause();
     });
   });
@@ -524,7 +608,8 @@ function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
 
   const onLoaded = () => {
     measureCell();
-    video.play().catch(() => {});
+    watchVideo(video);
+    safePlayVideo(video);
     draw();
     if (frameTimer) clearInterval(frameTimer);
     frameTimer = setInterval(draw, 1000 / fps);
@@ -546,6 +631,7 @@ function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
     video.removeEventListener("loadedmetadata", onLoaded);
     window.removeEventListener("resize", onResize);
     if (frameTimer) clearInterval(frameTimer);
+    video.dataset.allowPause = "true";
     video.pause();
   };
 }
@@ -615,7 +701,12 @@ function setupPostCarousel(post) {
       video.playsInline = true;
       video.autoplay = true;
       slide.appendChild(video);
-      postCarouselCleanups.push(() => video.pause());
+      watchVideo(video);
+      safePlayVideo(video);
+      postCarouselCleanups.push(() => {
+        video.dataset.allowPause = "true";
+        video.pause();
+      });
     } else {
       const image = document.createElement("img");
       image.className = "post-carousel-media";
@@ -839,6 +930,7 @@ function openPost(index) {
 
   if (setupPostCarousel(post)) {
     postBanner.hidden = true;
+    postBannerVideo.dataset.allowPause = "true";
     postBannerVideo.pause();
     postBannerVideo.hidden = true;
     postBannerVideo.removeAttribute("src");
@@ -847,10 +939,13 @@ function openPost(index) {
     postBannerVideo.hidden = false;
     postBannerVideo.src = post.image;
     postBannerVideo.setAttribute("aria-label", post.alt);
-    postBannerVideo.play().catch(() => {});
+    delete postBannerVideo.dataset.allowPause;
+    watchVideo(postBannerVideo);
+    safePlayVideo(postBannerVideo);
   } else if (post.mediaType === "game" && !post.embedDisabled) {
     postPanel.classList.add("is-game");
     postBanner.hidden = true;
+    postBannerVideo.dataset.allowPause = "true";
     postBannerVideo.pause();
     postBannerVideo.hidden = true;
     postBannerVideo.removeAttribute("src");
@@ -866,6 +961,7 @@ function openPost(index) {
     updateGameFrameScale();
     requestAnimationFrame(updateGameFrameScale);
   } else if (post.mediaType === "game") {
+    postBannerVideo.dataset.allowPause = "true";
     postBannerVideo.pause();
     postBannerVideo.hidden = true;
     postBannerVideo.removeAttribute("src");
@@ -873,6 +969,7 @@ function openPost(index) {
     postBanner.src = post.image;
     postBanner.alt = post.alt;
   } else {
+    postBannerVideo.dataset.allowPause = "true";
     postBannerVideo.pause();
     postBannerVideo.hidden = true;
     postBannerVideo.removeAttribute("src");
@@ -907,6 +1004,7 @@ function updateGameFrameScale() {
 
 function closePost() {
   postPanel.classList.remove("is-game");
+  postBannerVideo.dataset.allowPause = "true";
   postBannerVideo.pause();
   postBannerVideo.removeAttribute("src");
   clearPostCarousel();
@@ -1074,7 +1172,16 @@ function frameToAscii() {
 
 function renderLoop() {
   if (!isRendering) return;
-  frameToAscii();
+
+  if (sourceVideo.readyState >= 2) {
+    if (sourceVideo.paused || sourceVideo.ended) {
+      safePlayVideo(sourceVideo);
+    }
+
+    resizeCanvas();
+    frameToAscii();
+  }
+
   animationHandle = window.requestAnimationFrame(renderLoop);
 }
 
@@ -1102,6 +1209,7 @@ sourceVideo.addEventListener("loadeddata", () => {
   resizeCanvas();
   updateMeta();
   frameToAscii();
+  startRendering();
   firstFrameReady = true;
   revealUiIfReady();
 });
@@ -1112,15 +1220,31 @@ sourceVideo.addEventListener("canplay", () => {
     updateMeta();
     frameToAscii();
     hasLoadedFrame = true;
+    startRendering();
     firstFrameReady = true;
     revealUiIfReady();
   }
 });
 
-sourceVideo.addEventListener("play", startRendering);
-sourceVideo.addEventListener("pause", stopRendering);
+sourceVideo.addEventListener("play", () => {
+  startRendering();
+});
+sourceVideo.addEventListener("pause", () => {
+  if (sourceVideo.dataset.allowPause) {
+    stopRendering();
+    return;
+  }
+
+  safePlayVideo(sourceVideo);
+  startRendering();
+});
 sourceVideo.addEventListener("ended", () => {
-  if (sourceVideo.loop) return;
+  if (sourceVideo.loop) {
+    sourceVideo.currentTime = 0;
+    safePlayVideo(sourceVideo);
+    startRendering();
+    return;
+  }
   stopRendering();
 });
 
@@ -1172,10 +1296,20 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    ensureHeroRendering();
+    ensureAllVideosPlaying();
+  }
+});
+
 renderGallery();
+ensureAllVideosPlaying();
 window.requestAnimationFrame(animateIntroAscii);
 updateGalleryVisibility();
 window.addEventListener("scroll", updateGalleryVisibility, { passive: true });
+window.setInterval(ensureHeroRendering, 700);
+window.setInterval(ensureAllVideosPlaying, 1400);
 const bgImage = new Image();
 bgImage.onload = () => {
   backgroundReady = true;
@@ -1187,7 +1321,5 @@ bgImage.onerror = () => {
 };
 bgImage.src = "https://res.cloudinary.com/ddvaepjce/image/upload/v1776680183/Gemini_Generated_Image_y68dxay68dxay68d_o18s0q.png";
 sourceVideo.load();
-sourceVideo.play().catch(() => {});
-
-
-
+watchVideo(sourceVideo);
+safePlayVideo(sourceVideo);
