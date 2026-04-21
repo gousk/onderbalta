@@ -86,7 +86,7 @@ const galleryPosts = [
     externalUrl: "https://gousk.itch.io/null",
     alt: "NULL game preview",
     body: [
-      "â€‹Fast-paced, level-based movement shooter with only 3 levels for now. This is currently a prototype, but I plan to turn it into a proper demo later. I might eventually release it on Steam as well, though I'm not completely sure yet.",
+      "Fast-paced, level-based movement shooter with only 3 levels for now. This is currently a prototype, but I plan to turn it into a proper demo later. I might eventually release it on Steam as well, though I'm not completely sure yet.",
     ]
   },
   {
