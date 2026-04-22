@@ -14,6 +14,113 @@
 <body>
   <div id="loadingScreen" class="loading-screen" aria-hidden="true"></div>
   <div class="background-layer" aria-hidden="true"></div>
+  <section id="wishlistModal" class="wishlist-modal" hidden>
+    <div id="wishlistBackdrop" class="wishlist-backdrop" aria-hidden="true"></div>
+    <article class="wishlist-panel" aria-modal="true" role="dialog" aria-labelledby="wishlistTitle">
+      <button id="wishlistClose" class="wishlist-close" type="button" aria-label="Close wishlist modal">close</button>
+      <video
+        class="wishlist-video"
+        src="https://res.cloudinary.com/ddvaepjce/video/upload/v1776850880/DGS-TRAILER_wd62u0.mp4"
+        muted
+        autoplay
+        loop
+        playsinline
+        crossorigin="anonymous"
+        aria-hidden="true"
+      ></video>
+      <div class="wishlist-shade" aria-hidden="true"></div>
+      <div class="wishlist-content">
+        <img
+          class="wishlist-logo"
+          src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776853122/Gemini_Generated_Image_zhaahqzhaahqzhaa_wjqem2.png"
+          alt="Delivery Guy Simulator"
+        >
+        <h2 id="wishlistTitle" class="wishlist-title">wishlist now</h2>
+        <p class="wishlist-copy">Steam page is live. Add it to your wishlist and follow the game.</p>
+        <a class="wishlist-action" href="https://store.steampowered.com/app/3377340/Delivery_Guy_Simulator/" target="_blank" rel="noreferrer">wishlist now</a>
+      </div>
+      <img
+        class="wishlist-icon"
+        src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776849204/21ca6d0cf2f25c4dbb35d8dc0b679c3f_wxzz1g.png"
+        alt=""
+      >
+    </article>
+  </section>
+  <button id="wishlistFab" class="wishlist-fab" type="button" hidden>
+    <img
+      src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776853122/Gemini_Generated_Image_zhaahqzhaahqzhaa_wjqem2.png"
+      alt=""
+    >
+    <span>wishlist</span>
+  </button>
+  <div id="speakerModelStage" class="speaker-model-stage" aria-label="Open music player">
+    <article id="musicPlayerPanel" class="music-player-panel" aria-labelledby="musicPlayerTitle" hidden>
+      <div class="music-player-header">
+        <span class="music-player-heading">music player</span>
+        <button id="musicPlayerClose" class="music-player-close" type="button" aria-label="Close music player">x</button>
+      </div>
+      <div class="music-player-body">
+        <img
+          id="musicPlayerCover"
+          class="music-player-cover"
+          src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776867989/Oblique_bmsnfi.jpg"
+          alt=""
+        >
+        <div class="music-player-main">
+          <div class="music-player-now">
+            <h2 id="musicPlayerTitle" class="music-player-title">track 01</h2>
+            <p id="musicPlayerArtist" class="music-player-artist">onder radio</p>
+          </div>
+          <div class="music-player-progress" aria-label="Track progress">
+            <span id="musicCurrentTime" class="music-player-current-time">0:00</span>
+            <div id="musicProgressBar" class="music-player-progress-bar" role="slider" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+              <span id="musicProgressFill"></span>
+            </div>
+            <span id="musicDuration" class="music-player-duration">2:48</span>
+          </div>
+        </div>
+      </div>
+      <div class="music-player-footer">
+        <div class="music-player-controls" aria-label="Music controls">
+          <button id="musicPrev" type="button">|&lt;</button>
+          <button id="musicPlayToggle" class="music-player-main-control" type="button">&gt;</button>
+          <button id="musicNext" type="button">&gt;|</button>
+        </div>
+        <div class="music-player-volume" aria-label="Volume">
+          <span aria-hidden="true">vol</span>
+          <div id="musicVolumeBar" class="music-player-volume-bar" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="42" tabindex="0">
+            <span></span>
+          </div>
+        </div>
+      </div>
+      <div class="music-track-list-wrap">
+        <button
+          id="musicTrackToggle"
+          class="music-track-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="musicTrackList"
+        >
+          <span>music list</span>
+          <span aria-hidden="true">+</span>
+        </button>
+        <div id="musicTrackList" class="music-track-list" aria-label="Music list" hidden>
+          <button class="music-track-item is-active" type="button" data-track-index="0">
+            <span>ナトリウムライト</span>
+            <small>Oblique</small>
+          </button>
+          <button class="music-track-item" type="button" data-track-index="1">
+            <span>Fever Chill</span>
+            <small>ilent Hill 4</small>
+          </button>
+          <button class="music-track-item" type="button" data-track-index="2">
+            <span>MCOMM</span>
+            <small>Sxnctuary</small>
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
   <main class="site-shell">
     <section class="hero-shell">
       <div class="ascii-stage">
@@ -93,6 +200,14 @@
 
   <canvas id="frameCanvas" class="hidden-video" aria-hidden="true"></canvas>
 
-  <script src="script.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
