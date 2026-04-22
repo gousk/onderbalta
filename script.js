@@ -6,6 +6,7 @@ const loadingScreen = document.getElementById("loadingScreen");
 const siteShell = document.querySelector(".site-shell");
 const galleryShell = document.querySelector(".gallery-shell");
 const galleryGrid = document.getElementById("galleryGrid");
+const scrollCue = document.querySelector(".scroll-cue");
 const postOverlay = document.getElementById("postOverlay");
 const postBackdrop = document.getElementById("postBackdrop");
 const postClose = document.getElementById("postClose");
@@ -332,13 +333,57 @@ let introAsciiMetrics = null;
 const introPointerRadius = 11.5;
 
 function updateGalleryVisibility() {
-  const revealPoint = Math.min(window.innerHeight * 0.22, 220);
+  const revealPoint = Math.min(window.innerHeight * 0.14, 140);
   if (window.scrollY > revealPoint) {
     galleryShell.classList.add("is-visible");
+    if (scrollCue) {
+      scrollCue.classList.add("is-hidden");
+    }
     return;
   }
 
   galleryShell.classList.remove("is-visible");
+  if (scrollCue) {
+    scrollCue.classList.remove("is-hidden");
+  }
+}
+
+function renderGalleryAdStrip() {
+  return `
+    <a
+      class="gallery-ad-strip"
+      href="https://store.steampowered.com/app/3377340/Delivery_Guy_Simulator/"
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Wishlist Delivery Guy Simulator on Steam"
+    >
+      <video
+        class="gallery-ad-video"
+        src="https://res.cloudinary.com/ddvaepjce/video/upload/v1776850880/DGS-TRAILER_wd62u0.mp4"
+        muted
+        autoplay
+        loop
+        playsinline
+        crossorigin="anonymous"
+        aria-hidden="true"
+      ></video>
+      <div class="gallery-ad-ascii-layer" aria-hidden="true">
+        <canvas class="gallery-ad-ascii-canvas hidden-video"></canvas>
+        <pre class="gallery-ad-ascii-preview"></pre>
+      </div>
+      <img
+        class="gallery-ad-icon"
+        src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776849204/21ca6d0cf2f25c4dbb35d8dc0b679c3f_wxzz1g.png"
+        alt=""
+      >
+      <span class="gallery-ad-text">wishlist now</span>
+      <img
+        class="gallery-ad-side-icon"
+        src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776853122/Gemini_Generated_Image_zhaahqzhaahqzhaa_wjqem2.png"
+        alt=""
+      >
+    </a>
+  `;
 }
 
 function renderGallery() {
@@ -349,7 +394,7 @@ function renderGallery() {
   galleryGrid.innerHTML = galleryPosts.map((post, index) => `
       ${post.mediaType === "game" ? "" : ""}
       ${post.type === "intro" ? `
-        <article class="gallery-card gallery-card-intro">
+        <article class="gallery-card gallery-card-layout-${(index % 8) + 1} gallery-card-intro">
           <video class="gallery-intro-video hidden-video" src="${introAsciiVideoSrc}" muted autoplay loop playsinline crossorigin="anonymous"></video>
           <canvas class="gallery-intro-video-bg" aria-hidden="true"></canvas>
           <canvas class="gallery-intro-canvas hidden-video"></canvas>
@@ -361,7 +406,7 @@ function renderGallery() {
         </div>
         </article>
         ` : post.mediaType === "game" && post.title !== "null" ? `` : `
-        <button class="gallery-card${post.mediaType === "game" ? " gallery-card-game" : ""}${post.title === "fridge rush" ? " gallery-card-game-portrait" : ""}${post.title === "null" ? " gallery-card-game-null" : ""}${post.title === "scene 03" ? " gallery-card-scene-3" : ""}${post.title === "scene 02" ? " gallery-card-scene-2" : ""}${post.previewType === "ascii-video" ? " gallery-card-website" : ""}${post.title === "bicycle club" ? " gallery-card-bicycleclub" : ""}" type="button" data-post-index="${index}"${post.previewType === "ascii-video" ? ` data-preview-type="${post.previewType}"` : ""}>
+        <button class="gallery-card gallery-card-layout-${(index % 8) + 1}${post.mediaType === "game" ? " gallery-card-game" : ""}${post.title === "fridge rush" ? " gallery-card-game-portrait" : ""}${post.title === "null" ? " gallery-card-game-null" : ""}${post.title === "scene 03" ? " gallery-card-scene-3" : ""}${post.title === "scene 02" ? " gallery-card-scene-2" : ""}${post.previewType === "ascii-video" ? " gallery-card-website" : ""}${post.title === "bicycle club" ? " gallery-card-bicycleclub" : ""}" type="button" data-post-index="${index}"${post.previewType === "ascii-video" ? ` data-preview-type="${post.previewType}"` : ""}>
           <div class="gallery-thumb-wrap">
             ${post.previewType === "ascii-video" ? `
               <div class="gallery-ascii-thumb" aria-hidden="true">
@@ -382,6 +427,7 @@ function renderGallery() {
         </button>
       `}
     `).filter(Boolean).join("");
+  galleryGrid.insertAdjacentHTML("beforeend", renderGalleryAdStrip());
 
   introAsciiEl = galleryGrid.querySelector(".gallery-intro-ascii");
   introCardEl = galleryGrid.querySelector(".gallery-card-intro");
@@ -537,6 +583,7 @@ function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
   const lineHeight = options.lineHeight || fontSize;
   const fps = options.fps || 20;
   const cover = options.cover ?? false;
+  const fit = options.fit ?? true;
   const cell = { cw: 6, ch: 10 };
   let frameTimer = null;
 
@@ -561,6 +608,10 @@ function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
     const preHeight = pre.scrollHeight || 1;
     const wrapRect = wrap.getBoundingClientRect();
     if (!wrapRect.width || !wrapRect.height) return;
+    if (!fit) {
+      pre.style.transform = "";
+      return;
+    }
     const scaleFn = cover ? Math.max : Math.min;
     const scale = scaleFn(wrapRect.width / preWidth, wrapRect.height / preHeight) * (cover ? 1.01 : 0.998);
     pre.style.transform = `translate(-50%, -50%) scale(${scale})`;
@@ -571,24 +622,42 @@ function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
     const wrapRect = wrap.getBoundingClientRect();
     if (!wrapRect.width || !wrapRect.height) return;
 
-    const aspect = video.videoWidth / video.videoHeight;
+    const videoAspect = video.videoWidth / video.videoHeight;
+    const targetAspect = wrapRect.width / wrapRect.height;
     const colsByWidth = Math.max(36, Math.floor(wrapRect.width / cell.cw));
-    const rowsByWidth = Math.max(8, Math.round(colsByWidth / (aspect * (cell.ch / cell.cw))));
+    const rowsByWidth = Math.max(8, Math.round(colsByWidth / (videoAspect * (cell.ch / cell.cw))));
     const rowsLimit = Math.max(8, Math.floor(wrapRect.height / cell.ch));
 
     let cols = colsByWidth;
     let rows = rowsByWidth;
+    let sx = 0;
+    let sy = 0;
+    let sw = video.videoWidth;
+    let sh = video.videoHeight;
+
+    if (cover) {
+      rows = rowsLimit;
+      cols = Math.max(36, Math.floor(wrapRect.width / cell.cw));
+
+      if (videoAspect > targetAspect) {
+        sw = Math.round(video.videoHeight * targetAspect);
+        sx = Math.round((video.videoWidth - sw) / 2);
+      } else {
+        sh = Math.round(video.videoWidth / targetAspect);
+        sy = Math.round((video.videoHeight - sh) / 2);
+      }
+    }
 
     if (!cover && rows > rowsLimit) {
       rows = rowsLimit;
-      cols = Math.max(24, Math.round(rows * aspect * (cell.ch / cell.cw)));
+      cols = Math.max(24, Math.round(rows * videoAspect * (cell.ch / cell.cw)));
     }
 
     canvas.width = cols;
     canvas.height = rows;
     ctx2d.clearRect(0, 0, cols, rows);
     ctx2d.imageSmoothingEnabled = true;
-    ctx2d.drawImage(video, 0, 0, cols, rows);
+    ctx2d.drawImage(video, sx, sy, sw, sh, 0, 0, cols, rows);
 
     const { data } = ctx2d.getImageData(0, 0, cols, rows);
     let out = "";
@@ -634,6 +703,23 @@ function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
     video.dataset.allowPause = "true";
     video.pause();
   };
+}
+
+function setupGalleryAdAscii() {
+  const wrap = document.querySelector(".gallery-ad-ascii-layer");
+  const video = document.querySelector(".gallery-ad-video");
+  const canvas = document.querySelector(".gallery-ad-ascii-canvas");
+  const pre = document.querySelector(".gallery-ad-ascii-preview");
+  if (!wrap || !video || !canvas || !pre) return;
+
+  initAsciiVideoSurface(wrap, video, canvas, pre, {
+    fontSize: 16,
+    lineHeight: 14.72,
+    fps: 18,
+    cover: true,
+    fit: false,
+    ramp: activeIntroAsciiPattern,
+  });
 }
 
 function clearPostCarousel() {
@@ -1290,6 +1376,13 @@ galleryGrid.addEventListener("click", (event) => {
 postClose.addEventListener("click", closePost);
 postBackdrop.addEventListener("click", closePost);
 
+if (scrollCue) {
+  scrollCue.addEventListener("click", () => {
+    const revealPoint = Math.min(window.innerHeight * 0.14, 140) + 24;
+    window.scrollTo({ top: revealPoint, behavior: "smooth" });
+  });
+}
+
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !postOverlay.hidden) {
     closePost();
@@ -1304,6 +1397,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 renderGallery();
+setupGalleryAdAscii();
 ensureAllVideosPlaying();
 window.requestAnimationFrame(animateIntroAscii);
 updateGalleryVisibility();
