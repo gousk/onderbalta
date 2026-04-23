@@ -51,8 +51,7 @@ const postActions = document.getElementById("postActions");
 
 const GAME_FRAME_WIDTH = 1920;
 const GAME_FRAME_HEIGHT = 1118;
-const WISHLIST_DISMISSED_AT_KEY = "onderbalta:wishlistDismissedAt";
-const WISHLIST_REPEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const WISHLIST_SEEN_KEY = "onderbalta:wishlistSeen";
 const speakerModelUrl = "https://res.cloudinary.com/ddvaepjce/image/upload/v1776865669/dusty_passive_stage_speaker_quke5k.glb";
 const musicTracks = [
   {
@@ -413,16 +412,16 @@ function closeWishlistModal(rememberDismissal = true) {
   wishlistModal.hidden = true;
   if (rememberDismissal) {
     try {
-      window.localStorage.setItem(WISHLIST_DISMISSED_AT_KEY, String(Date.now()));
+      window.localStorage.setItem(WISHLIST_SEEN_KEY, "1");
     } catch {}
   }
   if (wishlistFab) wishlistFab.hidden = false;
+  updateGalleryVisibility();
 }
 
 function shouldAutoOpenWishlistModal() {
   try {
-    const dismissedAt = Number(window.localStorage.getItem(WISHLIST_DISMISSED_AT_KEY) || 0);
-    return !dismissedAt || Date.now() - dismissedAt > WISHLIST_REPEAT_INTERVAL_MS;
+    return window.localStorage.getItem(WISHLIST_SEEN_KEY) !== "1";
   } catch {
     return true;
   }
@@ -437,6 +436,7 @@ function initWishlistModal() {
   }
 
   if (wishlistFab) wishlistFab.hidden = false;
+  updateGalleryVisibility();
 }
 
 function formatTrackTime(seconds) {
@@ -532,6 +532,9 @@ function setVolumeToRatio(ratio) {
 
 function initSpeakerModel() {
   if (!speakerModelStage) return;
+
+  const speakerFrontFacingYaw = THREE.MathUtils.degToRad(-60);
+  const speakerYawSwing = THREE.MathUtils.degToRad(38);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
@@ -753,7 +756,7 @@ function initSpeakerModel() {
       applySpeakerPosition();
     }
 
-    modelPivot.rotation.y = Math.sin(seconds * 0.28) * THREE.MathUtils.degToRad(82);
+    modelPivot.rotation.y = speakerFrontFacingYaw + Math.sin(seconds * 0.28) * speakerYawSwing;
     modelPivot.rotation.x = Math.sin(seconds * 0.22) * 0.025;
     modelPivot.rotation.z = Math.sin(seconds * 0.2) * 0.018;
     renderer.render(scene, camera);
@@ -772,12 +775,18 @@ function updateGalleryVisibility() {
     if (scrollCue) {
       scrollCue.classList.add("is-hidden");
     }
+    if (wishlistFab && !wishlistFab.hidden) {
+      wishlistFab.classList.add("is-faded");
+    }
     return;
   }
 
   galleryShell.classList.remove("is-visible");
   if (scrollCue) {
     scrollCue.classList.remove("is-hidden");
+  }
+  if (wishlistFab && !wishlistFab.hidden) {
+    wishlistFab.classList.remove("is-faded");
   }
 }
 

@@ -230,6 +230,14 @@ body {
   cursor: pointer;
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.34);
   backdrop-filter: blur(10px);
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    border-color 220ms ease,
+    background 220ms ease;
 }
 
 .wishlist-fab img {
@@ -251,17 +259,23 @@ body {
     rgba(10, 7, 5, 0.9);
 }
 
+.wishlist-fab.is-faded {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
 .speaker-model-stage {
   position: fixed;
-  top: clamp(12px, 2vw, 26px);
-  right: clamp(10px, 2.6vw, 36px);
+  bottom: clamp(12px, 2vw, 26px);
+  left: clamp(10px, 2.6vw, 36px);
   z-index: 2;
-  width: clamp(180px, 22vw, 320px);
-  height: clamp(180px, 22vw, 320px);
+  width: clamp(160px, 19vw, 280px);
+  height: clamp(160px, 19vw, 280px);
   cursor: grab;
   pointer-events: auto;
   opacity: 0;
-  transform: translate(var(--speaker-x, 18px), var(--speaker-y, -18px)) rotate(-5deg);
+  transform: translate(var(--speaker-x, -18px), var(--speaker-y, 18px)) rotate(-5deg);
   touch-action: none;
   user-select: none;
   transition: opacity 520ms ease;
@@ -292,8 +306,8 @@ body {
 
 .music-player-panel {
   position: absolute;
-  top: 44px;
-  right: calc(100% - 28px);
+  bottom: 44px;
+  left: calc(100% - 28px);
   z-index: 2;
   width: 524px;
   padding: 0;
@@ -306,7 +320,7 @@ body {
     inset 0 1px 0 rgba(220, 205, 182, 0.08);
   pointer-events: auto;
   transform: rotate(5deg);
-  transform-origin: top right;
+  transform-origin: bottom left;
 }
 
 .music-player-panel[hidden] {
@@ -608,9 +622,9 @@ body {
 .scroll-cue-icon {
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 1px;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 21px;
+  font-size: 13px;
   line-height: 0.8;
   letter-spacing: 0;
   text-align: center;
@@ -1508,10 +1522,10 @@ body {
   }
 
   .speaker-model-stage {
-    top: 8px;
-    right: 6px;
-    width: 144px;
-    height: 144px;
+    bottom: 8px;
+    left: 6px;
+    width: 132px;
+    height: 132px;
     opacity: 0.76;
   }
 
@@ -1520,8 +1534,8 @@ body {
   }
 
   .music-player-panel {
-    top: 24px;
-    right: 94px;
+    bottom: 24px;
+    left: 94px;
     width: min(340px, calc(100vw - 28px));
   }
 
@@ -1558,7 +1572,7 @@ body {
   }
 
   .scroll-cue-icon {
-    font-size: 17px;
+    font-size: 10px;
   }
 
   .ascii-output {
