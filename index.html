@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>onder balta</title>
-  <link rel="icon" type="image/png" href="https://res.cloudinary.com/ddvaepjce/image/upload/v1776856173/Ads%C4%B1z_tasar%C4%B1m_1_ttrtkf.png">
-  <link rel="apple-touch-icon" href="https://res.cloudinary.com/ddvaepjce/image/upload/v1776856173/Ads%C4%B1z_tasar%C4%B1m_1_ttrtkf.png">
+  <link rel="icon" type="image/svg+xml" href="assets/placeholders/missing-media.svg">
+  <link rel="apple-touch-icon" href="assets/placeholders/missing-media.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
       <button id="wishlistClose" class="wishlist-close" type="button" aria-label="Close wishlist modal">close</button>
       <video
         class="wishlist-video"
-        src="https://res.cloudinary.com/ddvaepjce/video/upload/v1776850880/DGS-TRAILER_wd62u0.mp4"
+        src="assets/optimized-media/dgs-trailer.mp4"
         muted
         autoplay
         loop
@@ -28,11 +28,15 @@
         crossorigin="anonymous"
         aria-hidden="true"
       ></video>
+      <div class="wishlist-ascii-layer" aria-hidden="true">
+        <canvas class="wishlist-ascii-canvas hidden-video"></canvas>
+        <pre class="wishlist-ascii-preview"></pre>
+      </div>
       <div class="wishlist-shade" aria-hidden="true"></div>
       <div class="wishlist-content">
         <img
           class="wishlist-logo"
-          src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776853122/Gemini_Generated_Image_zhaahqzhaahqzhaa_wjqem2.png"
+          src="assets/optimized-media/delivery-guy-logo-white.png"
           alt="Delivery Guy Simulator"
         >
         <h2 id="wishlistTitle" class="wishlist-title">wishlist now</h2>
@@ -41,14 +45,14 @@
       </div>
       <img
         class="wishlist-icon"
-        src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776849204/21ca6d0cf2f25c4dbb35d8dc0b679c3f_wxzz1g.png"
+        src="assets/optimized-media/steam-logo-white.png"
         alt=""
       >
     </article>
   </section>
   <button id="wishlistFab" class="wishlist-fab" type="button" hidden>
     <img
-      src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776853122/Gemini_Generated_Image_zhaahqzhaahqzhaa_wjqem2.png"
+      src="assets/optimized-media/delivery-guy-logo-white.png"
       alt=""
     >
     <span>wishlist</span>
@@ -63,7 +67,7 @@
         <img
           id="musicPlayerCover"
           class="music-player-cover"
-          src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776867989/Oblique_bmsnfi.jpg"
+          src="assets/placeholders/missing-media.svg"
           alt=""
         >
         <div class="music-player-main">
@@ -190,7 +194,6 @@
   <video
     id="sourceVideo"
     class="hidden-video"
-    src="https://res.cloudinary.com/ddvaepjce/video/upload/v1776680182/Video1_tpwyty.mp4"
     autoplay
     muted
     loop

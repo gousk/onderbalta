@@ -23,7 +23,9 @@ It is a static site built with plain HTML, CSS, and JavaScript. The main page us
 
 ## Media
 
-Most project media is loaded from external URLs, mainly Cloudinary. Some items also use external platforms such as itch.io or separately hosted WebGL builds.
+Cloud-hosted media has been removed temporarily. Missing images, videos, audio, and 3D assets currently use local placeholders so the site can load while the original files are restored.
+
+When restoring media, keep source files outside the CDN as a separate archive, place raw local recovery files under `assets/media/`, generate production-ready files under `assets/optimized-media/`, then update the `mediaAssets` object in `script.js`.
 
 ## Running locally
 

@@ -10,6 +10,9 @@ const mimeTypes = {
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".mp4": "video/mp4",
+  ".mp3": "audio/mpeg",
+  ".ogg": "audio/ogg",
+  ".wav": "audio/wav",
   ".json": "application/json; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".png": "image/png",
@@ -17,6 +20,8 @@ const mimeTypes = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".svg": "image/svg+xml",
+  ".glb": "model/gltf-binary",
+  ".gltf": "model/gltf+json",
 };
 
 function sendFile(filePath, res) {

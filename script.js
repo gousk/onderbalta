@@ -52,25 +52,55 @@ const postActions = document.getElementById("postActions");
 const GAME_FRAME_WIDTH = 1920;
 const GAME_FRAME_HEIGHT = 1118;
 const WISHLIST_SEEN_KEY = "onderbalta:wishlistSeen";
-const speakerModelUrl = "https://res.cloudinary.com/ddvaepjce/image/upload/v1776865669/dusty_passive_stage_speaker_quke5k.glb";
+const missingMediaSrc = "assets/placeholders/missing-media.svg";
+const mediaAssets = {
+  backgroundImage: "assets/optimized-media/background.webp",
+  heroVideo: "assets/optimized-media/horsebanner.mp4",
+  scene01Video: "assets/optimized-media/scene-01-horse.mp4",
+  scene02Video: "assets/optimized-media/scene-02-blob-tracking.mp4",
+  scene03Video: "assets/optimized-media/scene-03-bicycle-intro.mp4",
+  wishlistVideo: "assets/optimized-media/dgs-trailer.mp4",
+  wishlistLogo: "assets/optimized-media/delivery-guy-logo-white.png",
+  wishlistIcon: "assets/optimized-media/steam-logo-white.png",
+  speakerModel: "assets/optimized-media/speaker.glb",
+  galleryIntroVideo: "assets/optimized-media/info-box-background.mp4",
+  bicycleClubPreviewVideo: "assets/optimized-media/bicycle-club-intro.mp4",
+  bicycleClubScreenshot: "assets/optimized-media/bicycle-club-site.webp",
+  music: {
+    oblique: {
+      cover: "assets/optimized-media/music/oblique-cover.jpg",
+      src: "assets/optimized-media/music/oblique.mp3",
+    },
+    feverChill: {
+      cover: "assets/optimized-media/music/fever-chill-cover.jpg",
+      src: "assets/optimized-media/music/fever-chill.mp3",
+    },
+    mcomm: {
+      cover: "assets/optimized-media/music/mcomm-cover.jpg",
+      src: "assets/optimized-media/music/mcomm.mp3",
+    },
+  },
+};
+const speakerModelUrl = mediaAssets.speakerModel;
+document.documentElement.style.setProperty("--site-background-image", `url("${mediaAssets.backgroundImage}")`);
 const musicTracks = [
   {
     title: "ナトリウムライト",
     artist: "Oblique",
-    cover: "https://res.cloudinary.com/ddvaepjce/image/upload/v1776867989/Oblique_bmsnfi.jpg",
-    src: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776867974/Oblique_powd5e.mp3",
+    cover: mediaAssets.music.oblique.cover,
+    src: mediaAssets.music.oblique.src,
   },
   {
     title: "Fever Chill",
     artist: "ilent Hill 4",
-    cover: "https://res.cloudinary.com/ddvaepjce/image/upload/v1776867988/FeverChill_yf43iv.jpg",
-    src: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776867965/FeverChill_fcqnom.mp3",
+    cover: mediaAssets.music.feverChill.cover,
+    src: mediaAssets.music.feverChill.src,
   },
   {
     title: "MCOMM",
     artist: "Sxnctuary",
-    cover: "https://res.cloudinary.com/ddvaepjce/image/upload/v1776867989/MCOMM_uv36gu.jpg",
-    src: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776867976/MCOMM_w0dsin.mp3",
+    cover: mediaAssets.music.mcomm.cover,
+    src: mediaAssets.music.mcomm.src,
   },
 ];
 let activeGameFrameWidth = GAME_FRAME_WIDTH;
@@ -100,11 +130,12 @@ const activeIntroAsciiPattern = introAsciiPatterns.technical;
 const galleryAsciiPreviewCleanups = [];
 const postCarouselCleanups = [];
 let postCarouselIndex = 0;
-const introAsciiVideoSrc = "https://res.cloudinary.com/ddvaepjce/video/upload/v1776767453/From_KlickPin_CF_Pin_de_angelina_em_Videos_pt_2___Dia_da_dan%C3%A7a_Cen%C3%A1rio_para_v%C3%ADdeos_Guia_de_fotografia_agywq4.mp4";
+const introAsciiVideoSrc = mediaAssets.galleryIntroVideo;
 const managedVideos = new Set();
 
 function safePlayVideo(video) {
   if (!video || video.hidden || !video.isConnected) return;
+  if (!video.currentSrc && !video.getAttribute("src")) return;
 
   video.muted = true;
   video.loop = true;
@@ -194,7 +225,8 @@ const galleryPosts = [
     category: "environment",
     year: "2026",
     mediaType: "video",
-    image: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776697083/Movie_020_yqakht.mp4",
+    image: mediaAssets.scene01Video,
+    objectPosition: "72% center",
     alt: "Atmospheric cinematic still",
     body: [
       "work in progress.",
@@ -222,7 +254,7 @@ const galleryPosts = [
     category: "environment",
     year: "2026",
     mediaType: "video",
-    image: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776695734/456_qsbg78.mp4?v=1776695734",
+    image: mediaAssets.scene03Video,
     alt: "Scene 03 video preview",
     body: [
       "made with unity.",
@@ -234,14 +266,14 @@ const galleryPosts = [
     category: "website",
     year: "2026",
     mediaType: "video",
-    image: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776690543/introclip_witlri.mp4",
+    image: mediaAssets.bicycleClubPreviewVideo,
     previewType: "ascii-video",
     alt: "Bicycle Club website ASCII hero preview",
     externalUrl: "https://bicycleclub.net",
     actionLabel: "visit",
     mediaGallery: [
-      { type: "ascii-video", src: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776690543/introclip_witlri.mp4", alt: "Bicycle Club ASCII hero" },
-      { type: "image", src: "https://res.cloudinary.com/ddvaepjce/image/upload/v1776690433/Screenshot_26_dsglbw.png", alt: "Bicycle Club screenshot" }
+      { type: "ascii-video", src: mediaAssets.bicycleClubPreviewVideo, alt: "Bicycle Club ASCII hero" },
+      { type: "image", src: mediaAssets.bicycleClubScreenshot, alt: "Bicycle Club site screenshot", objectPosition: "center top" }
     ],
     body: [
       "made with react, vite, and supabase. the site uses ascii art throughout the interface and keeps a dense terminal-inspired visual language.",
@@ -255,7 +287,7 @@ const galleryPosts = [
     category: "environment",
     year: "2026",
     mediaType: "video",
-    image: "https://res.cloudinary.com/ddvaepjce/video/upload/v1776680203/123_ikdovw.mp4",
+    image: mediaAssets.scene02Video,
     alt: "Scene 02 video preview",
     body: [
       "made with unity.",
@@ -485,6 +517,14 @@ function updateVolumeUi() {
 function loadActiveTrack() {
   const track = musicTracks[activeMusicTrackIndex];
   if (!track) return;
+  if (!track.src) {
+    musicAudio.removeAttribute("src");
+    musicAudio.load();
+    musicProgress = 0;
+    setMusicPlayerState(false);
+    updateMusicPlayerUi();
+    return;
+  }
   musicAudio.src = track.src;
   musicAudio.load();
   updateMusicPlayerUi();
@@ -500,6 +540,10 @@ function updateSelectedTrack(nextIndex, shouldPlay = musicIsPlaying) {
 }
 
 function setMusicPlayerState(isPlaying) {
+  const track = musicTracks[activeMusicTrackIndex];
+  if (isPlaying && !track?.src) {
+    isPlaying = false;
+  }
   musicIsPlaying = isPlaying;
   if (!musicPlayToggle) return;
   musicPlayToggle.textContent = isPlaying ? "||" : ">";
@@ -532,6 +576,15 @@ function setVolumeToRatio(ratio) {
 
 function initSpeakerModel() {
   if (!speakerModelStage) return;
+
+  if (!speakerModelUrl) {
+    speakerModelStage.classList.add("is-loaded", "is-media-missing");
+    speakerModelStage.addEventListener("click", (event) => {
+      if (event.target.closest(".music-player-panel")) return;
+      openMusicPlayerModal();
+    });
+    return;
+  }
 
   const speakerFrontFacingYaw = THREE.MathUtils.degToRad(-60);
   const speakerYawSwing = THREE.MathUtils.degToRad(38);
@@ -799,29 +852,31 @@ function renderGalleryAdStrip() {
       rel="noreferrer"
       aria-label="Wishlist Delivery Guy Simulator on Steam"
     >
-      <video
-        class="gallery-ad-video"
-        src="https://res.cloudinary.com/ddvaepjce/video/upload/v1776850880/DGS-TRAILER_wd62u0.mp4"
-        muted
-        autoplay
-        loop
-        playsinline
-        crossorigin="anonymous"
-        aria-hidden="true"
-      ></video>
-      <div class="gallery-ad-ascii-layer" aria-hidden="true">
-        <canvas class="gallery-ad-ascii-canvas hidden-video"></canvas>
-        <pre class="gallery-ad-ascii-preview"></pre>
-      </div>
+      ${mediaAssets.wishlistVideo ? `
+        <video
+          class="gallery-ad-video"
+          src="${mediaAssets.wishlistVideo}"
+          muted
+          autoplay
+          loop
+          playsinline
+          crossorigin="anonymous"
+          aria-hidden="true"
+        ></video>
+        <div class="gallery-ad-ascii-layer" aria-hidden="true">
+          <canvas class="gallery-ad-ascii-canvas hidden-video"></canvas>
+          <pre class="gallery-ad-ascii-preview"></pre>
+        </div>
+      ` : `<img class="gallery-ad-video" src="${missingMediaSrc}" alt="" aria-hidden="true">`}
       <img
         class="gallery-ad-icon"
-        src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776849204/21ca6d0cf2f25c4dbb35d8dc0b679c3f_wxzz1g.png"
+        src="${mediaAssets.wishlistIcon}"
         alt=""
       >
       <span class="gallery-ad-text">wishlist now</span>
       <img
         class="gallery-ad-side-icon"
-        src="https://res.cloudinary.com/ddvaepjce/image/upload/v1776853122/Gemini_Generated_Image_zhaahqzhaahqzhaa_wjqem2.png"
+        src="${mediaAssets.wishlistLogo}"
         alt=""
       >
     </a>
@@ -837,7 +892,7 @@ function renderGallery() {
       ${post.mediaType === "game" ? "" : ""}
       ${post.type === "intro" ? `
         <article class="gallery-card gallery-card-layout-${(index % 8) + 1} gallery-card-intro">
-          <video class="gallery-intro-video hidden-video" src="${introAsciiVideoSrc}" muted autoplay loop playsinline crossorigin="anonymous"></video>
+          ${introAsciiVideoSrc ? `<video class="gallery-intro-video hidden-video" src="${introAsciiVideoSrc}" muted autoplay loop playsinline crossorigin="anonymous"></video>` : ""}
           <canvas class="gallery-intro-video-bg" aria-hidden="true"></canvas>
           <canvas class="gallery-intro-canvas hidden-video"></canvas>
           <pre class="gallery-intro-ascii" aria-hidden="true"></pre>
@@ -857,7 +912,7 @@ function renderGallery() {
                 <pre class="gallery-ascii-preview"></pre>
               </div>
             ` : post.mediaType === "video" ? `
-              <video class="gallery-thumb-video${post.image.includes("Movie_020_yqakht.mp4") ? " gallery-thumb-video-right" : ""}${post.mediaType === "game" ? " gallery-thumb-game" : ""}" src="${post.image}" muted autoplay loop playsinline crossorigin="anonymous" aria-label="${post.alt}"></video>
+              <video class="gallery-thumb-video${post.image.includes("Movie_020_yqakht.mp4") ? " gallery-thumb-video-right" : ""}${post.mediaType === "game" ? " gallery-thumb-game" : ""}" src="${post.image}" muted autoplay loop playsinline crossorigin="anonymous" aria-label="${post.alt}"${post.objectPosition ? ` style="object-position: ${post.objectPosition}"` : ""}></video>
             ` : `
               <img class="gallery-thumb${post.mediaType === "game" ? " gallery-thumb-game" : ""}" src="${post.image}" alt="${post.alt}">
             `}
@@ -1164,6 +1219,31 @@ function setupGalleryAdAscii() {
   });
 }
 
+function setupWishlistAscii() {
+  const wrap = document.querySelector(".wishlist-ascii-layer");
+  const video = document.querySelector(".wishlist-video");
+  const canvas = document.querySelector(".wishlist-ascii-canvas");
+  const pre = document.querySelector(".wishlist-ascii-preview");
+  if (!wrap || !video || !canvas || !pre || !mediaAssets.wishlistVideo) return;
+
+  video.src = mediaAssets.wishlistVideo;
+  document.querySelectorAll(".wishlist-logo, .wishlist-fab img").forEach((image) => {
+    image.src = mediaAssets.wishlistLogo;
+  });
+  document.querySelectorAll(".wishlist-icon, .gallery-ad-icon").forEach((image) => {
+    image.src = mediaAssets.wishlistIcon;
+  });
+
+  initAsciiVideoSurface(wrap, video, canvas, pre, {
+    fontSize: 14,
+    lineHeight: 12.88,
+    fps: 18,
+    cover: true,
+    fit: false,
+    ramp: activeIntroAsciiPattern,
+  });
+}
+
 function clearPostCarousel() {
   postCarouselCleanups.splice(0).forEach((cleanup) => {
     try { cleanup(); } catch {}
@@ -1240,6 +1320,9 @@ function setupPostCarousel(post) {
       image.className = "post-carousel-media";
       image.src = item.src;
       image.alt = item.alt || "";
+      if (item.objectPosition) {
+        image.style.objectPosition = item.objectPosition;
+      }
       slide.appendChild(image);
     }
 
@@ -1456,6 +1539,19 @@ function revealUiIfReady() {
   loadingScreen.classList.add("is-hidden");
 }
 
+function showHeroMediaFallback() {
+  stopRendering();
+  hasLoadedFrame = true;
+  firstFrameReady = true;
+  asciiOutput.textContent = [
+    "onder balta",
+    "",
+    "media offline",
+    "local files can be restored from assets/optimized-media",
+  ].join("\n");
+  revealUiIfReady();
+}
+
 function openPost(index) {
   const post = galleryPosts[index];
   if (!post) return;
@@ -1476,6 +1572,7 @@ function openPost(index) {
     postBannerVideo.hidden = false;
     postBannerVideo.src = post.image;
     postBannerVideo.setAttribute("aria-label", post.alt);
+    postBannerVideo.style.objectPosition = "";
     delete postBannerVideo.dataset.allowPause;
     watchVideo(postBannerVideo);
     safePlayVideo(postBannerVideo);
@@ -1787,7 +1884,7 @@ sourceVideo.addEventListener("ended", () => {
 });
 
 sourceVideo.addEventListener("error", () => {
-  asciiOutput.textContent = "Video yuklenemedi.\n\nMuhtemel nedenler:\n- tarayici codec desteklemiyor\n- file:// acilisinda medya bloklaniyor\n- dosya bozuk ya da okunamiyor";
+  showHeroMediaFallback();
 });
 
 window.addEventListener("resize", () => {
@@ -1989,6 +2086,7 @@ document.addEventListener("visibilitychange", () => {
 
 renderGallery();
 initSpeakerModel();
+setupWishlistAscii();
 window.requestAnimationFrame(initWishlistModal);
 setupGalleryAdAscii();
 ensureAllVideosPlaying();
@@ -2007,7 +2105,12 @@ bgImage.onerror = () => {
   backgroundReady = true;
   revealUiIfReady();
 };
-bgImage.src = "https://res.cloudinary.com/ddvaepjce/image/upload/v1776680183/Gemini_Generated_Image_y68dxay68dxay68d_o18s0q.png";
-sourceVideo.load();
-watchVideo(sourceVideo);
-safePlayVideo(sourceVideo);
+bgImage.src = mediaAssets.backgroundImage;
+if (mediaAssets.heroVideo) {
+  sourceVideo.src = mediaAssets.heroVideo;
+  sourceVideo.load();
+  watchVideo(sourceVideo);
+  safePlayVideo(sourceVideo);
+} else {
+  showHeroMediaFallback();
+}
