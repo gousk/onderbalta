@@ -6,10 +6,6 @@ const sourceVideo = document.getElementById("sourceVideo");
 const displayCanvas = document.getElementById("displayCanvas");
 const frameCanvas = document.getElementById("frameCanvas");
 const loadingScreen = document.getElementById("loadingScreen");
-const wishlistModal = document.getElementById("wishlistModal");
-const wishlistBackdrop = document.getElementById("wishlistBackdrop");
-const wishlistClose = document.getElementById("wishlistClose");
-const wishlistFab = document.getElementById("wishlistFab");
 const speakerModelStage = document.getElementById("speakerModelStage");
 const musicPlayerPanel = document.getElementById("musicPlayerPanel");
 const musicPlayerClose = document.getElementById("musicPlayerClose");
@@ -51,7 +47,6 @@ const postActions = document.getElementById("postActions");
 
 const GAME_FRAME_WIDTH = 1920;
 const GAME_FRAME_HEIGHT = 1118;
-const WISHLIST_SEEN_KEY = "onderbalta:wishlistSeen";
 const missingMediaSrc = "assets/placeholders/missing-media.svg";
 const mediaAssets = {
   backgroundImage: "assets/optimized-media/background.webp",
@@ -175,9 +170,34 @@ function watchVideo(video) {
   video.addEventListener("waiting", () => safePlayVideo(video));
 }
 
+const videoVisibilityObserver = "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        entry.target.querySelectorAll("video").forEach((video) => {
+          if (entry.isIntersecting) {
+            delete video.dataset.allowPause;
+            safePlayVideo(video);
+            return;
+          }
+
+          video.dataset.allowPause = "true";
+          video.pause();
+        });
+      });
+    }, { rootMargin: "300px 0px" })
+  : null;
+
+function observeGalleryVideoVisibility() {
+  if (!videoVisibilityObserver) return;
+  videoVisibilityObserver.disconnect();
+  galleryGrid.querySelectorAll(".gallery-card, .gallery-ad-strip").forEach((anchor) => {
+    videoVisibilityObserver.observe(anchor);
+  });
+}
+
 function ensureAllVideosPlaying() {
   document.querySelectorAll("video").forEach((video) => {
-    if (video.hidden || !video.isConnected) return;
+    if (video.hidden || !video.isConnected || video.dataset.allowPause) return;
     watchVideo(video);
     if (video.paused || video.ended || video.readyState < 2) {
       safePlayVideo(video);
@@ -429,48 +449,6 @@ function closeMusicPlayerModal() {
   musicPlayerPanel.hidden = true;
 }
 
-function openWishlistModal() {
-  if (!wishlistModal) return;
-  wishlistModal.hidden = false;
-  if (wishlistFab) wishlistFab.hidden = true;
-  wishlistModal.querySelectorAll("video").forEach((video) => {
-    watchVideo(video);
-    safePlayVideo(video);
-  });
-}
-
-function closeWishlistModal(rememberDismissal = true) {
-  if (!wishlistModal) return;
-  wishlistModal.hidden = true;
-  if (rememberDismissal) {
-    try {
-      window.localStorage.setItem(WISHLIST_SEEN_KEY, "1");
-    } catch {}
-  }
-  if (wishlistFab) wishlistFab.hidden = false;
-  updateGalleryVisibility();
-}
-
-function shouldAutoOpenWishlistModal() {
-  try {
-    return window.localStorage.getItem(WISHLIST_SEEN_KEY) !== "1";
-  } catch {
-    return true;
-  }
-}
-
-function initWishlistModal() {
-  if (!wishlistModal) return;
-
-  if (shouldAutoOpenWishlistModal()) {
-    openWishlistModal();
-    return;
-  }
-
-  if (wishlistFab) wishlistFab.hidden = false;
-  updateGalleryVisibility();
-}
-
 function formatTrackTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const minutes = Math.floor(seconds / 60);
@@ -574,15 +552,23 @@ function setVolumeToRatio(ratio) {
   updateVolumeUi();
 }
 
+let speakerFallbackReady = false;
+
+function enableSpeakerFallback() {
+  if (!speakerModelStage || speakerFallbackReady) return;
+  speakerFallbackReady = true;
+  speakerModelStage.classList.add("is-loaded", "is-media-missing");
+  speakerModelStage.addEventListener("click", (event) => {
+    if (event.target.closest(".music-player-panel")) return;
+    openMusicPlayerModal();
+  });
+}
+
 function initSpeakerModel() {
   if (!speakerModelStage) return;
 
   if (!speakerModelUrl) {
-    speakerModelStage.classList.add("is-loaded", "is-media-missing");
-    speakerModelStage.addEventListener("click", (event) => {
-      if (event.target.closest(".music-player-panel")) return;
-      openMusicPlayerModal();
-    });
+    enableSpeakerFallback();
     return;
   }
 
@@ -593,11 +579,17 @@ function initSpeakerModel() {
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
   camera.position.set(0, 0.38, 5.6);
 
-  const renderer = new THREE.WebGLRenderer({
-    alpha: true,
-    antialias: true,
-    powerPreference: "high-performance",
-  });
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      powerPreference: "high-performance",
+    });
+  } catch {
+    enableSpeakerFallback();
+    return;
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -828,18 +820,12 @@ function updateGalleryVisibility() {
     if (scrollCue) {
       scrollCue.classList.add("is-hidden");
     }
-    if (wishlistFab && !wishlistFab.hidden) {
-      wishlistFab.classList.add("is-faded");
-    }
     return;
   }
 
   galleryShell.classList.remove("is-visible");
   if (scrollCue) {
     scrollCue.classList.remove("is-hidden");
-  }
-  if (wishlistFab && !wishlistFab.hidden) {
-    wishlistFab.classList.remove("is-faded");
   }
 }
 
@@ -935,6 +921,7 @@ function renderGallery() {
   introVideoBgCtx = introVideoBgEl ? introVideoBgEl.getContext("2d") : null;
   introAsciiMetrics = null;
   setupGalleryAsciiPreviews();
+  observeGalleryVideoVisibility();
 
   if (introVideoEl) {
     watchVideo(introVideoEl);
@@ -1003,7 +990,7 @@ function setupGalleryAsciiPreviews() {
     };
 
     const draw = () => {
-      if (!video.videoWidth || !video.videoHeight) return;
+      if (!video.videoWidth || !video.videoHeight || video.dataset.allowPause) return;
       const wrapRect = wrap.getBoundingClientRect();
       if (!wrapRect.width || !wrapRect.height) return;
 
@@ -1115,7 +1102,7 @@ function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
   };
 
   const draw = () => {
-    if (!video.videoWidth || !video.videoHeight) return;
+    if (!video.videoWidth || !video.videoHeight || video.dataset.allowPause) return;
     const wrapRect = wrap.getBoundingClientRect();
     if (!wrapRect.width || !wrapRect.height) return;
 
@@ -1212,31 +1199,6 @@ function setupGalleryAdAscii() {
   initAsciiVideoSurface(wrap, video, canvas, pre, {
     fontSize: 16,
     lineHeight: 14.72,
-    fps: 18,
-    cover: true,
-    fit: false,
-    ramp: activeIntroAsciiPattern,
-  });
-}
-
-function setupWishlistAscii() {
-  const wrap = document.querySelector(".wishlist-ascii-layer");
-  const video = document.querySelector(".wishlist-video");
-  const canvas = document.querySelector(".wishlist-ascii-canvas");
-  const pre = document.querySelector(".wishlist-ascii-preview");
-  if (!wrap || !video || !canvas || !pre || !mediaAssets.wishlistVideo) return;
-
-  video.src = mediaAssets.wishlistVideo;
-  document.querySelectorAll(".wishlist-logo, .wishlist-fab img").forEach((image) => {
-    image.src = mediaAssets.wishlistLogo;
-  });
-  document.querySelectorAll(".wishlist-icon, .gallery-ad-icon").forEach((image) => {
-    image.src = mediaAssets.wishlistIcon;
-  });
-
-  initAsciiVideoSurface(wrap, video, canvas, pre, {
-    fontSize: 14,
-    lineHeight: 12.88,
     fps: 18,
     cover: true,
     fit: false,
@@ -1924,15 +1886,6 @@ galleryGrid.addEventListener("click", (event) => {
 
 postClose.addEventListener("click", closePost);
 postBackdrop.addEventListener("click", closePost);
-if (wishlistClose) {
-  wishlistClose.addEventListener("click", closeWishlistModal);
-}
-if (wishlistBackdrop) {
-  wishlistBackdrop.addEventListener("click", closeWishlistModal);
-}
-if (wishlistFab) {
-  wishlistFab.addEventListener("click", () => openWishlistModal());
-}
 if (musicPlayerClose) {
   musicPlayerClose.addEventListener("click", closeMusicPlayerModal);
 }
@@ -2062,11 +2015,6 @@ if (scrollCue) {
 }
 
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && wishlistModal && !wishlistModal.hidden) {
-    closeWishlistModal();
-    return;
-  }
-
   if (event.key === "Escape" && musicPlayerPanel && !musicPlayerPanel.hidden) {
     closeMusicPlayerModal();
     return;
@@ -2085,9 +2033,11 @@ document.addEventListener("visibilitychange", () => {
 });
 
 renderGallery();
-initSpeakerModel();
-setupWishlistAscii();
-window.requestAnimationFrame(initWishlistModal);
+try {
+  initSpeakerModel();
+} catch {
+  enableSpeakerFallback();
+}
 setupGalleryAdAscii();
 ensureAllVideosPlaying();
 window.requestAnimationFrame(animateIntroAscii);

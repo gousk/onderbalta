@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>onder balta</title>
+  <title>onder balta — game developer</title>
+  <meta name="description" content="Personal portfolio of onder balta — games, real-time environments, and web experiments.">
+  <meta name="theme-color" content="#0a0705">
+  <meta property="og:title" content="onder balta — game developer">
+  <meta property="og:description" content="Games, real-time environments, and web experiments.">
+  <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="assets/optimized-media/browser-icon.png">
   <link rel="apple-touch-icon" href="assets/optimized-media/browser-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,49 +19,6 @@
 <body>
   <div id="loadingScreen" class="loading-screen" aria-hidden="true"></div>
   <div class="background-layer" aria-hidden="true"></div>
-  <section id="wishlistModal" class="wishlist-modal" hidden>
-    <div id="wishlistBackdrop" class="wishlist-backdrop" aria-hidden="true"></div>
-    <article class="wishlist-panel" aria-modal="true" role="dialog" aria-labelledby="wishlistTitle">
-      <button id="wishlistClose" class="wishlist-close" type="button" aria-label="Close wishlist modal">close</button>
-      <video
-        class="wishlist-video"
-        src="assets/optimized-media/dgs-trailer.mp4"
-        muted
-        autoplay
-        loop
-        playsinline
-        crossorigin="anonymous"
-        aria-hidden="true"
-      ></video>
-      <div class="wishlist-ascii-layer" aria-hidden="true">
-        <canvas class="wishlist-ascii-canvas hidden-video"></canvas>
-        <pre class="wishlist-ascii-preview"></pre>
-      </div>
-      <div class="wishlist-shade" aria-hidden="true"></div>
-      <div class="wishlist-content">
-        <img
-          class="wishlist-logo"
-          src="assets/optimized-media/delivery-guy-logo-white.png"
-          alt="Delivery Guy Simulator"
-        >
-        <h2 id="wishlistTitle" class="wishlist-title">wishlist now</h2>
-        <p class="wishlist-copy">Steam page is live. Add it to your wishlist and follow the game.</p>
-        <a class="wishlist-action" href="https://store.steampowered.com/app/3377340/Delivery_Guy_Simulator/" target="_blank" rel="noreferrer">wishlist now</a>
-      </div>
-      <img
-        class="wishlist-icon"
-        src="assets/optimized-media/steam-logo-white.png"
-        alt=""
-      >
-    </article>
-  </section>
-  <button id="wishlistFab" class="wishlist-fab" type="button" hidden>
-    <img
-      src="assets/optimized-media/delivery-guy-logo-white.png"
-      alt=""
-    >
-    <span>wishlist</span>
-  </button>
   <div id="speakerModelStage" class="speaker-model-stage" aria-label="Open music player">
     <article id="musicPlayerPanel" class="music-player-panel" aria-labelledby="musicPlayerTitle" hidden>
       <div class="music-player-header">
@@ -158,6 +120,16 @@
     <section class="gallery-shell" aria-labelledby="galleryTitle">
       <div id="galleryGrid" class="gallery-grid"></div>
     </section>
+
+    <footer class="site-footer">
+      <p class="site-footer-copy">&copy; 2026 onder balta</p>
+      <nav class="site-footer-links" aria-label="Contact links">
+        <a href="https://github.com/Gousk" target="_blank" rel="noreferrer">github</a>
+        <a href="https://www.linkedin.com/in/onderbalta/" target="_blank" rel="noreferrer">linkedin</a>
+        <a href="https://gousk.itch.io/" target="_blank" rel="noreferrer">itch.io</a>
+        <a href="mailto:onderbalta99@gmail.com">email</a>
+      </nav>
+    </footer>
   </main>
 
   <section id="postOverlay" class="post-overlay" hidden>
