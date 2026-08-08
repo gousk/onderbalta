@@ -1,2066 +1,3262 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 
-const asciiOutput = document.getElementById("asciiOutput");
-const sourceVideo = document.getElementById("sourceVideo");
-const displayCanvas = document.getElementById("displayCanvas");
-const frameCanvas = document.getElementById("frameCanvas");
-const loadingScreen = document.getElementById("loadingScreen");
-const speakerModelStage = document.getElementById("speakerModelStage");
-const musicPlayerPanel = document.getElementById("musicPlayerPanel");
-const musicPlayerClose = document.getElementById("musicPlayerClose");
-const musicPlayerCover = document.getElementById("musicPlayerCover");
-const musicPlayerTitle = document.getElementById("musicPlayerTitle");
-const musicPlayerArtist = document.getElementById("musicPlayerArtist");
-const musicProgressBar = document.getElementById("musicProgressBar");
-const musicProgressFill = document.getElementById("musicProgressFill");
-const musicCurrentTime = document.getElementById("musicCurrentTime");
-const musicDuration = document.getElementById("musicDuration");
-const musicVolumeBar = document.getElementById("musicVolumeBar");
-const musicTrackToggle = document.getElementById("musicTrackToggle");
-const musicTrackList = document.getElementById("musicTrackList");
-const musicPrev = document.getElementById("musicPrev");
-const musicPlayToggle = document.getElementById("musicPlayToggle");
-const musicNext = document.getElementById("musicNext");
-const musicPlayerHeader = document.querySelector(".music-player-header");
-const siteShell = document.querySelector(".site-shell");
-const galleryShell = document.querySelector(".gallery-shell");
-const galleryGrid = document.getElementById("galleryGrid");
-const scrollCue = document.querySelector(".scroll-cue");
-const postOverlay = document.getElementById("postOverlay");
-const postBackdrop = document.getElementById("postBackdrop");
-const postClose = document.getElementById("postClose");
-const postPanel = document.querySelector(".post-panel");
-const postBanner = document.getElementById("postBanner");
-const postBannerVideo = document.getElementById("postBannerVideo");
-const postCarousel = document.getElementById("postCarousel");
-const postCarouselViewport = document.getElementById("postCarouselViewport");
-const postCarouselPrev = document.getElementById("postCarouselPrev");
-const postCarouselNext = document.getElementById("postCarouselNext");
-const postCarouselDots = document.getElementById("postCarouselDots");
-const postGameWrap = document.getElementById("postGameWrap");
-const postGameFrame = document.getElementById("postGameFrame");
-const postMeta = document.getElementById("postMeta");
-const postTitle = document.getElementById("postTitle");
-const postContent = document.getElementById("postContent");
-const postActions = document.getElementById("postActions");
+const canvas = document.querySelector("#roomCanvas");
+const roomStage = document.querySelector(".room-stage");
+const loadingScreen = document.querySelector("#loadingScreen");
+const webglFallback = document.querySelector("#webglFallback");
+const viewCursor = document.querySelector("#viewCursor");
+const siteHeader = document.querySelector("#siteHeader");
+const headerWordmark = document.querySelector("#headerWordmark");
+const projectPanel = document.querySelector("#projectPanel");
+const projectClose = document.querySelector("#projectClose");
+const projectMeta = document.querySelector("#projectMeta");
+const projectTitle = document.querySelector("#projectTitle");
+const projectDescription = document.querySelector("#projectDescription");
+const projectPreview = document.querySelector("#projectPreview");
+const projectPreviewVideo = document.querySelector("#projectPreviewVideo");
+const projectPreviewImage = document.querySelector("#projectPreviewImage");
+const projectPreviewLabel = document.querySelector("#projectPreviewLabel");
+const projectLink = document.querySelector("#projectLink");
+const cleanView = document.querySelector("#cleanView");
+const cleanViewClose = document.querySelector("#cleanViewClose");
+const cleanViewTitle = document.querySelector("#cleanViewTitle");
+const cleanVideo = document.querySelector("#cleanVideo");
+const cleanImage = document.querySelector("#cleanImage");
+const cleanGalleryNav = document.querySelector("#cleanGalleryNav");
+const cleanGalleryPrev = document.querySelector("#cleanGalleryPrev");
+const cleanGalleryNext = document.querySelector("#cleanGalleryNext");
+const cleanGalleryCount = document.querySelector("#cleanGalleryCount");
 
-const GAME_FRAME_WIDTH = 1920;
-const GAME_FRAME_HEIGHT = 1118;
-const missingMediaSrc = "assets/placeholders/missing-media.svg";
-const mediaAssets = {
-  backgroundImage: "assets/optimized-media/background.webp",
-  heroVideo: "assets/optimized-media/horsebanner.mp4",
-  scene01Video: "assets/optimized-media/scene-01-horse.mp4",
-  scene02Video: "assets/optimized-media/scene-02-blob-tracking.mp4",
-  scene03Video: "assets/optimized-media/scene-03-bicycle-intro.mp4",
-  wishlistVideo: "assets/optimized-media/dgs-trailer.mp4",
-  wishlistLogo: "assets/optimized-media/delivery-guy-logo-white.png",
-  wishlistIcon: "assets/optimized-media/steam-logo-white.png",
-  speakerModel: "assets/optimized-media/speaker.glb",
-  galleryIntroVideo: "assets/optimized-media/info-box-background.mp4",
-  bicycleClubPreviewVideo: "assets/optimized-media/bicycle-club-intro.mp4",
-  bicycleClubScreenshot: "assets/optimized-media/bicycle-club-site.webp",
-  music: {
-    oblique: {
-      cover: "assets/optimized-media/music/oblique-cover.jpg",
-      src: "assets/optimized-media/music/oblique.mp3",
-    },
-    feverChill: {
-      cover: "assets/optimized-media/music/fever-chill-cover.jpg",
-      src: "assets/optimized-media/music/fever-chill.mp3",
-    },
-    mcomm: {
-      cover: "assets/optimized-media/music/mcomm-cover.jpg",
-      src: "assets/optimized-media/music/mcomm.mp3",
-    },
-  },
-};
-const speakerModelUrl = mediaAssets.speakerModel;
-document.documentElement.style.setProperty("--site-background-image", `url("${mediaAssets.backgroundImage}")`);
-const musicTracks = [
-  {
-    title: "ナトリウムライト",
-    artist: "Oblique",
-    cover: mediaAssets.music.oblique.cover,
-    src: mediaAssets.music.oblique.src,
-  },
-  {
-    title: "Fever Chill",
-    artist: "ilent Hill 4",
-    cover: mediaAssets.music.feverChill.cover,
-    src: mediaAssets.music.feverChill.src,
-  },
-  {
-    title: "MCOMM",
-    artist: "Sxnctuary",
-    cover: mediaAssets.music.mcomm.cover,
-    src: mediaAssets.music.mcomm.src,
-  },
+const ROOM_WIDTH = 18;
+const ROOM_HEIGHT = 6;
+const ROOM_DEPTH = 18;
+const EYE_HEIGHT = 2.82;
+const TV_TARGET_HEIGHT = 1.6;
+const TV_WALL_Z = -ROOM_DEPTH / 2 + 0.04;
+const TV_HORIZONTAL_GAP = 0.015;
+const TV_VERTICAL_GAP = -0.035;
+const TV_WALL_ROWS = [
+  { offsetX: -0.08, scales: [1, 0.98, 1.01, 0.97, 0.99] },
+  { offsetX: 0.12, scales: [0.98, 1, 0.97, 1.01, 0.98] },
+  { offsetX: -0.04, scales: [0.99, 0.97, 1, 0.98] },
 ];
-let activeGameFrameWidth = GAME_FRAME_WIDTH;
-let activeGameFrameHeight = GAME_FRAME_HEIGHT;
-let activeGameWrapWidth = GAME_FRAME_WIDTH;
-let activeGameWrapHeight = GAME_FRAME_HEIGHT;
-
-const ctx = frameCanvas.getContext("2d", { willReadFrequently: true });
-const displayCtx = displayCanvas.getContext("2d");
-const charset = " .`',:^;i!l~_-";
-const topCropRatio = 0;
-const leftCropRatio = 0;
-const rightCropRatio = 0;
-const bottomCropRatio = 0;
-const renderScale = 1.45;
-const cursorRadius = 15;
-const cursorFlowStrength = 3.2;
-const cursorFadeSpeed = 0.16;
-const cursorNoiseScale = 0.22;
-const introAsciiPatterns = {
-  minimal: " .,:;",
-  geometric: " .:-=+*#%@",
-  technical: " .`':;i!+=x#",
-  organic: " .`'^~*:ox",
+const SOCIAL_LINKS = {
+  socialLinkedin: {
+    label: "linkedin",
+    url: "https://www.linkedin.com/in/onderbalta/",
+    iconPath: "M6.94 8.5H3.56V19.5h3.38V8.5Zm.22-3.4a1.96 1.96 0 1 0-3.92 0 1.96 1.96 0 0 0 3.92 0ZM20.44 12.74c0-3.31-1.76-4.85-4.12-4.85-1.9 0-2.75 1.06-3.23 1.8V8.5H9.72c.04.79 0 11 0 11h3.37v-6.14c0-.33.02-.66.12-.89.27-.66.88-1.35 1.9-1.35 1.34 0 1.88 1.03 1.88 2.55v5.83h3.37v-6.76Z",
+  },
+  socialGithub: {
+    label: "github",
+    url: "https://github.com/Gousk",
+    iconPath: "M12 2C6.48 2 2 6.58 2 12.24c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-1.03-.01-1.87-2.78.62-3.37-1.21-3.37-1.21-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.15-4.56-5.12 0-1.13.39-2.06 1.03-2.79-.1-.26-.45-1.32.1-2.75 0 0 .84-.28 2.75 1.07A9.3 9.3 0 0 1 12 6.84c.85 0 1.71.12 2.51.36 1.91-1.35 2.75-1.07 2.75-1.07.55 1.43.2 2.49.1 2.75.64.73 1.03 1.66 1.03 2.79 0 3.98-2.34 4.86-4.58 5.11.36.32.68.94.68 1.9 0 1.38-.01 2.49-.01 2.83 0 .27.18.59.69.49A10.27 10.27 0 0 0 22 12.24C22 6.58 17.52 2 12 2Z",
+  },
+  socialItch: {
+    label: "itch.io",
+    url: "https://gousk.itch.io/",
+    iconSrc: "assets/itchio-logo-textless-white.png",
+  },
 };
-const activeIntroAsciiPattern = introAsciiPatterns.technical;
-const galleryAsciiPreviewCleanups = [];
-const postCarouselCleanups = [];
-let postCarouselIndex = 0;
-const introAsciiVideoSrc = mediaAssets.galleryIntroVideo;
-const managedVideos = new Set();
-
-function safePlayVideo(video) {
-  if (!video || video.hidden || !video.isConnected) return;
-  if (!video.currentSrc && !video.getAttribute("src")) return;
-
-  video.muted = true;
-  video.loop = true;
-  video.playsInline = true;
-
-  const playPromise = video.play();
-  if (playPromise && typeof playPromise.catch === "function") {
-    playPromise.catch(() => {
-      window.setTimeout(() => {
-        if (!video.hidden && video.isConnected) {
-          video.play().catch(() => {});
-        }
-      }, 260);
-    });
-  }
-}
-
-function watchVideo(video) {
-  if (!video || managedVideos.has(video)) return;
-  managedVideos.add(video);
-
-  video.addEventListener("pause", () => {
-    if (!video.dataset.allowPause) {
-      safePlayVideo(video);
-    }
-  });
-
-  video.addEventListener("ended", () => {
-    if (!video.dataset.allowPause) {
-      video.currentTime = 0;
-      safePlayVideo(video);
-    }
-  });
-
-  video.addEventListener("stalled", () => safePlayVideo(video));
-  video.addEventListener("suspend", () => safePlayVideo(video));
-  video.addEventListener("waiting", () => safePlayVideo(video));
-}
-
-const videoVisibilityObserver = "IntersectionObserver" in window
-  ? new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        entry.target.querySelectorAll("video").forEach((video) => {
-          if (entry.isIntersecting) {
-            delete video.dataset.allowPause;
-            safePlayVideo(video);
-            return;
-          }
-
-          video.dataset.allowPause = "true";
-          video.pause();
-        });
-      });
-    }, { rootMargin: "300px 0px" })
-  : null;
-
-function observeGalleryVideoVisibility() {
-  if (!videoVisibilityObserver) return;
-  videoVisibilityObserver.disconnect();
-  galleryGrid.querySelectorAll(".gallery-card, .gallery-ad-strip").forEach((anchor) => {
-    videoVisibilityObserver.observe(anchor);
-  });
-}
-
-function ensureAllVideosPlaying() {
-  document.querySelectorAll("video").forEach((video) => {
-    if (video.hidden || !video.isConnected || video.dataset.allowPause) return;
-    watchVideo(video);
-    if (video.paused || video.ended || video.readyState < 2) {
-      safePlayVideo(video);
-    }
-  });
-
-  if (!isRendering && sourceVideo && sourceVideo.readyState >= 2) {
-    startRendering();
-  }
-}
-
-function ensureHeroRendering() {
-  if (!sourceVideo) return;
-
-  watchVideo(sourceVideo);
-
-  if (sourceVideo.readyState >= 2) {
-    if (sourceVideo.paused || sourceVideo.ended) {
-      safePlayVideo(sourceVideo);
-    }
-
-    if (!isRendering) {
-      startRendering();
-    }
-
-    if (!hasLoadedFrame) {
-      hasLoadedFrame = true;
-      firstFrameReady = true;
-      revealUiIfReady();
-    }
-  } else {
-    sourceVideo.load();
-    safePlayVideo(sourceVideo);
-  }
-}
-const galleryPosts = [
-    {
-      type: "intro",
-      body: [
-        "I'm Onder, and this is a collection of things I've&nbsp;made."
-      ]
-    },
-  {
+const EXTERNAL_SCREEN_LINKS = {
+  deliveryGuy: {
+    label: "steam",
+    url: "https://store.steampowered.com/app/3377340/Delivery_Guy_Simulator/",
+  },
+};
+const TV_SCREEN_LAYOUT = [
+  ["scene01", "socialItch", "bicycleVideo", "static", "scene03"],
+  ["static", "scene02", "static", "socialGithub", "static"],
+  ["socialLinkedin", "static", "nullGame", "deliveryGuy"],
+];
+const TV_SCREEN_MEDIA = {
+  scene01: {
+    type: "video",
+    src: "assets/optimized-media/scene-01-horse.mp4",
+  },
+  scene02: {
+    type: "video",
+    src: "assets/optimized-media/scene-02-blob-tracking.mp4",
+  },
+  scene03: {
+    type: "video",
+    src: "assets/optimized-media/scene-03-bicycle-intro.mp4",
+  },
+  bicycleVideo: {
+    type: "video",
+    src: "assets/optimized-media/bicycle-club-intro.mp4",
+  },
+  deliveryGuy: {
+    type: "video",
+    src: "assets/optimized-media/delivery-guy-official-trailer-720p.mp4",
+  },
+  nullGame: {
+    type: "image",
+    src: "assets/optimized-media/null-game-preview.png",
+  },
+};
+const TV_PROJECTS = {
+  scene01: {
     title: "scene 01",
-    category: "environment",
-    year: "2026",
-    mediaType: "video",
-    image: mediaAssets.scene01Video,
-    objectPosition: "72% center",
-    alt: "Atmospheric cinematic still",
-    body: [
-      "work in progress.",
-      "made with unity.",
-      "procedural god rays, bird flocks, and horse systems. experimenting with shaders, lighting, and post-processing. still working on the color grading, composition, and camera angle."
-    ]
+    meta: "environment   2026",
+    description:
+      "A Unity environment study built around procedural god rays bird flocks and horse systems",
   },
-  {
-    title: "null",
-    category: "game",
-    year: "prototype",
-    mediaType: "game",
-    image: "https://img.itch.zone/aW1nLzI2Nzk5MzQ3LnBuZw==/347x500/r6hpSd.png",
-    gameUrl: "https://roaring-treacle-78453f.netlify.app/",
-    gameWidth: 1920,
-    gameHeight: 1118,
-    externalUrl: "https://gousk.itch.io/null",
-    alt: "NULL game preview",
-    body: [
-      "Fast-paced, level-based movement shooter with only 3 levels for now. This is currently a prototype, but I plan to turn it into a proper demo later. I might eventually release it on Steam as well, though I'm not completely sure yet.",
-    ]
-  },
-  {
-    title: "scene 03",
-    category: "environment",
-    year: "2026",
-    mediaType: "video",
-    image: mediaAssets.scene03Video,
-    alt: "Scene 03 video preview",
-    body: [
-      "made with unity.",
-      "test intro sequence for bicycle club games and videos."
-    ]
-  },
-  {
-    title: "bicycle club",
-    category: "website",
-    year: "2026",
-    mediaType: "video",
-    image: mediaAssets.bicycleClubPreviewVideo,
-    previewType: "ascii-video",
-    alt: "Bicycle Club website ASCII hero preview",
-    externalUrl: "https://bicycleclub.net",
-    actionLabel: "visit",
-    mediaGallery: [
-      { type: "ascii-video", src: mediaAssets.bicycleClubPreviewVideo, alt: "Bicycle Club ASCII hero" },
-      { type: "image", src: mediaAssets.bicycleClubScreenshot, alt: "Bicycle Club site screenshot", objectPosition: "center top" }
-    ],
-    body: [
-      "made with react, vite, and supabase. the site uses ascii art throughout the interface and keeps a dense terminal-inspired visual language.",
-      "it includes pages like home, posts, projects, gallery, merch, and contact, plus authenticated areas such as logs and profile. the console is functional, login happens through it, and some hidden panels and extras open from there, including things like the aim trainer.",
-      "it also works like a small cms/admin-driven platform. depending on the logged-in user's permissions, content like gallery items, posts, and projects can be managed directly from inside the site instead of being hardcoded by hand.",
-      "there is also realtime chat, a draggable music player, and a few smaller interactive systems layered into the same interface. it is still in active development and not fully finished yet."
-    ]
-  },
-  {
+  scene02: {
     title: "scene 02",
-    category: "environment",
-    year: "2026",
-    mediaType: "video",
-    image: mediaAssets.scene02Video,
-    alt: "Scene 02 video preview",
-    body: [
-      "made with unity.",
-      "procedural blob tracking."
-    ]
+    meta: "environment   2026",
+    description:
+      "A Unity experiment focused on procedural blob tracking and responsive motion",
   },
-    {
-      title: "isometric shooter",
-      category: "game",
-      year: "2024",
-      mediaType: "game",
-      image: "https://img.itch.zone/aW1nLzE1MTIyNTI2LnBuZw==/508x254%23mb/e19PyI.png",
-      gameUrl: "https://html-classic.itch.zone/html/9772857/BUILD/index.html",
-      gameWidth: 1920,
-      gameHeight: 1118,
-      externalUrl: "https://gousk.itch.io/isometric-shooter",
-      alt: "Isometric Shooter game preview",
-      body: [
-        "This project is something I'm working on for learning and to try out different ideas. It's not finished yet and I'm still working on it when I have time. The car mechanic comes from a free asset; everything else is my own creation other than the models and animations.",
-        "You can navigate with WASD, pick up weapons by walking over them, shoot with the mouse, drop weapons with G, swap with the scroll wheel or number keys, and spawn a vehicle with F. Enemies drop ammo of various rarities, endless spawns are active, and for now you cannot die."
-      ]
-    },
-    {
-      title: "splitself",
-      category: "game",
-      year: "2025",
-      mediaType: "game",
-      image: "https://img.itch.zone/aW1nLzIxMjE5MTIwLnBuZw==/508x254%23mb/5sih03.png",
-      gameUrl: "https://html-classic.itch.zone/html/13709006/Splitself WebBuild/index.html",
-      gameWidth: 1920,
-      gameHeight: 1118,
-      externalUrl: "https://gousk.itch.io/splitself",
-      alt: "Splitself game preview",
-      body: [
-        "Google Yapay Zeka ve Teknoloji Akademisi'nin duzenledigi Game Jam'de, Grup 49 olarak uc gun icinde gelistirdigimiz bu projeyle ikincilik elde ettik.",
-        "Splitself, yanlis giden bir buyu sonucu benligi ve esyalari farkli diyarlara ve zaman dilimlerine dagilan bir buyucunun, bu diyarlarda gezerek benligini ve esyalarini toplayip anilarini yeniden hatirlamaya calistigi uc bolumlu bir Game Jam oyunudur.",
-        "Kontroller: WASD hareket, Space ziplama, Left Shift kamera acisini degistirme, R zamani geri sarma, sol fare tusu buyu atma."
-      ]
-    },
-    {
-      title: "fridge rush",
-      category: "game",
-      year: "2022",
-      mediaType: "game",
-      image: "https://img.itch.zone/aW1hZ2UvMTQ2MDc3My84NTI2MzgzLnBuZw==/794x1000/bULZxs.png",
-      gameUrl: "https://html-classic.itch.zone/html/5502426/Fridge Rush 1.1/index.html",
-      gameWidth: 486,
-      gameHeight: 902,
-      wrapWidth: 1920,
-      wrapHeight: 1118,
-      externalUrl: "https://gousk.itch.io/fridge-rush",
-      alt: "Fridge Rush game preview",
-      body: [
-        "An ATMRush clone with a different theme. Learning practice."
-      ]
-    },
-    {
-      title: "ps graphics shooter",
-      category: "game",
-      year: "2024",
-      mediaType: "game",
-      image: "https://img.itch.zone/aW1nLzE1MTIyNjIxLnBuZw==/508x254%23mb/AnWhs5.png",
-      gameUrl: "https://html-classic.itch.zone/html/9772838/COWBOY BUILD/index.html",
-      gameWidth: 1920,
-      gameHeight: 1118,
-      externalUrl: "https://gousk.itch.io/ps-graphics-shooter",
-      alt: "PS Graphics Shooter game preview",
-      body: [
-        "I always wanted to try an old PlayStation graphics look, so I mixed that aesthetic with an old-school shooter feel.",
-        "Controls: Move with WASD, switch weapons with 1 and 2, and shoot with Mouse 1."
-      ]
-    },
+  scene03: {
+    title: "scene 03",
+    meta: "environment   2026",
+    description:
+      "A test intro sequence created for Bicycle Club games and videos",
+  },
+  bicycleVideo: {
+    title: "bicycle club",
+    meta: "website   2026",
+    description:
+      "A dense terminal inspired platform built with React Vite Supabase and an interface shaped by ASCII imagery",
+    url: "https://bicycleclub.net",
+    gallery: [
       {
-        title: "mpcars",
-        category: "game",
-        year: "2022",
-      mediaType: "game",
-      image: "https://img.itch.zone/aW1nLzg4NjI0NjAucG5n/508x254%23mb/FaxERN.png",
-      gameUrl: "https://html-classic.itch.zone/html/5804609/CROSSDENEME/index.html",
-      gameWidth: 1024,
-      gameHeight: 806,
-      wrapWidth: 1920,
-      wrapHeight: 1118,
-      externalUrl: "https://gousk.itch.io/mpcars",
-      alt: "MPCARS game preview",
-      body: [
-        "Multiplayer car sumo game developed with Unity and PUN2."
-      ]
-    }
-  ];
+        src: "assets/optimized-media/bicycle-club-site.webp",
+        alt: "Bicycle Club website interface",
+      },
+    ],
+  },
+  nullGame: {
+    title: "null",
+    meta: "game   prototype",
+    description:
+      "A fast paced level based movement shooter currently being developed as a playable prototype",
+    url: "https://gousk.itch.io/null",
+  },
+};
 
-let animationHandle = null;
-let isRendering = false;
-let hasLoadedFrame = false;
-let pointerActive = false;
-let pointerX = 0;
-let pointerY = 0;
-let smoothPointerX = 0;
-let smoothPointerY = 0;
-let frameTick = 0;
-let displayFrameBuffer = null;
-let backgroundReady = false;
-let firstFrameReady = false;
-let uiReady = false;
-let introAsciiEl = null;
-let introCardEl = null;
-let introVideoBgEl = null;
-let introVideoEl = null;
-let introCanvasEl = null;
-let introCanvasCtx = null;
-let introVideoBgCtx = null;
-let introVideoBgAnimationHandle = null;
-let introAsciiFrame = 0;
-let introAsciiLastTime = 0;
-let introPointerActive = false;
-let introPointerX = 0;
-let introPointerY = 0;
-let introPointerSmoothX = 0;
-let introPointerSmoothY = 0;
-let introAsciiMetrics = null;
-const introPointerRadius = 11.5;
-let activeMusicTrackIndex = 0;
-let musicIsPlaying = false;
-let musicProgress = 0;
-let musicVolume = 0.42;
-let isSeekingMusic = false;
-let isChangingVolume = false;
-const musicAudio = new Audio();
-musicAudio.preload = "metadata";
-musicAudio.crossOrigin = "anonymous";
+let renderer;
 
-function openMusicPlayerModal() {
-  if (!musicPlayerPanel) return;
-  musicPlayerPanel.hidden = false;
-}
-
-function closeMusicPlayerModal() {
-  if (!musicPlayerPanel) return;
-  musicPlayerPanel.hidden = true;
-}
-
-function formatTrackTime(seconds) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${remainingSeconds}`;
-}
-
-function getActiveTrackDuration() {
-  return Number.isFinite(musicAudio.duration) && musicAudio.duration > 0
-    ? musicAudio.duration
-    : 0;
-}
-
-function updateMusicPlayerUi() {
-  const track = musicTracks[activeMusicTrackIndex];
-  if (!track) return;
-
-  const duration = getActiveTrackDuration();
-  const currentTime = Number.isFinite(musicAudio.currentTime) ? musicAudio.currentTime : 0;
-  musicProgress = duration ? currentTime / duration : 0;
-
-  if (musicPlayerCover) {
-    musicPlayerCover.src = track.cover;
-  }
-  if (musicPlayerTitle) musicPlayerTitle.textContent = track.title;
-  if (musicPlayerArtist) musicPlayerArtist.textContent = track.artist;
-  if (musicCurrentTime) musicCurrentTime.textContent = formatTrackTime(currentTime);
-  if (musicDuration) musicDuration.textContent = duration ? formatTrackTime(duration) : "--:--";
-  if (musicProgressFill) musicProgressFill.style.width = `${musicProgress * 100}%`;
-  if (musicProgressBar) musicProgressBar.setAttribute("aria-valuenow", String(Math.round(musicProgress * 100)));
-  if (musicVolumeBar) musicVolumeBar.setAttribute("aria-valuenow", String(Math.round(musicVolume * 100)));
-
-  document.querySelectorAll(".music-track-item").forEach((item) => {
-    item.classList.toggle("is-active", Number(item.dataset.trackIndex) === activeMusicTrackIndex);
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    powerPreference: "high-performance",
   });
+} catch (error) {
+  loadingScreen.classList.add("is-hidden");
+  webglFallback.hidden = false;
+  throw error;
 }
 
-function updateVolumeUi() {
-  const volumeFill = musicVolumeBar?.querySelector("span");
-  if (volumeFill) volumeFill.style.width = `${musicVolume * 100}%`;
-  if (musicVolumeBar) musicVolumeBar.setAttribute("aria-valuenow", String(Math.round(musicVolume * 100)));
-}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.82;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+RectAreaLightUniformsLib.init();
 
-function loadActiveTrack() {
-  const track = musicTracks[activeMusicTrackIndex];
-  if (!track) return;
-  if (!track.src) {
-    musicAudio.removeAttribute("src");
-    musicAudio.load();
-    musicProgress = 0;
-    setMusicPlayerState(false);
-    updateMusicPlayerUi();
-    return;
-  }
-  musicAudio.src = track.src;
-  musicAudio.load();
-  updateMusicPlayerUi();
-}
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x171819);
 
-function updateSelectedTrack(nextIndex, shouldPlay = musicIsPlaying) {
-  activeMusicTrackIndex = (nextIndex + musicTracks.length) % musicTracks.length;
-  musicProgress = 0;
-  loadActiveTrack();
-  if (shouldPlay) {
-    musicAudio.play().catch(() => setMusicPlayerState(false));
-  }
-}
+const camera = new THREE.PerspectiveCamera(
+  60,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  100,
+);
+camera.position.set(0, EYE_HEIGHT, 0);
+camera.lookAt(0, EYE_HEIGHT, -ROOM_DEPTH / 2);
 
-function setMusicPlayerState(isPlaying) {
-  const track = musicTracks[activeMusicTrackIndex];
-  if (isPlaying && !track?.src) {
-    isPlaying = false;
-  }
-  musicIsPlaying = isPlaying;
-  if (!musicPlayToggle) return;
-  musicPlayToggle.textContent = isPlaying ? "||" : ">";
+const pointerTarget = new THREE.Vector2();
+const smoothedPointer = new THREE.Vector2();
+const pointerNdc = new THREE.Vector2(2, 2);
+const raycaster = new THREE.Raycaster();
+const interactiveScreenMeshes = [];
+const allScreenEntries = [];
+const introLetterScreenEntries = [];
+const homeCameraPosition = new THREE.Vector3();
+const homeLookTarget = new THREE.Vector3();
+const focusCameraPosition = new THREE.Vector3();
+const focusLookTarget = new THREE.Vector3();
+const movingFocusCameraPosition = new THREE.Vector3();
+const movingFocusLookTarget = new THREE.Vector3();
+const finalLookTarget = new THREE.Vector3();
+const interactionWorldPosition = new THREE.Vector3();
+const focusedScreenBounds = new THREE.Box3();
+const projectedScreenCorner = new THREE.Vector3();
+const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const FOCUS_RELEASE_THRESHOLD = 0.03;
+let hoveredScreen = null;
+let focusedScreen = null;
+let focusAmount = 0;
+let focusTarget = 0;
+let projectPanelSideOffset = null;
+let cleanViewMode = null;
+let cleanGalleryItems = [];
+let cleanGalleryIndex = 0;
+let previousFrameTime = performance.now() * 0.001;
 
-  if (isPlaying) {
-    musicAudio.play().catch(() => setMusicPlayerState(false));
-  } else {
-    musicAudio.pause();
-  }
-}
-
-function getPointerRatio(event, element) {
-  const rect = element.getBoundingClientRect();
-  if (!rect.width) return 0;
-  return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-}
-
-function seekMusicToRatio(ratio) {
-  const duration = getActiveTrackDuration();
-  if (!duration) return;
-  musicAudio.currentTime = duration * ratio;
-  updateMusicPlayerUi();
-}
-
-function setVolumeToRatio(ratio) {
-  musicVolume = Math.max(0, Math.min(1, ratio));
-  musicAudio.volume = musicVolume;
-  updateVolumeUi();
-}
-
-let speakerFallbackReady = false;
-
-function enableSpeakerFallback() {
-  if (!speakerModelStage || speakerFallbackReady) return;
-  speakerFallbackReady = true;
-  speakerModelStage.classList.add("is-loaded", "is-media-missing");
-  speakerModelStage.addEventListener("click", (event) => {
-    if (event.target.closest(".music-player-panel")) return;
-    openMusicPlayerModal();
-  });
-}
-
-function initSpeakerModel() {
-  if (!speakerModelStage) return;
-
-  if (!speakerModelUrl) {
-    enableSpeakerFallback();
-    return;
-  }
-
-  const speakerFrontFacingYaw = THREE.MathUtils.degToRad(-60);
-  const speakerYawSwing = THREE.MathUtils.degToRad(38);
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
-  camera.position.set(0, 0.38, 5.6);
-
-  let renderer;
-  try {
-    renderer = new THREE.WebGLRenderer({
-      alpha: true,
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-  } catch {
-    enableSpeakerFallback();
-    return;
-  }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(0x000000, 0);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  speakerModelStage.appendChild(renderer.domElement);
-
-  const keyLight = new THREE.DirectionalLight(0xffead2, 2.2);
-  keyLight.position.set(3.2, 4.2, 4.4);
-  scene.add(keyLight);
-
-  const fillLight = new THREE.DirectionalLight(0x8f2722, 1.25);
-  fillLight.position.set(-3.5, 1.4, 2.6);
-  scene.add(fillLight);
-
-  const ambientLight = new THREE.AmbientLight(0xdccdb6, 1.15);
-  scene.add(ambientLight);
-
-  const modelPivot = new THREE.Group();
-  scene.add(modelPivot);
-  const throwState = {
-    dragging: false,
-    lastX: 0,
-    lastY: 0,
-    velocityX: 0,
-    velocityY: 0,
-    positionX: 0,
-    positionY: 0,
-    lastMoveTime: 0,
-    lastFrameTime: 0,
-    pointerDownX: 0,
-    pointerDownY: 0,
-    movedDistance: 0,
-  };
-
-  function beginSpeakerDrag(event) {
-    speakerModelStage.setPointerCapture(event.pointerId);
-    speakerModelStage.classList.add("is-dragging");
-    throwState.dragging = true;
-    throwState.lastX = event.clientX;
-    throwState.lastY = event.clientY;
-    throwState.pointerDownX = event.clientX;
-    throwState.pointerDownY = event.clientY;
-    throwState.movedDistance = 0;
-    throwState.velocityX = 0;
-    throwState.velocityY = 0;
-    throwState.lastMoveTime = performance.now();
-  }
-
-  function resizeSpeakerRenderer() {
-    const rect = speakerModelStage.getBoundingClientRect();
-    const width = Math.max(1, Math.round(rect.width));
-    const height = Math.max(1, Math.round(rect.height));
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-  }
-
-  function frameLoadedModel(model) {
-    const box = new THREE.Box3().setFromObject(model);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    const maxAxis = Math.max(size.x, size.y, size.z) || 1;
-
-    model.position.sub(center);
-    model.scale.setScalar(1.58 / maxAxis);
-    model.rotation.set(
-      THREE.MathUtils.degToRad(-12),
-      THREE.MathUtils.degToRad(-34),
-      THREE.MathUtils.degToRad(10)
-    );
-  }
-
-  new GLTFLoader().load(
-    speakerModelUrl,
-    (gltf) => {
-      frameLoadedModel(gltf.scene);
-      modelPivot.add(gltf.scene);
-      speakerModelStage.classList.add("is-loaded");
-    },
-    undefined,
-    () => {
-      speakerModelStage.remove();
-    }
+function handlePointerMove(event) {
+  const pointerX = THREE.MathUtils.clamp(
+    (event.clientX / window.innerWidth) * 2 - 1,
+    -1,
+    1,
+  );
+  const pointerY = THREE.MathUtils.clamp(
+    1 - (event.clientY / window.innerHeight) * 2,
+    -1,
+    1,
   );
 
-  speakerModelStage.addEventListener("pointerdown", (event) => {
-    if (event.target.closest(".music-player-panel")) return;
-    beginSpeakerDrag(event);
+  pointerTarget.set(pointerX, pointerY);
+  pointerNdc.set(pointerX, pointerY);
+  viewCursor.style.transform = `translate3d(${event.clientX + 16}px, ${event.clientY + 16}px, 0)`;
+}
+
+function resetPointerTarget() {
+  pointerTarget.set(0, 0);
+  pointerNdc.set(2, 2);
+  setHoveredScreen(null);
+}
+
+window.addEventListener("pointermove", handlePointerMove, { passive: true });
+document.documentElement.addEventListener("mouseleave", resetPointerTarget);
+
+const smoothWhiteMaterial = new THREE.MeshStandardMaterial({
+  color: 0xf7f7f4,
+  roughness: 1,
+  metalness: 0,
+  side: THREE.DoubleSide,
+});
+
+const concreteTextureLoader = new THREE.TextureLoader();
+
+function loadConcreteTexture(src, colorSpace = THREE.NoColorSpace) {
+  const texture = concreteTextureLoader.load(src, render);
+  texture.colorSpace = colorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.anisotropy = Math.min(
+    renderer.capabilities.getMaxAnisotropy(),
+    8,
+  );
+  return texture;
+}
+
+const concreteColorTexture = loadConcreteTexture(
+  "assets/optimized-media/concrete-layers-02-diff-4k.jpg",
+  THREE.SRGBColorSpace,
+);
+const concreteNormalTexture = loadConcreteTexture(
+  "assets/optimized-media/concrete-layers-02-normal-gl-2k.jpg",
+);
+const concreteRoughnessTexture = loadConcreteTexture(
+  "assets/optimized-media/concrete-layers-02-rough-2k.jpg",
+);
+const CONCRETE_TILE_SIZE = 6;
+
+function createConcreteMaterial(width, height) {
+  const colorTexture = concreteColorTexture.clone();
+  const normalTexture = concreteNormalTexture.clone();
+  const roughnessTexture = concreteRoughnessTexture.clone();
+  const repeatX = width / CONCRETE_TILE_SIZE;
+  const repeatY = height / CONCRETE_TILE_SIZE;
+
+  [colorTexture, normalTexture, roughnessTexture].forEach((texture) => {
+    texture.repeat.set(repeatX, repeatY);
+    texture.needsUpdate = true;
   });
 
-  if (musicPlayerHeader) {
-    musicPlayerHeader.addEventListener("pointerdown", (event) => {
-      if (event.target.closest("button")) return;
-      event.stopPropagation();
-      beginSpeakerDrag(event);
-    });
+  return new THREE.MeshStandardMaterial({
+    color: 0xd8d5cf,
+    map: colorTexture,
+    normalMap: normalTexture,
+    normalScale: new THREE.Vector2(0.72, 0.72),
+    roughness: 0.92,
+    roughnessMap: roughnessTexture,
+    metalness: 0,
+    side: THREE.DoubleSide,
+  });
+
+}
+
+function createSurface(
+  width,
+  height,
+  position,
+  rotation = [0, 0, 0],
+  useConcrete = false,
+) {
+  const geometry = new THREE.PlaneGeometry(width, height);
+  const material = useConcrete
+    ? createConcreteMaterial(width, height)
+    : smoothWhiteMaterial;
+  const surface = new THREE.Mesh(geometry, material);
+
+  surface.position.set(...position);
+  surface.rotation.set(...rotation);
+  surface.receiveShadow = true;
+  scene.add(surface);
+
+  return surface;
+}
+
+// Back and front walls.
+createSurface(
+  ROOM_WIDTH,
+  ROOM_HEIGHT,
+  [0, ROOM_HEIGHT / 2, -ROOM_DEPTH / 2],
+  [0, 0, 0],
+  true,
+);
+createSurface(
+  ROOM_WIDTH,
+  ROOM_HEIGHT,
+  [0, ROOM_HEIGHT / 2, ROOM_DEPTH / 2],
+  [0, Math.PI, 0],
+  true,
+);
+
+// Left and right walls.
+createSurface(
+  ROOM_DEPTH,
+  ROOM_HEIGHT,
+  [-ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0],
+  [0, Math.PI / 2, 0],
+  true,
+);
+createSurface(
+  ROOM_DEPTH,
+  ROOM_HEIGHT,
+  [ROOM_WIDTH / 2, ROOM_HEIGHT / 2, 0],
+  [0, -Math.PI / 2, 0],
+  true,
+);
+
+// Floor and ceiling.
+createSurface(
+  ROOM_WIDTH,
+  ROOM_DEPTH,
+  [0, 0, 0],
+  [-Math.PI / 2, 0, 0],
+  true,
+);
+createSurface(
+  ROOM_WIDTH,
+  ROOM_DEPTH,
+  [0, ROOM_HEIGHT, 0],
+  [Math.PI / 2, 0, 0],
+  true,
+);
+
+const ambientLight = new THREE.HemisphereLight(0xcfd6da, 0x6f6962, 0.24);
+scene.add(ambientLight);
+
+const KEY_LIGHT_BASE_INTENSITY = 82;
+const keyLight = new THREE.SpotLight(
+  0xffffff,
+  KEY_LIGHT_BASE_INTENSITY,
+  18,
+  Math.PI / 2.8,
+  0.86,
+  2,
+);
+keyLight.position.set(0, ROOM_HEIGHT - 0.36, -1.5);
+keyLight.target.position.set(0, 0.5, -5);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.near = 0.2;
+keyLight.shadow.camera.far = 18;
+keyLight.shadow.bias = -0.00025;
+keyLight.shadow.normalBias = 0.035;
+keyLight.shadow.radius = 4;
+scene.add(keyLight, keyLight.target);
+
+const ceilingPanelMaterial = new THREE.MeshBasicMaterial({
+  color: 0xffffff,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+});
+const ceilingPanelBaseColor = ceilingPanelMaterial.color.clone();
+const ceilingFixtures = [];
+let ceilingLightPower = 1;
+const ceilingHousingMaterial = new THREE.MeshStandardMaterial({
+  color: 0x292b2b,
+  roughness: 0.78,
+  metalness: 0.18,
+});
+
+function createCeilingFixture(z, intensity) {
+  const housing = new THREE.Mesh(
+    new THREE.BoxGeometry(3.65, 0.1, 0.72),
+    ceilingHousingMaterial,
+  );
+  housing.position.set(0, ROOM_HEIGHT - 0.075, z);
+  housing.castShadow = true;
+  scene.add(housing);
+
+  const panel = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.35, 0.48),
+    ceilingPanelMaterial,
+  );
+  panel.position.set(0, ROOM_HEIGHT - 0.132, z);
+  panel.rotation.x = Math.PI / 2;
+  scene.add(panel);
+
+  const areaLight = new THREE.RectAreaLight(
+    0xffffff,
+    intensity,
+    3.35,
+    0.48,
+  );
+  areaLight.position.set(0, ROOM_HEIGHT - 0.16, z);
+  areaLight.lookAt(0, 0, z);
+  scene.add(areaLight);
+  ceilingFixtures.push({ areaLight, baseIntensity: intensity });
+}
+
+createCeilingFixture(3.8, 2.1);
+createCeilingFixture(-1.5, 2.8);
+createCeilingFixture(-6.7, 2.35);
+
+const tvGlowLight = new THREE.PointLight(0x91b6c8, 3.2, 5.5, 2);
+tvGlowLight.position.set(0, 2.25, TV_WALL_Z + 1.45);
+scene.add(tvGlowLight);
+
+const interactionLight = new THREE.PointLight(0xc8efd1, 0, 3.2, 2);
+interactionLight.position.set(0, EYE_HEIGHT, TV_WALL_Z + 0.8);
+scene.add(interactionLight);
+
+const activeScreenVideos = [];
+const screenVideoByMediaKey = new Map();
+const screenTextureCache = new Map();
+const screenMediaAspectCache = new Map();
+const crtScreenMaterials = [];
+const screenGlowEntries = [];
+const sampledScreenLightCache = new Map();
+const screenLightSampleCanvas = document.createElement("canvas");
+screenLightSampleCanvas.width = 12;
+screenLightSampleCanvas.height = 12;
+const screenLightSampleContext = screenLightSampleCanvas.getContext("2d", {
+  willReadFrequently: true,
+});
+let nextScreenLightSampleAt = 0;
+
+const sharedTitleCanvas = document.createElement("canvas");
+const sharedTitleContext = sharedTitleCanvas.getContext("2d");
+const FLOATING_TITLE_ENABLED = false;
+const INTRO_HANDOFF_DURATION = 0.92;
+const INTRO_FADE_DURATION = 0.9;
+const INTRO_POWER_DURATION = 1.15;
+const INTRO_CAMERA_PULL_DURATION = INTRO_HANDOFF_DURATION + INTRO_FADE_DURATION;
+const GRAYSCALE_FADE_DELAY = 0.34;
+const GRAYSCALE_FADE_DURATION = 0.82;
+const CRT_SCREEN_ASPECT = 1.3126972362;
+const INTRO_HOVER_OUTER_RANGE = 1.55;
+const INTRO_CAMERA_Z = -1.35;
+const INTRO_CAMERA_HEIGHT = 2.38;
+let sharedTitleWallAspect = 1.6;
+let sharedTitleTexture;
+let introTitleTexture;
+let introLetterTitleBounds = null;
+let introHoverHitArea = null;
+let introStage = "waiting";
+let introStageStartedAt = 0;
+let introSequenceStartedAt = 0;
+let introCompletedAt = 0;
+let siteHeaderVisible = false;
+const introWaveOrigin = new THREE.Vector2(0.5, 0.5);
+let floatingTitleGroup = null;
+let floatingTitleHitArea = null;
+const floatingTitleLetters = [];
+let titleTransferAmount = 0;
+let titleTransferTarget = 0;
+
+function getIntroTitleLayout(context, canvasWidth, canvasHeight) {
+  const preferredFontSize = canvasHeight * 0.43;
+  context.font = `500 ${preferredFontSize}px "Onder Medium", sans-serif`;
+  const widestLine = Math.max(
+    context.measureText("onder").width,
+    context.measureText("balta").width,
+  );
+  const fontSize = preferredFontSize * Math.min(
+    1,
+    (canvasWidth * 0.86) / widestLine,
+  );
+
+  return {
+    fontSize,
+    lines: [
+      { text: "onder", y: canvasHeight * 0.27 },
+      { text: "balta", y: canvasHeight * 0.73 },
+    ],
+  };
+}
+
+function drawIntroTvLetters(context, canvasWidth, canvasHeight, withGlow = false) {
+  if (!introLetterTitleBounds || introLetterScreenEntries.length === 0) {
+    return false;
   }
 
-  function applySpeakerPosition() {
-    speakerModelStage.style.setProperty("--speaker-x", `${throwState.positionX}px`);
-    speakerModelStage.style.setProperty("--speaker-y", `${throwState.positionY}px`);
-  }
+  const boundsWidth = introLetterTitleBounds.max.x - introLetterTitleBounds.min.x;
+  const boundsHeight = introLetterTitleBounds.max.y - introLetterTitleBounds.min.y;
+  if (boundsWidth <= 0 || boundsHeight <= 0) return false;
 
-  function clampSpeakerPosition() {
-    const rects = [speakerModelStage.getBoundingClientRect()];
-    if (musicPlayerPanel && !musicPlayerPanel.hidden) {
-      rects.push(musicPlayerPanel.getBoundingClientRect());
-    }
+  const fontSize = canvasHeight * 0.34;
+  const screenBounds = new THREE.Box3();
+  const screenCenter = new THREE.Vector3();
+  context.save();
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.font = `500 ${fontSize}px "Onder Medium", sans-serif`;
+  context.fillStyle = "#ffffff";
+  context.shadowColor = withGlow ? "rgba(255, 255, 255, 0.76)" : "transparent";
+  context.shadowBlur = withGlow ? Math.max(18, canvasHeight * 0.022) : 0;
 
-    const baseBounds = rects.reduce((bounds, rect) => {
-      const left = rect.left - throwState.positionX;
-      const right = rect.right - throwState.positionX;
-      const top = rect.top - throwState.positionY;
-      const bottom = rect.bottom - throwState.positionY;
+  introLetterScreenEntries.forEach((entry) => {
+    const word = entry.rowIndex === 1 ? "onder" : "balta";
+    const character = word[entry.unitIndex];
+    if (!character) return;
 
-      return {
-        left: Math.min(bounds.left, left),
-        right: Math.max(bounds.right, right),
-        top: Math.min(bounds.top, top),
-        bottom: Math.max(bounds.bottom, bottom),
-      };
-    }, {
-      left: Number.POSITIVE_INFINITY,
-      right: Number.NEGATIVE_INFINITY,
-      top: Number.POSITIVE_INFINITY,
-      bottom: Number.NEGATIVE_INFINITY,
-    });
-
-    const minX = -baseBounds.left;
-    const maxX = window.innerWidth - baseBounds.right;
-    const minY = -baseBounds.top;
-    const maxY = window.innerHeight - baseBounds.bottom;
-
-    if (throwState.positionX < minX) {
-      throwState.positionX = minX;
-      throwState.velocityX = Math.abs(throwState.velocityX) * 0.86;
-    } else if (throwState.positionX > maxX) {
-      throwState.positionX = maxX;
-      throwState.velocityX = -Math.abs(throwState.velocityX) * 0.86;
-    }
-
-    if (throwState.positionY < minY) {
-      throwState.positionY = minY;
-      throwState.velocityY = Math.abs(throwState.velocityY) * 0.86;
-    } else if (throwState.positionY > maxY) {
-      throwState.positionY = maxY;
-      throwState.velocityY = -Math.abs(throwState.velocityY) * 0.86;
-    }
-  }
-
-  speakerModelStage.addEventListener("pointermove", (event) => {
-    if (!throwState.dragging) return;
-
-    const now = performance.now();
-    const dt = Math.max(16, now - throwState.lastMoveTime);
-    const dx = event.clientX - throwState.lastX;
-    const dy = event.clientY - throwState.lastY;
-
-    throwState.movedDistance = Math.max(
-      throwState.movedDistance,
-      Math.hypot(event.clientX - throwState.pointerDownX, event.clientY - throwState.pointerDownY)
+    screenBounds.setFromObject(entry.mesh);
+    screenBounds.getCenter(screenCenter);
+    const normalizedX = (screenCenter.x - introLetterTitleBounds.min.x) / boundsWidth;
+    const normalizedY = (screenCenter.y - introLetterTitleBounds.min.y) / boundsHeight;
+    context.fillText(
+      character,
+      normalizedX * canvasWidth,
+      (1 - normalizedY) * canvasHeight,
     );
-    throwState.positionX += dx;
-    throwState.positionY += dy;
-    throwState.velocityX = dx / dt;
-    throwState.velocityY = dy / dt;
-    throwState.lastX = event.clientX;
-    throwState.lastY = event.clientY;
-    throwState.lastMoveTime = now;
-
-    clampSpeakerPosition();
-    applySpeakerPosition();
   });
-
-  function releaseSpeakerModel(event) {
-    if (!throwState.dragging) return;
-
-    if (speakerModelStage.hasPointerCapture(event.pointerId)) {
-      speakerModelStage.releasePointerCapture(event.pointerId);
-    }
-
-    speakerModelStage.classList.remove("is-dragging");
-    throwState.dragging = false;
-    if (throwState.movedDistance < 6) {
-      openMusicPlayerModal();
-    }
-    throwState.velocityX = THREE.MathUtils.clamp(throwState.velocityX, -2.4, 2.4);
-    throwState.velocityY = THREE.MathUtils.clamp(throwState.velocityY, -2.4, 2.4);
-  }
-
-  speakerModelStage.addEventListener("pointerup", releaseSpeakerModel);
-  speakerModelStage.addEventListener("pointercancel", releaseSpeakerModel);
-
-  function animateSpeakerModel(time) {
-    const seconds = time * 0.001;
-    const previousFrameTime = throwState.lastFrameTime || time;
-    const deltaTime = Math.min(34, time - previousFrameTime);
-    throwState.lastFrameTime = time;
-
-    if (!throwState.dragging) {
-      throwState.positionX += throwState.velocityX * deltaTime;
-      throwState.positionY += throwState.velocityY * deltaTime;
-      throwState.velocityX *= 0.985;
-      throwState.velocityY *= 0.985;
-
-      if (Math.abs(throwState.velocityX) < 0.004) throwState.velocityX = 0;
-      if (Math.abs(throwState.velocityY) < 0.004) throwState.velocityY = 0;
-
-      clampSpeakerPosition();
-      applySpeakerPosition();
-    }
-
-    modelPivot.rotation.y = speakerFrontFacingYaw + Math.sin(seconds * 0.28) * speakerYawSwing;
-    modelPivot.rotation.x = Math.sin(seconds * 0.22) * 0.025;
-    modelPivot.rotation.z = Math.sin(seconds * 0.2) * 0.018;
-    renderer.render(scene, camera);
-    window.requestAnimationFrame(animateSpeakerModel);
-  }
-
-  resizeSpeakerRenderer();
-  window.addEventListener("resize", resizeSpeakerRenderer);
-  window.requestAnimationFrame(animateSpeakerModel);
-}
-
-function updateGalleryVisibility() {
-  const revealPoint = Math.min(window.innerHeight * 0.14, 140);
-  if (window.scrollY > revealPoint) {
-    galleryShell.classList.add("is-visible");
-    if (scrollCue) {
-      scrollCue.classList.add("is-hidden");
-    }
-    return;
-  }
-
-  galleryShell.classList.remove("is-visible");
-  if (scrollCue) {
-    scrollCue.classList.remove("is-hidden");
-  }
-}
-
-function renderGalleryAdStrip() {
-  return `
-    <a
-      class="gallery-ad-strip"
-      href="https://store.steampowered.com/app/3377340/Delivery_Guy_Simulator/"
-      target="_blank"
-      rel="noreferrer"
-      aria-label="Wishlist Delivery Guy Simulator on Steam"
-    >
-      ${mediaAssets.wishlistVideo ? `
-        <video
-          class="gallery-ad-video"
-          src="${mediaAssets.wishlistVideo}"
-          muted
-          autoplay
-          loop
-          playsinline
-          crossorigin="anonymous"
-          aria-hidden="true"
-        ></video>
-        <div class="gallery-ad-ascii-layer" aria-hidden="true">
-          <canvas class="gallery-ad-ascii-canvas hidden-video"></canvas>
-          <pre class="gallery-ad-ascii-preview"></pre>
-        </div>
-      ` : `<img class="gallery-ad-video" src="${missingMediaSrc}" alt="" aria-hidden="true">`}
-      <img
-        class="gallery-ad-icon"
-        src="${mediaAssets.wishlistIcon}"
-        alt=""
-      >
-      <span class="gallery-ad-text">wishlist now</span>
-      <img
-        class="gallery-ad-side-icon"
-        src="${mediaAssets.wishlistLogo}"
-        alt=""
-      >
-    </a>
-  `;
-}
-
-function renderGallery() {
-  galleryAsciiPreviewCleanups.splice(0).forEach((cleanup) => {
-    try { cleanup(); } catch {}
-  });
-
-  galleryGrid.innerHTML = galleryPosts.map((post, index) => `
-      ${post.mediaType === "game" ? "" : ""}
-      ${post.type === "intro" ? `
-        <article class="gallery-card gallery-card-layout-${(index % 8) + 1} gallery-card-intro">
-          ${introAsciiVideoSrc ? `<video class="gallery-intro-video hidden-video" src="${introAsciiVideoSrc}" muted autoplay loop playsinline crossorigin="anonymous"></video>` : ""}
-          <canvas class="gallery-intro-video-bg" aria-hidden="true"></canvas>
-          <canvas class="gallery-intro-canvas hidden-video"></canvas>
-          <pre class="gallery-intro-ascii" aria-hidden="true"></pre>
-          <div class="gallery-intro-inner">
-            <div class="gallery-intro-body">
-            ${post.body.map((paragraph) => `<p>${paragraph}</p>`).join("")}
-          </div>
-        </div>
-        </article>
-        ` : post.mediaType === "game" && post.title !== "null" ? `` : `
-        <button class="gallery-card gallery-card-layout-${(index % 8) + 1}${post.mediaType === "game" ? " gallery-card-game" : ""}${post.title === "fridge rush" ? " gallery-card-game-portrait" : ""}${post.title === "null" ? " gallery-card-game-null" : ""}${post.title === "scene 03" ? " gallery-card-scene-3" : ""}${post.title === "scene 02" ? " gallery-card-scene-2" : ""}${post.previewType === "ascii-video" ? " gallery-card-website" : ""}${post.title === "bicycle club" ? " gallery-card-bicycleclub" : ""}" type="button" data-post-index="${index}"${post.previewType === "ascii-video" ? ` data-preview-type="${post.previewType}"` : ""}>
-          <div class="gallery-thumb-wrap">
-            ${post.previewType === "ascii-video" ? `
-              <div class="gallery-ascii-thumb" aria-hidden="true">
-                <video class="gallery-ascii-source hidden-video" src="${post.image}" muted autoplay loop playsinline crossorigin="anonymous"></video>
-                <canvas class="gallery-ascii-canvas hidden-video"></canvas>
-                <pre class="gallery-ascii-preview"></pre>
-              </div>
-            ` : post.mediaType === "video" ? `
-              <video class="gallery-thumb-video${post.image.includes("Movie_020_yqakht.mp4") ? " gallery-thumb-video-right" : ""}${post.mediaType === "game" ? " gallery-thumb-game" : ""}" src="${post.image}" muted autoplay loop playsinline crossorigin="anonymous" aria-label="${post.alt}"${post.objectPosition ? ` style="object-position: ${post.objectPosition}"` : ""}></video>
-            ` : `
-              <img class="gallery-thumb${post.mediaType === "game" ? " gallery-thumb-game" : ""}" src="${post.image}" alt="${post.alt}">
-            `}
-            <div class="gallery-copy">
-            <p class="gallery-card-title">${post.title}</p>
-            <p class="gallery-card-meta">${post.category} / ${post.year}</p>
-          </div>
-        </div>
-        </button>
-      `}
-    `).filter(Boolean).join("");
-  galleryGrid.insertAdjacentHTML("beforeend", renderGalleryAdStrip());
-
-  introAsciiEl = galleryGrid.querySelector(".gallery-intro-ascii");
-  introCardEl = galleryGrid.querySelector(".gallery-card-intro");
-  introVideoBgEl = galleryGrid.querySelector(".gallery-intro-video-bg");
-  introVideoEl = galleryGrid.querySelector(".gallery-intro-video");
-  introCanvasEl = galleryGrid.querySelector(".gallery-intro-canvas");
-  introCanvasCtx = introCanvasEl ? introCanvasEl.getContext("2d", { willReadFrequently: true }) : null;
-  introVideoBgCtx = introVideoBgEl ? introVideoBgEl.getContext("2d") : null;
-  introAsciiMetrics = null;
-  setupGalleryAsciiPreviews();
-  observeGalleryVideoVisibility();
-
-  if (introVideoEl) {
-    watchVideo(introVideoEl);
-    safePlayVideo(introVideoEl);
-  }
-
-
-  if (introCardEl) {
-    introCardEl.addEventListener("mousemove", (event) => {
-      const rect = (introAsciiEl || introCardEl).getBoundingClientRect();
-      introPointerX = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-      introPointerY = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-
-      if (!introPointerActive) {
-        introPointerSmoothX = introPointerX;
-        introPointerSmoothY = introPointerY;
-      }
-
-      introPointerActive = true;
-    });
-
-    introCardEl.addEventListener("mouseleave", () => {
-      introPointerActive = false;
-    });
-  }
-}
-
-function setupGalleryAsciiPreviews() {
-  const cards = galleryGrid.querySelectorAll('[data-preview-type="ascii-video"]');
-  cards.forEach((card) => {
-    const wrap = card.querySelector(".gallery-ascii-thumb");
-    const video = card.querySelector(".gallery-ascii-source");
-    const canvas = card.querySelector(".gallery-ascii-canvas");
-    const pre = card.querySelector(".gallery-ascii-preview");
-    if (!wrap || !video || !canvas || !pre) return;
-
-    const ctx2d = canvas.getContext("2d", { willReadFrequently: true });
-    const ramp = " .:-=+*#%@";
-    const cell = { cw: 6, ch: 10 };
-    let frameTimer = null;
-    const fitBoost = card.classList.contains("gallery-card-bicycleclub") ? 1.05 : 0.998;
-
-    const measureCell = () => {
-      const probe = document.createElement("span");
-      probe.textContent = "MMMMMMMMMM\nMMMMMMMMMM";
-      probe.style.position = "absolute";
-      probe.style.visibility = "hidden";
-      probe.style.whiteSpace = "pre";
-      probe.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
-      probe.style.fontSize = "10px";
-      probe.style.lineHeight = "10px";
-      wrap.appendChild(probe);
-      const rect = probe.getBoundingClientRect();
-      wrap.removeChild(probe);
-      cell.cw = Math.max(4, rect.width / 10);
-      cell.ch = Math.max(6, rect.height / 2);
-    };
-
-    const fitPre = () => {
-      const preWidth = pre.scrollWidth || 1;
-      const preHeight = pre.scrollHeight || 1;
-      const wrapRect = wrap.getBoundingClientRect();
-      if (!wrapRect.width || !wrapRect.height) return;
-      const scale = Math.min(wrapRect.width / preWidth, wrapRect.height / preHeight) * fitBoost;
-      pre.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    };
-
-    const draw = () => {
-      if (!video.videoWidth || !video.videoHeight || video.dataset.allowPause) return;
-      const wrapRect = wrap.getBoundingClientRect();
-      if (!wrapRect.width || !wrapRect.height) return;
-
-      const aspect = video.videoWidth / video.videoHeight;
-      const colsByWidth = Math.max(36, Math.floor(wrapRect.width / cell.cw));
-      const rowsByWidth = Math.max(8, Math.round(colsByWidth / (aspect * (cell.ch / cell.cw))));
-      const rowsLimit = Math.max(8, Math.floor(wrapRect.height / cell.ch));
-
-      let cols = colsByWidth;
-      let rows = rowsByWidth;
-
-      if (rows > rowsLimit) {
-        rows = rowsLimit;
-        cols = Math.max(24, Math.round(rows * aspect * (cell.ch / cell.cw)));
-      }
-
-      canvas.width = cols;
-      canvas.height = rows;
-      ctx2d.clearRect(0, 0, cols, rows);
-      ctx2d.imageSmoothingEnabled = true;
-      ctx2d.drawImage(video, 0, 0, cols, rows);
-
-      const { data } = ctx2d.getImageData(0, 0, cols, rows);
-      let out = "";
-      for (let y = 0; y < rows; y += 1) {
-        let row = "";
-        for (let x = 0; x < cols; x += 1) {
-          const i = (y * cols + x) * 4;
-          const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
-          const idx = Math.min(ramp.length - 1, Math.max(0, Math.round(lum * (ramp.length - 1))));
-          row += ramp[idx];
-        }
-        out += y === rows - 1 ? row : `${row}\n`;
-      }
-      pre.textContent = out;
-      fitPre();
-    };
-
-    const onLoaded = () => {
-      measureCell();
-      watchVideo(video);
-      safePlayVideo(video);
-      draw();
-      if (frameTimer) clearInterval(frameTimer);
-      frameTimer = setInterval(draw, 1000 / 20);
-    };
-
-    const onResize = () => {
-      measureCell();
-      draw();
-    };
-
-    video.addEventListener("loadedmetadata", onLoaded);
-    window.addEventListener("resize", onResize);
-
-    if (video.readyState >= 1) {
-      onLoaded();
-    }
-
-    galleryAsciiPreviewCleanups.push(() => {
-      video.removeEventListener("loadedmetadata", onLoaded);
-      window.removeEventListener("resize", onResize);
-      if (frameTimer) clearInterval(frameTimer);
-      video.dataset.allowPause = "true";
-      video.pause();
-    });
-  });
-}
-
-function initAsciiVideoSurface(wrap, video, canvas, pre, options = {}) {
-  const ctx2d = canvas.getContext("2d", { willReadFrequently: true });
-  const ramp = options.ramp || " .:-=+*#%@";
-  const fontSize = options.fontSize || 10;
-  const lineHeight = options.lineHeight || fontSize;
-  const fps = options.fps || 20;
-  const cover = options.cover ?? false;
-  const fit = options.fit ?? true;
-  const cell = { cw: 6, ch: 10 };
-  let frameTimer = null;
-
-  const measureCell = () => {
-    const probe = document.createElement("span");
-    probe.textContent = "MMMMMMMMMM\nMMMMMMMMMM";
-    probe.style.position = "absolute";
-    probe.style.visibility = "hidden";
-    probe.style.whiteSpace = "pre";
-    probe.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
-    probe.style.fontSize = `${fontSize}px`;
-    probe.style.lineHeight = `${lineHeight}px`;
-    wrap.appendChild(probe);
-    const rect = probe.getBoundingClientRect();
-    wrap.removeChild(probe);
-    cell.cw = Math.max(4, rect.width / 10);
-    cell.ch = Math.max(6, rect.height / 2);
-  };
-
-  const fitPre = () => {
-    const preWidth = pre.scrollWidth || 1;
-    const preHeight = pre.scrollHeight || 1;
-    const wrapRect = wrap.getBoundingClientRect();
-    if (!wrapRect.width || !wrapRect.height) return;
-    if (!fit) {
-      pre.style.transform = "";
-      return;
-    }
-    const scaleFn = cover ? Math.max : Math.min;
-    const scale = scaleFn(wrapRect.width / preWidth, wrapRect.height / preHeight) * (cover ? 1.01 : 0.998);
-    pre.style.transform = `translate(-50%, -50%) scale(${scale})`;
-  };
-
-  const draw = () => {
-    if (!video.videoWidth || !video.videoHeight || video.dataset.allowPause) return;
-    const wrapRect = wrap.getBoundingClientRect();
-    if (!wrapRect.width || !wrapRect.height) return;
-
-    const videoAspect = video.videoWidth / video.videoHeight;
-    const targetAspect = wrapRect.width / wrapRect.height;
-    const colsByWidth = Math.max(36, Math.floor(wrapRect.width / cell.cw));
-    const rowsByWidth = Math.max(8, Math.round(colsByWidth / (videoAspect * (cell.ch / cell.cw))));
-    const rowsLimit = Math.max(8, Math.floor(wrapRect.height / cell.ch));
-
-    let cols = colsByWidth;
-    let rows = rowsByWidth;
-    let sx = 0;
-    let sy = 0;
-    let sw = video.videoWidth;
-    let sh = video.videoHeight;
-
-    if (cover) {
-      rows = rowsLimit;
-      cols = Math.max(36, Math.floor(wrapRect.width / cell.cw));
-
-      if (videoAspect > targetAspect) {
-        sw = Math.round(video.videoHeight * targetAspect);
-        sx = Math.round((video.videoWidth - sw) / 2);
-      } else {
-        sh = Math.round(video.videoWidth / targetAspect);
-        sy = Math.round((video.videoHeight - sh) / 2);
-      }
-    }
-
-    if (!cover && rows > rowsLimit) {
-      rows = rowsLimit;
-      cols = Math.max(24, Math.round(rows * videoAspect * (cell.ch / cell.cw)));
-    }
-
-    canvas.width = cols;
-    canvas.height = rows;
-    ctx2d.clearRect(0, 0, cols, rows);
-    ctx2d.imageSmoothingEnabled = true;
-    ctx2d.drawImage(video, sx, sy, sw, sh, 0, 0, cols, rows);
-
-    const { data } = ctx2d.getImageData(0, 0, cols, rows);
-    let out = "";
-    for (let y = 0; y < rows; y += 1) {
-      let row = "";
-      for (let x = 0; x < cols; x += 1) {
-        const i = (y * cols + x) * 4;
-        const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
-        const idx = Math.min(ramp.length - 1, Math.max(0, Math.round(lum * (ramp.length - 1))));
-        row += ramp[idx];
-      }
-      out += y === rows - 1 ? row : `${row}\n`;
-    }
-    pre.textContent = out;
-    fitPre();
-  };
-
-  const onLoaded = () => {
-    measureCell();
-    watchVideo(video);
-    safePlayVideo(video);
-    draw();
-    if (frameTimer) clearInterval(frameTimer);
-    frameTimer = setInterval(draw, 1000 / fps);
-  };
-
-  const onResize = () => {
-    measureCell();
-    draw();
-  };
-
-  video.addEventListener("loadedmetadata", onLoaded);
-  window.addEventListener("resize", onResize);
-
-  if (video.readyState >= 1) {
-    onLoaded();
-  }
-
-  return () => {
-    video.removeEventListener("loadedmetadata", onLoaded);
-    window.removeEventListener("resize", onResize);
-    if (frameTimer) clearInterval(frameTimer);
-    video.dataset.allowPause = "true";
-    video.pause();
-  };
-}
-
-function setupGalleryAdAscii() {
-  const wrap = document.querySelector(".gallery-ad-ascii-layer");
-  const video = document.querySelector(".gallery-ad-video");
-  const canvas = document.querySelector(".gallery-ad-ascii-canvas");
-  const pre = document.querySelector(".gallery-ad-ascii-preview");
-  if (!wrap || !video || !canvas || !pre) return;
-
-  initAsciiVideoSurface(wrap, video, canvas, pre, {
-    fontSize: 16,
-    lineHeight: 14.72,
-    fps: 18,
-    cover: true,
-    fit: false,
-    ramp: activeIntroAsciiPattern,
-  });
-}
-
-function clearPostCarousel() {
-  postCarouselCleanups.splice(0).forEach((cleanup) => {
-    try { cleanup(); } catch {}
-  });
-  postCarouselViewport.innerHTML = "";
-  postCarouselDots.innerHTML = "";
-  postCarousel.hidden = true;
-  postCarouselIndex = 0;
-}
-
-function updatePostCarousel(index) {
-  const slides = postCarouselViewport.querySelectorAll(".post-carousel-slide");
-  const dots = postCarouselDots.querySelectorAll(".post-carousel-dot");
-  slides.forEach((slide, slideIndex) => {
-    slide.classList.toggle("is-active", slideIndex === index);
-  });
-  dots.forEach((dot, dotIndex) => {
-    dot.classList.toggle("is-active", dotIndex === index);
-  });
-  postCarouselIndex = index;
-}
-
-function setupPostCarousel(post) {
-  clearPostCarousel();
-  const mediaItems = Array.isArray(post.mediaGallery) ? post.mediaGallery : [];
-  if (!mediaItems.length) return false;
-
-  postCarousel.hidden = false;
-
-  mediaItems.forEach((item, index) => {
-    const slide = document.createElement("div");
-    slide.className = "post-carousel-slide";
-    slide.setAttribute("aria-hidden", index === 0 ? "false" : "true");
-
-    if (item.type === "ascii-video") {
-      const wrap = document.createElement("div");
-      wrap.className = "post-carousel-ascii";
-
-      const video = document.createElement("video");
-      video.className = "hidden-video";
-      video.src = item.src;
-      video.muted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.setAttribute("crossorigin", "anonymous");
-
-      const canvas = document.createElement("canvas");
-      canvas.className = "hidden-video";
-
-      const pre = document.createElement("pre");
-
-      wrap.append(video, canvas, pre);
-      slide.appendChild(wrap);
-      postCarouselCleanups.push(
-        initAsciiVideoSurface(wrap, video, canvas, pre, { fontSize: 12, lineHeight: 12, fps: 20, cover: false })
-      );
-    } else if (item.type === "video") {
-      const video = document.createElement("video");
-      video.className = "post-carousel-media";
-      video.src = item.src;
-      video.muted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.autoplay = true;
-      slide.appendChild(video);
-      watchVideo(video);
-      safePlayVideo(video);
-      postCarouselCleanups.push(() => {
-        video.dataset.allowPause = "true";
-        video.pause();
-      });
-    } else {
-      const image = document.createElement("img");
-      image.className = "post-carousel-media";
-      image.src = item.src;
-      image.alt = item.alt || "";
-      if (item.objectPosition) {
-        image.style.objectPosition = item.objectPosition;
-      }
-      slide.appendChild(image);
-    }
-
-    postCarouselViewport.appendChild(slide);
-
-    const dot = document.createElement("button");
-    dot.className = "post-carousel-dot";
-    dot.type = "button";
-    dot.setAttribute("aria-label", `Media ${index + 1}`);
-    dot.addEventListener("click", () => updatePostCarousel(index));
-    postCarouselDots.appendChild(dot);
-  });
-
-  postCarouselPrev.hidden = mediaItems.length < 2;
-  postCarouselNext.hidden = mediaItems.length < 2;
-
-  updatePostCarousel(0);
+  context.restore();
   return true;
 }
 
-function getIntroAsciiMetrics(targetEl) {
-  if (!targetEl) return null;
+function drawSharedTitleTexture(wallAspect = sharedTitleWallAspect) {
+  sharedTitleWallAspect = wallAspect;
+  const canvasWidth = 2048;
+  const canvasHeight = THREE.MathUtils.clamp(
+    Math.round(canvasWidth / wallAspect),
+    960,
+    1600,
+  );
 
-  const width = targetEl.clientWidth;
-  const height = targetEl.clientHeight;
+  sharedTitleCanvas.width = canvasWidth;
+  sharedTitleCanvas.height = canvasHeight;
+  sharedTitleContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
-  if (
-    introAsciiMetrics &&
-    introAsciiMetrics.width === width &&
-    introAsciiMetrics.height === height
-  ) {
-    return introAsciiMetrics;
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = canvasWidth;
+  maskCanvas.height = canvasHeight;
+  const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
+  maskContext.clearRect(0, 0, canvasWidth, canvasHeight);
+  if (!drawIntroTvLetters(maskContext, canvasWidth, canvasHeight)) {
+    const titleLayout = getIntroTitleLayout(maskContext, canvasWidth, canvasHeight);
+    maskContext.textAlign = "center";
+    maskContext.textBaseline = "middle";
+    maskContext.font = `500 ${titleLayout.fontSize}px "Onder Medium", sans-serif`;
+    maskContext.fillStyle = "#ffffff";
+    titleLayout.lines.forEach(({ text, y }) => {
+      maskContext.fillText(text, canvasWidth * 0.5, y);
+    });
   }
 
-  const style = window.getComputedStyle(targetEl);
-  const fontSize = Number.parseFloat(style.fontSize) || 16;
-  const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 0.92;
-  const columns = Math.max(22, Math.ceil(width / (fontSize * 0.56)));
-  const rows = Math.max(12, Math.ceil(height / (lineHeight * 0.96)));
+  const maskPixels = maskContext.getImageData(
+    0,
+    0,
+    canvasWidth,
+    canvasHeight,
+  ).data;
+  const characters = ".`',:;~-+=*#%@";
+  const accentCharacters = [".", "`", "'", ":", ";"];
+  const cellSize = Math.max(10, Math.round(canvasHeight / 80));
+  const characterAccents = [];
+  sharedTitleContext.textAlign = "center";
+  sharedTitleContext.textBaseline = "middle";
+  sharedTitleContext.font = `700 ${cellSize * 0.88}px Menlo, Monaco, monospace`;
+  sharedTitleContext.shadowColor = "rgba(255, 255, 255, 0.52)";
+  sharedTitleContext.shadowBlur = 5;
 
-  introAsciiMetrics = {
-    width,
-    height,
-    fontSize,
-    lineHeight,
-    columns,
-    rows,
+  for (let y = cellSize * 0.5; y < canvasHeight; y += cellSize) {
+    for (let x = cellSize * 0.5; x < canvasWidth; x += cellSize) {
+      const sampleOffset = cellSize * 0.3;
+      const samples = [
+        [x, y],
+        [x - sampleOffset, y - sampleOffset],
+        [x + sampleOffset, y - sampleOffset],
+        [x - sampleOffset, y + sampleOffset],
+        [x + sampleOffset, y + sampleOffset],
+      ];
+      let coverage = 0;
+      samples.forEach(([sampleX, sampleY]) => {
+        const pixelX = Math.max(0, Math.min(canvasWidth - 1, Math.round(sampleX)));
+        const pixelY = Math.max(0, Math.min(canvasHeight - 1, Math.round(sampleY)));
+        coverage += maskPixels[(pixelY * canvasWidth + pixelX) * 4 + 3] / 255;
+      });
+      coverage /= samples.length;
+      if (coverage < 0.1) continue;
+
+      const noise = ((x * 17 + y * 31) % 29) / 28;
+      const textureWave =
+        0.5 +
+        Math.sin(x * 0.037 + y * 0.021) * 0.22 +
+        Math.sin(x * 0.013 - y * 0.043) * 0.18;
+      const tonalValue = THREE.MathUtils.clamp(
+        coverage * 0.62 + textureWave * 0.25 + noise * 0.13,
+        0,
+        1,
+      );
+      const characterIndex = Math.min(
+        characters.length - 1,
+        Math.floor(tonalValue * characters.length),
+      );
+      const brightness = THREE.MathUtils.clamp(
+        0.5 + coverage * 0.35 + textureWave * 0.15,
+        0.48,
+        1,
+      );
+      sharedTitleContext.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+      sharedTitleContext.fillText(characters[characterIndex], x, y);
+
+      if (coverage > 0.5 && noise > 0.64) {
+        characterAccents.push({
+          character: accentCharacters[(characterIndex + Math.round(noise * 7)) % accentCharacters.length],
+          x: x + (noise - 0.5) * cellSize * 0.7,
+          y: y + (textureWave - 0.5) * cellSize * 0.65,
+          opacity: 0.2 + noise * 0.22,
+        });
+      }
+    }
+  }
+
+  sharedTitleContext.font = `600 ${cellSize * 0.52}px Menlo, Monaco, monospace`;
+  sharedTitleContext.shadowBlur = 2;
+  characterAccents.forEach(({ character, x, y, opacity }) => {
+    sharedTitleContext.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+    sharedTitleContext.fillText(character, x, y);
+  });
+  sharedTitleContext.shadowBlur = 0;
+
+  if (sharedTitleTexture) {
+    sharedTitleTexture.needsUpdate = true;
+    render();
+  }
+}
+
+drawSharedTitleTexture();
+sharedTitleTexture = new THREE.CanvasTexture(sharedTitleCanvas);
+sharedTitleTexture.colorSpace = THREE.SRGBColorSpace;
+sharedTitleTexture.minFilter = THREE.LinearMipmapLinearFilter;
+sharedTitleTexture.magFilter = THREE.LinearFilter;
+sharedTitleTexture.anisotropy = Math.min(
+  renderer.capabilities.getMaxAnisotropy(),
+  8,
+);
+
+const introTitleCanvas = document.createElement("canvas");
+const introTitleContext = introTitleCanvas.getContext("2d");
+
+function drawIntroTitleTexture(wallAspect = sharedTitleWallAspect) {
+  const canvasWidth = 2048;
+  const canvasHeight = THREE.MathUtils.clamp(
+    Math.round(canvasWidth / wallAspect),
+    960,
+    1600,
+  );
+  introTitleCanvas.width = canvasWidth;
+  introTitleCanvas.height = canvasHeight;
+  introTitleContext.clearRect(0, 0, introTitleCanvas.width, introTitleCanvas.height);
+  if (drawIntroTvLetters(
+    introTitleContext,
+    introTitleCanvas.width,
+    introTitleCanvas.height,
+    true,
+  )) {
+    if (introTitleTexture) introTitleTexture.needsUpdate = true;
+    return;
+  }
+
+  const titleLayout = getIntroTitleLayout(
+    introTitleContext,
+    introTitleCanvas.width,
+    introTitleCanvas.height,
+  );
+  introTitleContext.textAlign = "center";
+  introTitleContext.textBaseline = "middle";
+  introTitleContext.font = `500 ${titleLayout.fontSize}px "Onder Medium", sans-serif`;
+  introTitleContext.fillStyle = "#ffffff";
+  introTitleContext.shadowColor = "rgba(255, 255, 255, 0.76)";
+  introTitleContext.shadowBlur = Math.max(24, introTitleCanvas.height * 0.025);
+  titleLayout.lines.forEach(({ text, y }) => {
+    introTitleContext.fillText(text, introTitleCanvas.width * 0.5, y);
+  });
+  introTitleContext.shadowBlur = 0;
+
+  if (introTitleTexture) introTitleTexture.needsUpdate = true;
+}
+
+drawIntroTitleTexture();
+introTitleTexture = new THREE.CanvasTexture(introTitleCanvas);
+introTitleTexture.colorSpace = THREE.SRGBColorSpace;
+introTitleTexture.minFilter = THREE.LinearMipmapLinearFilter;
+introTitleTexture.magFilter = THREE.LinearFilter;
+introTitleTexture.anisotropy = Math.min(
+  renderer.capabilities.getMaxAnisotropy(),
+  8,
+);
+
+const introLetterTextureCache = new Map();
+
+function drawIntroLetterTextureSet(letterSet) {
+  const { character, regularCanvas, asciiCanvas, regularTexture, asciiTexture } = letterSet;
+  const width = 800;
+  const height = 800;
+  regularCanvas.width = width;
+  regularCanvas.height = height;
+  asciiCanvas.width = width;
+  asciiCanvas.height = height;
+
+  const regularContext = regularCanvas.getContext("2d");
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = width;
+  maskCanvas.height = height;
+  const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
+  const fontSize = height * 0.64;
+
+  regularContext.clearRect(0, 0, width, height);
+  regularContext.fillStyle = "#ffffff";
+  regularContext.shadowColor = "rgba(255, 255, 255, 0.58)";
+  regularContext.shadowBlur = 3;
+
+  maskContext.clearRect(0, 0, width, height);
+  maskContext.textAlign = "center";
+  maskContext.textBaseline = "middle";
+  maskContext.font = `500 ${fontSize}px "Onder Medium", sans-serif`;
+  maskContext.fillStyle = "#ffffff";
+  maskContext.fillText(character, width * 0.5, height * 0.56);
+
+  const maskPixels = maskContext.getImageData(0, 0, width, height).data;
+  const asciiContext = asciiCanvas.getContext("2d");
+  const characters = ".`',:;~-+=*#%@";
+  const cellSize = 16;
+  asciiContext.clearRect(0, 0, width, height);
+  asciiContext.textAlign = "center";
+  asciiContext.textBaseline = "middle";
+  asciiContext.font = `700 ${cellSize * 0.88}px Menlo, Monaco, monospace`;
+  asciiContext.shadowColor = "rgba(255, 255, 255, 0.5)";
+  asciiContext.shadowBlur = 3;
+
+  for (let y = cellSize * 0.5; y < height; y += cellSize) {
+    for (let x = cellSize * 0.5; x < width; x += cellSize) {
+      const sampleOffset = cellSize * 0.3;
+      const samples = [
+        [x, y],
+        [x - sampleOffset, y - sampleOffset],
+        [x + sampleOffset, y - sampleOffset],
+        [x - sampleOffset, y + sampleOffset],
+        [x + sampleOffset, y + sampleOffset],
+      ];
+      let coverage = 0;
+      samples.forEach(([sampleX, sampleY]) => {
+        const pixelX = Math.max(0, Math.min(width - 1, Math.round(sampleX)));
+        const pixelY = Math.max(0, Math.min(height - 1, Math.round(sampleY)));
+        coverage += maskPixels[(pixelY * width + pixelX) * 4 + 3] / 255;
+      });
+      coverage /= samples.length;
+      if (coverage < 0.1) continue;
+
+      regularContext.fillRect(
+        x - cellSize * 0.5,
+        y - cellSize * 0.5,
+        cellSize,
+        cellSize,
+      );
+
+      const noise = ((x * 17 + y * 31 + character.charCodeAt(0) * 7) % 29) / 28;
+      const textureWave =
+        0.5 +
+        Math.sin(x * 0.037 + y * 0.021) * 0.22 +
+        Math.sin(x * 0.013 - y * 0.043) * 0.18;
+      const tonalValue = THREE.MathUtils.clamp(
+        coverage * 0.62 + textureWave * 0.25 + noise * 0.13,
+        0,
+        1,
+      );
+      const characterIndex = Math.min(
+        characters.length - 1,
+        Math.floor(tonalValue * characters.length),
+      );
+      asciiContext.fillStyle = `rgba(255, 255, 255, ${0.52 + coverage * 0.42})`;
+      asciiContext.fillText(characters[characterIndex], x, y);
+    }
+  }
+  regularContext.shadowBlur = 0;
+  asciiContext.shadowBlur = 0;
+
+  if (regularTexture) regularTexture.needsUpdate = true;
+  if (asciiTexture) asciiTexture.needsUpdate = true;
+}
+
+function getIntroLetterTextureSet(character) {
+  if (introLetterTextureCache.has(character)) {
+    return introLetterTextureCache.get(character);
+  }
+
+  const letterSet = {
+    character,
+    regularCanvas: document.createElement("canvas"),
+    asciiCanvas: document.createElement("canvas"),
+    regularTexture: null,
+    asciiTexture: null,
+  };
+  drawIntroLetterTextureSet(letterSet);
+
+  letterSet.regularTexture = new THREE.CanvasTexture(letterSet.regularCanvas);
+  letterSet.asciiTexture = new THREE.CanvasTexture(letterSet.asciiCanvas);
+  [letterSet.regularTexture, letterSet.asciiTexture].forEach((texture) => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+  });
+  introLetterTextureCache.set(character, letterSet);
+  return letterSet;
+}
+
+function drawFloatingTitleLetter(letterEntry) {
+  const { canvas, character, texture } = letterEntry;
+  const context = canvas.getContext("2d");
+  const fontSize = 240;
+  context.font = `500 ${fontSize}px "Onder Medium", sans-serif`;
+  const measuredWidth = context.measureText(character).width;
+  canvas.width = Math.ceil(measuredWidth + 104);
+  canvas.height = 340;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.font = `500 ${fontSize}px "Onder Medium", sans-serif`;
+  context.fillStyle = "#ffffff";
+  context.shadowColor = "rgba(255, 255, 255, 0.82)";
+  context.shadowBlur = 34;
+  context.fillText(character, canvas.width * 0.5, canvas.height * 0.51);
+  context.shadowBlur = 0;
+
+  if (texture) texture.needsUpdate = true;
+}
+
+function redrawFloatingTitleLetters() {
+  floatingTitleLetters.forEach((entry) => drawFloatingTitleLetter(entry));
+}
+
+const socialScreenCanvases = new Map();
+const socialScreenTextures = new Map();
+const socialAsciiScreenCanvases = new Map();
+const socialAsciiScreenTextures = new Map();
+const socialIconImages = new Map();
+const SOCIAL_ASCII_CHARACTERS = ".`',:;~-+=*#%@";
+
+function drawSocialIconMask(mediaKey, maskCanvas) {
+  const social = SOCIAL_LINKS[mediaKey];
+  const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
+  maskContext.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+  maskContext.fillStyle = "#ffffff";
+
+  const iconSize = Math.min(maskCanvas.width, maskCanvas.height) * 0.36;
+  const iconX = (maskCanvas.width - iconSize) * 0.5;
+  const iconY = (maskCanvas.height - iconSize) * 0.5;
+
+  if (social.iconPath) {
+    const scale = iconSize / 24;
+    maskContext.save();
+    maskContext.translate(iconX, iconY);
+    maskContext.scale(scale, scale);
+    maskContext.fill(new Path2D(social.iconPath));
+    maskContext.restore();
+    return true;
+  }
+
+  const iconImage = socialIconImages.get(mediaKey);
+  if (!iconImage?.complete || !iconImage.naturalWidth) return false;
+
+  const imageAspect = iconImage.naturalWidth / iconImage.naturalHeight;
+  const drawWidth = imageAspect >= 1 ? iconSize : iconSize * imageAspect;
+  const drawHeight = imageAspect >= 1 ? iconSize / imageAspect : iconSize;
+  maskContext.drawImage(
+    iconImage,
+    (maskCanvas.width - drawWidth) * 0.5,
+    (maskCanvas.height - drawHeight) * 0.5,
+    drawWidth,
+    drawHeight,
+  );
+  return true;
+}
+
+function drawSocialScreenTexture(mediaKey) {
+  const social = SOCIAL_LINKS[mediaKey];
+  const pixelCanvas = socialScreenCanvases.get(mediaKey);
+  const asciiCanvas = socialAsciiScreenCanvases.get(mediaKey);
+  if (!social || !pixelCanvas || !asciiCanvas) return;
+
+  const pixelContext = pixelCanvas.getContext("2d");
+  const asciiContext = asciiCanvas.getContext("2d");
+  [pixelContext, asciiContext].forEach((context) => {
+    context.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+    context.fillStyle = "#020303";
+    context.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+  });
+
+  const maskCanvas = document.createElement("canvas");
+  maskCanvas.width = pixelCanvas.width;
+  maskCanvas.height = pixelCanvas.height;
+  if (drawSocialIconMask(mediaKey, maskCanvas)) {
+    const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
+    const maskPixels = maskContext.getImageData(
+      0,
+      0,
+      maskCanvas.width,
+      maskCanvas.height,
+    ).data;
+    const socialCharacterColumns = 64;
+    const cellSize = pixelCanvas.width / socialCharacterColumns;
+
+    pixelContext.fillStyle = "#ffffff";
+    pixelContext.shadowColor = "rgba(255, 255, 255, 0.58)";
+    pixelContext.shadowBlur = 3;
+    asciiContext.textAlign = "center";
+    asciiContext.textBaseline = "middle";
+    asciiContext.font = `700 ${cellSize * 0.88}px Menlo, Monaco, monospace`;
+    asciiContext.shadowColor = "rgba(255, 255, 255, 0.5)";
+    asciiContext.shadowBlur = 3;
+
+    for (let y = cellSize * 0.5; y < pixelCanvas.height; y += cellSize) {
+      for (let x = cellSize * 0.5; x < pixelCanvas.width; x += cellSize) {
+        let coverage = 0;
+        const sampleOffset = cellSize * 0.28;
+        const samples = [
+          [x, y],
+          [x - sampleOffset, y - sampleOffset],
+          [x + sampleOffset, y - sampleOffset],
+          [x - sampleOffset, y + sampleOffset],
+          [x + sampleOffset, y + sampleOffset],
+        ];
+
+        samples.forEach(([sampleX, sampleY]) => {
+          const pixelX = Math.max(0, Math.min(pixelCanvas.width - 1, Math.round(sampleX)));
+          const pixelY = Math.max(0, Math.min(pixelCanvas.height - 1, Math.round(sampleY)));
+          coverage += maskPixels[(pixelY * pixelCanvas.width + pixelX) * 4 + 3] / 255;
+        });
+        coverage /= samples.length;
+        if (coverage < 0.1) continue;
+
+        pixelContext.fillRect(
+          x - cellSize * 0.5,
+          y - cellSize * 0.5,
+          cellSize,
+          cellSize,
+        );
+
+        const noise = ((x * 17 + y * 31 + mediaKey.length * 13) % 29) / 28;
+        const textureWave =
+          0.5 +
+          Math.sin(x * 0.037 + y * 0.021) * 0.22 +
+          Math.sin(x * 0.013 - y * 0.043) * 0.18;
+        const tonalValue = THREE.MathUtils.clamp(
+          coverage * 0.62 + textureWave * 0.25 + noise * 0.13,
+          0,
+          1,
+        );
+        const characterIndex = Math.min(
+          SOCIAL_ASCII_CHARACTERS.length - 1,
+          Math.floor(tonalValue * SOCIAL_ASCII_CHARACTERS.length),
+        );
+        asciiContext.fillStyle = `rgba(255, 255, 255, ${0.52 + coverage * 0.42})`;
+        asciiContext.fillText(SOCIAL_ASCII_CHARACTERS[characterIndex], x, y);
+      }
+    }
+    pixelContext.shadowBlur = 0;
+    asciiContext.shadowBlur = 0;
+  }
+
+  const pixelTexture = socialScreenTextures.get(mediaKey);
+  const asciiTexture = socialAsciiScreenTextures.get(mediaKey);
+  if (pixelTexture) pixelTexture.needsUpdate = true;
+  if (asciiTexture) asciiTexture.needsUpdate = true;
+}
+
+Object.keys(SOCIAL_LINKS).forEach((mediaKey) => {
+  const socialCanvas = document.createElement("canvas");
+  socialCanvas.width = 800;
+  socialCanvas.height = 800;
+  const socialAsciiCanvas = document.createElement("canvas");
+  socialAsciiCanvas.width = 800;
+  socialAsciiCanvas.height = 800;
+  socialScreenCanvases.set(mediaKey, socialCanvas);
+  socialAsciiScreenCanvases.set(mediaKey, socialAsciiCanvas);
+
+  const socialTexture = new THREE.CanvasTexture(socialCanvas);
+  const socialAsciiTexture = new THREE.CanvasTexture(socialAsciiCanvas);
+  [socialTexture, socialAsciiTexture].forEach((texture) => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+  });
+  socialScreenTextures.set(mediaKey, socialTexture);
+  socialAsciiScreenTextures.set(mediaKey, socialAsciiTexture);
+  screenMediaAspectCache.set(mediaKey, socialCanvas.width / socialCanvas.height);
+  drawSocialScreenTexture(mediaKey);
+
+  const iconSrc = SOCIAL_LINKS[mediaKey].iconSrc;
+  if (iconSrc) {
+    const iconImage = new Image();
+    iconImage.decoding = "async";
+    iconImage.addEventListener("load", () => drawSocialScreenTexture(mediaKey));
+    socialIconImages.set(mediaKey, iconImage);
+    iconImage.src = iconSrc;
+  }
+});
+
+function drawHeaderAsciiWordmark() {
+  if (!headerWordmark) return;
+
+  const width = 880;
+  const height = 184;
+  const cellSize = 8;
+  const context = headerWordmark.getContext("2d");
+  const maskCanvas = document.createElement("canvas");
+  const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
+
+  headerWordmark.width = width;
+  headerWordmark.height = height;
+  maskCanvas.width = width;
+  maskCanvas.height = height;
+
+  maskContext.clearRect(0, 0, width, height);
+  maskContext.fillStyle = "#ffffff";
+  const wordmarkText = "onder balta";
+  const initialFontSize = 112;
+  maskContext.font = `500 ${initialFontSize}px "Onder Medium", sans-serif`;
+  const initialMetrics = maskContext.measureText(wordmarkText);
+  const fittedFontSize = initialFontSize * Math.min(
+    1,
+    (width - 96) / Math.max(initialMetrics.width, 1),
+  );
+  maskContext.font = `500 ${fittedFontSize}px "Onder Medium", sans-serif`;
+  const fittedMetrics = maskContext.measureText(wordmarkText);
+  const ascent = fittedMetrics.actualBoundingBoxAscent || fittedFontSize * 0.72;
+  const descent = fittedMetrics.actualBoundingBoxDescent || fittedFontSize * 0.2;
+  const wordmarkBaseline = (height + ascent - descent) * 0.5;
+  maskContext.textAlign = "center";
+  maskContext.textBaseline = "alphabetic";
+  maskContext.fillText(wordmarkText, width * 0.5, wordmarkBaseline);
+
+  const maskPixels = maskContext.getImageData(0, 0, width, height).data;
+  const characters = ".,:;-=+*#%@";
+  context.clearRect(0, 0, width, height);
+  context.font = `700 ${cellSize * 0.92}px Menlo, Monaco, monospace`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.shadowColor = "rgba(236, 245, 239, 0.42)";
+  context.shadowBlur = 3;
+
+  for (let y = cellSize * 0.5; y < height; y += cellSize) {
+    for (let x = cellSize * 0.5; x < width; x += cellSize) {
+      const sampleRadius = cellSize * 0.3;
+      const samplePoints = [
+        [x, y],
+        [x - sampleRadius, y - sampleRadius],
+        [x + sampleRadius, y - sampleRadius],
+        [x - sampleRadius, y + sampleRadius],
+        [x + sampleRadius, y + sampleRadius],
+      ];
+      let coverage = 0;
+
+      samplePoints.forEach(([sampleX, sampleY]) => {
+        const pixelX = Math.max(0, Math.min(width - 1, Math.round(sampleX)));
+        const pixelY = Math.max(0, Math.min(height - 1, Math.round(sampleY)));
+        coverage += maskPixels[(pixelY * width + pixelX) * 4 + 3] / 255;
+      });
+      coverage /= samplePoints.length;
+      if (coverage < 0.08) continue;
+
+      const noise = ((x * 19 + y * 37) % 43) / 42;
+      const texture =
+        0.5 +
+        Math.sin(x * 0.073 + y * 0.041) * 0.19 +
+        Math.sin(x * 0.021 - y * 0.067) * 0.14;
+      const tone = THREE.MathUtils.clamp(
+        coverage * 0.68 + texture * 0.2 + noise * 0.12,
+        0,
+        1,
+      );
+      const characterIndex = Math.min(
+        characters.length - 1,
+        Math.floor(tone * characters.length),
+      );
+
+      context.fillStyle = `rgba(244, 248, 245, ${0.48 + coverage * 0.5})`;
+      context.fillText(characters[characterIndex], x, y);
+    }
+  }
+
+  context.shadowBlur = 0;
+}
+
+drawHeaderAsciiWordmark();
+
+document.fonts?.load('500 160px "Onder Medium"').then(() => {
+  drawSharedTitleTexture();
+  drawIntroTitleTexture();
+  introLetterTextureCache.forEach(drawIntroLetterTextureSet);
+  redrawFloatingTitleLetters();
+  Object.keys(SOCIAL_LINKS).forEach(drawSocialScreenTexture);
+  drawHeaderAsciiWordmark();
+});
+
+const blankScreenTexture = new THREE.DataTexture(
+  new Uint8Array([0, 0, 0, 255]),
+  1,
+  1,
+  THREE.RGBAFormat,
+);
+blankScreenTexture.needsUpdate = true;
+blankScreenTexture.colorSpace = THREE.SRGBColorSpace;
+blankScreenTexture.flipY = true;
+
+function updateScreenMediaAspect(mediaKey, aspect) {
+  if (!Number.isFinite(aspect) || aspect <= 0) return;
+
+  screenMediaAspectCache.set(mediaKey, aspect);
+  crtScreenMaterials.forEach((material) => {
+    if (material.userData.mediaKey === mediaKey) {
+      material.uniforms.uMediaAspect.value = aspect;
+    }
+  });
+}
+
+function createScreenVideoTexture(mediaKey, src) {
+  const video = document.createElement("video");
+  video.src = src;
+  video.muted = true;
+  video.defaultMuted = true;
+  video.loop = true;
+  video.autoplay = true;
+  video.playsInline = true;
+  video.preload = "auto";
+  video.setAttribute("muted", "");
+  video.setAttribute("playsinline", "");
+  video.addEventListener("loadedmetadata", () => {
+    updateScreenMediaAspect(mediaKey, video.videoWidth / video.videoHeight);
+  });
+  activeScreenVideos.push(video);
+  screenVideoByMediaKey.set(mediaKey, video);
+
+  const texture = new THREE.VideoTexture(video);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.flipY = true;
+
+  return texture;
+}
+
+function getScreenTexture(mediaKey) {
+  if (mediaKey === "static") return blankScreenTexture;
+  if (socialScreenTextures.has(mediaKey)) {
+    return socialScreenTextures.get(mediaKey);
+  }
+
+  if (screenTextureCache.has(mediaKey)) {
+    return screenTextureCache.get(mediaKey);
+  }
+
+  const media = TV_SCREEN_MEDIA[mediaKey];
+  if (!media) return blankScreenTexture;
+
+  const texture = media.type === "video"
+    ? createScreenVideoTexture(mediaKey, media.src)
+    : new THREE.TextureLoader().load(media.src, (loadedTexture) => {
+        const { width, height } = loadedTexture.image;
+        updateScreenMediaAspect(mediaKey, width / height);
+        render();
+      });
+
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.flipY = true;
+  screenTextureCache.set(mediaKey, texture);
+
+  return texture;
+}
+
+function sampleScreenLight(mediaKey, texture) {
+  if (mediaKey === "static") {
+    return {
+      color: new THREE.Color(0x9fadb8),
+      luminance: 0.16,
+    };
+  }
+
+  const source = texture?.image;
+  if (!source || !screenLightSampleContext) return null;
+  if (source instanceof HTMLVideoElement && source.readyState < 2) return null;
+  if (source instanceof HTMLImageElement && !source.complete) return null;
+
+  try {
+    screenLightSampleContext.clearRect(
+      0,
+      0,
+      screenLightSampleCanvas.width,
+      screenLightSampleCanvas.height,
+    );
+    screenLightSampleContext.drawImage(
+      source,
+      0,
+      0,
+      screenLightSampleCanvas.width,
+      screenLightSampleCanvas.height,
+    );
+    const pixels = screenLightSampleContext.getImageData(
+      0,
+      0,
+      screenLightSampleCanvas.width,
+      screenLightSampleCanvas.height,
+    ).data;
+
+    let red = 0;
+    let green = 0;
+    let blue = 0;
+    let weightTotal = 0;
+    let luminanceTotal = 0;
+    let visiblePixels = 0;
+
+    for (let index = 0; index < pixels.length; index += 4) {
+      const alpha = pixels[index + 3] / 255;
+      if (alpha <= 0.01) continue;
+
+      const pixelRed = pixels[index] / 255;
+      const pixelGreen = pixels[index + 1] / 255;
+      const pixelBlue = pixels[index + 2] / 255;
+      const luminance =
+        pixelRed * 0.2126 + pixelGreen * 0.7152 + pixelBlue * 0.0722;
+      const emissionWeight = (0.035 + luminance * luminance) * alpha;
+
+      red += pixelRed * emissionWeight;
+      green += pixelGreen * emissionWeight;
+      blue += pixelBlue * emissionWeight;
+      weightTotal += emissionWeight;
+      luminanceTotal += luminance * alpha;
+      visiblePixels += alpha;
+    }
+
+    if (weightTotal <= 0 || visiblePixels <= 0) return null;
+
+    const color = new THREE.Color();
+    color.setRGB(
+      red / weightTotal,
+      green / weightTotal,
+      blue / weightTotal,
+      THREE.SRGBColorSpace,
+    );
+
+    return {
+      color,
+      luminance: THREE.MathUtils.clamp(
+        0.1 + Math.sqrt(luminanceTotal / visiblePixels) * 0.72,
+        0.12,
+        0.82,
+      ),
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function configureScreenGlowLights() {
+  const screenBounds = new THREE.Box3();
+  const screenCenter = new THREE.Vector3();
+
+  allScreenEntries.forEach((entry, index) => {
+    screenBounds.setFromObject(entry.mesh);
+    screenBounds.getCenter(screenCenter);
+
+    const light = new THREE.PointLight(0xcbd4da, 0, 3.4, 2);
+    light.position.copy(screenCenter);
+    light.position.z += 0.48;
+    scene.add(light);
+
+    entry.glowLight = light;
+    screenGlowEntries.push({
+      entry,
+      light,
+      phase: index * 1.731 + entry.rowIndex * 0.47,
+      targetColor: new THREE.Color(0xcbd4da),
+    });
+  });
+}
+
+function updateScreenGlowLights(elapsedTime, deltaTime) {
+  if (elapsedTime >= nextScreenLightSampleAt) {
+    nextScreenLightSampleAt = elapsedTime + 0.34;
+
+    screenGlowEntries.forEach(({ entry }) => {
+      const isVideo = TV_SCREEN_MEDIA[entry.mediaKey]?.type === "video";
+      if (sampledScreenLightCache.has(entry.mediaKey) && !isVideo) {
+        return;
+      }
+
+      const sample = sampleScreenLight(
+        entry.mediaKey,
+        entry.material.uniforms.uMedia.value,
+      );
+      if (sample) sampledScreenLightCache.set(entry.mediaKey, sample);
+    });
+  }
+
+  const intensityEase = 1 - Math.exp(-deltaTime * 3.8);
+  const colorEase = 1 - Math.exp(-deltaTime * 2.6);
+
+  screenGlowEntries.forEach(({ entry, light, phase, targetColor }) => {
+    const material = entry.material;
+    const sample = sampledScreenLightCache.get(entry.mediaKey) ?? {
+      color: new THREE.Color(0xb9c4ca),
+      luminance: 0.2,
+    };
+    const hoverAmount = material.uniforms.uHoverAmount.value;
+    const grayscaleReveal = material.uniforms.uGrayscaleReveal.value;
+    const powerAmount = material.uniforms.uPowerAmount.value;
+    const titleAmount = Math.max(
+      material.uniforms.uIntroTitleOnScreenAmount.value,
+      material.uniforms.uTitleOnScreenAmount.value,
+    );
+    const dimAmount = material.uniforms.uDimAmount.value;
+    const isStatic = entry.mediaKey === "static";
+
+    if (titleAmount > 0.01) {
+      targetColor.set(0xdde3e6);
+    } else if (isStatic) {
+      targetColor.copy(sample.color);
+    } else {
+      const filteredColorAmount = THREE.MathUtils.lerp(
+        1,
+        0.45,
+        grayscaleReveal,
+      );
+      const contentColorAmount = Math.max(hoverAmount, filteredColorAmount);
+      targetColor.set(0xd3d7d8).lerp(sample.color, contentColorAmount);
+    }
+
+    light.color.lerp(targetColor, colorEase);
+
+    const subtleFlicker = isStatic
+      ? 0.91 + Math.sin(elapsedTime * 8.7 + phase) * 0.045
+      : 0.97 +
+        Math.sin(elapsedTime * 2.3 + phase) * 0.018 +
+        Math.sin(elapsedTime * 7.1 + phase * 1.7) * 0.009;
+    const visibleAmount = Math.max(powerAmount, titleAmount * 0.78);
+    const baseIntensity = isStatic
+      ? 0.62
+      : 1.05 + sample.luminance * 2.35;
+    const targetIntensity =
+      baseIntensity *
+      subtleFlicker *
+      visibleAmount *
+      THREE.MathUtils.lerp(1, 0.42, dimAmount);
+
+    light.intensity += (targetIntensity - light.intensity) * intensityEase;
+  });
+}
+
+const CRT_VERTEX_SHADER = `
+    varying vec2 vUv;
+
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `;
+
+const CRT_FRAGMENT_SHADER = `
+    uniform sampler2D uMedia;
+    uniform sampler2D uSocialAsciiCanvas;
+    uniform sampler2D uTitleCanvas;
+    uniform sampler2D uIntroTitleCanvas;
+    uniform float uTime;
+    uniform float uStaticAmount;
+    uniform float uPhase;
+    uniform float uMediaAspect;
+    uniform float uScreenAspect;
+    uniform float uTitleAspect;
+    uniform float uAsciiAmount;
+    uniform float uSocialAmount;
+    uniform float uSocialHoverActive;
+    uniform float uHoverAmount;
+    uniform float uGrayscaleReveal;
+    uniform float uInteractiveAmount;
+    uniform float uDimAmount;
+    uniform float uPowerAmount;
+    uniform float uIntroTitleOnScreenAmount;
+    uniform float uTitleOnScreenAmount;
+    uniform float uTitleFadeProgress;
+    uniform float uIntroHoverAmount;
+    uniform float uIntroIdlePatternAmount;
+    uniform float uIntroWaveProgress;
+    uniform vec4 uTitleUvRect;
+    uniform vec2 uIntroPointerUv;
+    uniform vec2 uIntroGridOffset;
+    uniform vec2 uIntroGridScale;
+    uniform vec2 uIntroWaveOrigin;
+    uniform vec2 uSocialPointerUv;
+    uniform vec2 uScreenUvMin;
+    uniform vec2 uScreenUvMax;
+    varying vec2 vUv;
+
+    float random(vec2 point) {
+      return fract(sin(dot(point, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    float asciiCharacter(float characterCode, vec2 position) {
+      vec2 pixel = floor(position * vec2(4.0, -4.0) + 2.5);
+
+      if (
+        pixel.x >= 0.0 && pixel.x <= 4.0 &&
+        pixel.y >= 0.0 && pixel.y <= 4.0
+      ) {
+        float bitPosition = pixel.x + 5.0 * pixel.y;
+        return mod(floor(characterCode / exp2(bitPosition)), 2.0);
+      }
+
+      return 0.0;
+    }
+
+    void main() {
+      vec2 screenUv = clamp(
+        (vUv - uScreenUvMin) / (uScreenUvMax - uScreenUvMin),
+        vec2(0.0),
+        vec2(1.0)
+      );
+      vec2 centeredUv = screenUv - 0.5;
+      float distanceFromCenter = dot(centeredUv, centeredUv);
+      vec2 curvedUv = centeredUv * (1.0 + distanceFromCenter * 0.16) + 0.5;
+
+      if (
+        curvedUv.x < 0.0 || curvedUv.x > 1.0 ||
+        curvedUv.y < 0.0 || curvedUv.y > 1.0
+      ) {
+        gl_FragColor = vec4(0.002, 0.002, 0.002, 1.0);
+        return;
+      }
+
+      float jitterTimeA = mix(uTime * 2.4, uTime * 7.0, 1.0 - uStaticAmount);
+      float jitterTimeB = mix(uTime * 1.6, uTime * 4.0, 1.0 - uStaticAmount);
+      float horizontalJitter = (
+        sin(curvedUv.y * 91.0 + jitterTimeA + uPhase) * 0.00045 +
+        sin(curvedUv.y * 247.0 - jitterTimeB + uPhase) * 0.0002
+      );
+      vec2 jitteredUv = curvedUv + vec2(horizontalJitter, 0.0);
+      float hoverZoom = mix(1.0, 1.035, uHoverAmount);
+      jitteredUv = (jitteredUv - 0.5) / hoverZoom + 0.5;
+
+      vec3 color;
+      vec2 mediaUv = jitteredUv;
+
+      if (uMediaAspect > uScreenAspect) {
+        float visibleWidth = uScreenAspect / uMediaAspect;
+        mediaUv.x = (jitteredUv.x - 0.5) * visibleWidth + 0.5;
+      } else {
+        float visibleHeight = uMediaAspect / uScreenAspect;
+        mediaUv.y = (jitteredUv.y - 0.5) * visibleHeight + 0.5;
+      }
+
+      mediaUv = clamp(mediaUv, vec2(0.001), vec2(0.999));
+
+      if (uStaticAmount > 0.5) {
+        vec2 staticCell = floor(curvedUv * vec2(480.0, 360.0));
+        float staticFrame = floor((uTime + uPhase) * 12.0);
+        float staticNoise = random(
+          staticCell + vec2(staticFrame, uPhase * 7.0)
+        );
+        float staticLuminance = 0.035 + staticNoise * 0.19;
+        color = vec3(
+          staticLuminance * 0.78,
+          staticLuminance * 0.84,
+          staticLuminance * 0.9
+        );
+      } else {
+        vec2 sampleUv = mediaUv;
+        vec2 asciiGrid = vec2(
+          112.0,
+          max(8.0, floor(112.0 / (uMediaAspect * (10.0 / 6.0))))
+        );
+
+        if (uAsciiAmount > 0.5) {
+          sampleUv = (floor(mediaUv * asciiGrid) + 0.5) / asciiGrid;
+        }
+
+        if (uAsciiAmount > 0.5) {
+          vec3 sourceColor = texture2D(uMedia, sampleUv).rgb;
+          float luminance = dot(
+            sourceColor,
+            vec3(0.2126, 0.7152, 0.0722)
+          );
+          float rampIndex = floor(luminance * 9.0 + 0.5);
+          float characterCode = 0.0;
+
+          if (rampIndex > 0.5) characterCode = 4325376.0;
+          if (rampIndex > 1.5) characterCode = 131200.0;
+          if (rampIndex > 2.5) characterCode = 14336.0;
+          if (rampIndex > 3.5) characterCode = 459200.0;
+          if (rampIndex > 4.5) characterCode = 145536.0;
+          if (rampIndex > 5.5) characterCode = 332772.0;
+          if (rampIndex > 6.5) characterCode = 11512810.0;
+          if (rampIndex > 7.5) characterCode = 27070835.0;
+          if (rampIndex > 8.5) characterCode = 13199452.0;
+
+          vec2 characterPosition = fract(mediaUv * asciiGrid) - 0.5;
+          float character = asciiCharacter(characterCode, characterPosition);
+          float glow = max(
+            max(
+              asciiCharacter(characterCode, characterPosition + vec2(0.16, 0.0)),
+              asciiCharacter(characterCode, characterPosition - vec2(0.16, 0.0))
+            ),
+            max(
+              asciiCharacter(characterCode, characterPosition + vec2(0.0, 0.16)),
+              asciiCharacter(characterCode, characterPosition - vec2(0.0, 0.16))
+            )
+          );
+          vec3 originalAsciiGreen = vec3(112.0, 211.0, 122.0) / 255.0;
+          color = originalAsciiGreen * (character * 0.92 + glow * 0.12);
+        } else {
+          float colorSeparation = (
+            0.0022 + distanceFromCenter * 0.003
+          ) * mix(1.0, 0.28, uHoverAmount);
+          float red = texture2D(
+            uMedia,
+            sampleUv + vec2(colorSeparation, 0.0)
+          ).r;
+          float green = texture2D(uMedia, sampleUv).g;
+          float blue = texture2D(
+            uMedia,
+            sampleUv - vec2(colorSeparation, 0.0)
+          ).b;
+          color = vec3(red, green, blue);
+        }
+      }
+
+      vec2 socialStableUv = screenUv;
+      if (uMediaAspect > uScreenAspect) {
+        float socialVisibleWidth = uScreenAspect / uMediaAspect;
+        socialStableUv.x = (screenUv.x - 0.5) * socialVisibleWidth + 0.5;
+      } else {
+        float socialVisibleHeight = uMediaAspect / uScreenAspect;
+        socialStableUv.y = (screenUv.y - 0.5) * socialVisibleHeight + 0.5;
+      }
+      vec2 socialCharacterCell = floor(socialStableUv * vec2(64.0));
+      vec2 socialCharacterUv = (socialCharacterCell + 0.5) / 64.0;
+      vec2 socialCellScreenUv = socialCharacterUv;
+      if (uMediaAspect > uScreenAspect) {
+        float socialVisibleWidth = uScreenAspect / uMediaAspect;
+        socialCellScreenUv.x =
+          (socialCharacterUv.x - 0.5) / socialVisibleWidth + 0.5;
+      } else {
+        float socialVisibleHeight = uMediaAspect / uScreenAspect;
+        socialCellScreenUv.y =
+          (socialCharacterUv.y - 0.5) / socialVisibleHeight + 0.5;
+      }
+      float socialCharacterNoise = random(
+        socialCharacterCell + vec2(uPhase * 4.13, uPhase * 6.71)
+      );
+      float socialPatternCoordinate = fract(
+        socialCellScreenUv.x * 0.82 +
+        socialCellScreenUv.y * 0.38 -
+        uTime * 0.075 +
+        uPhase * 0.027
+      );
+      float socialPatternBand = 1.0 - smoothstep(
+        0.04,
+        0.32,
+        abs(socialPatternCoordinate - 0.5)
+      );
+      float socialPatternTexture =
+        0.78 +
+        0.14 * sin(
+          socialCharacterCell.x * 0.31 +
+          socialCharacterCell.y * 0.47 +
+          uTime * 0.32
+        );
+      float socialPatternField = clamp(
+        0.81 +
+        socialPatternBand * 0.07 +
+        (socialPatternTexture - 0.78) * 0.18,
+        0.79,
+        0.9
+      );
+      float socialAsciiField = mix(
+        socialPatternField,
+        1.0,
+        smoothstep(0.0, 1.0, uSocialHoverActive)
+      );
+      float socialConversionThreshold = 0.04 + socialCharacterNoise * 0.92;
+      float socialAsciiMix =
+        step(socialConversionThreshold, socialAsciiField) * uSocialAmount;
+      float socialColorSeparation = 0.0016 + distanceFromCenter * 0.0024;
+      vec2 socialRedUv = clamp(
+        mediaUv + vec2(socialColorSeparation, 0.0),
+        vec2(0.001),
+        vec2(0.999)
+      );
+      vec2 socialBlueUv = clamp(
+        mediaUv - vec2(socialColorSeparation, 0.0),
+        vec2(0.001),
+        vec2(0.999)
+      );
+      vec3 socialAsciiColor = vec3(
+        texture2D(uSocialAsciiCanvas, socialRedUv).r,
+        texture2D(uSocialAsciiCanvas, mediaUv).g,
+        texture2D(uSocialAsciiCanvas, socialBlueUv).b
+      );
+      color = mix(color, socialAsciiColor, socialAsciiMix);
+
+      // Grade the source image before the CRT pass so scanlines, rolling
+      // luminance, noise and phosphor glow remain visible above the filter.
+      float grayscaleLuminance = dot(
+        max(color, vec3(0.0)),
+        vec3(0.2126, 0.7152, 0.0722)
+      );
+      float grayscaleContrast = clamp(
+        (grayscaleLuminance - 0.5) * 1.12 + 0.56,
+        0.0,
+        1.0
+      );
+      float colorReveal = smoothstep(0.04, 0.96, uHoverAmount);
+      float grayscaleAmount =
+        (1.0 - uStaticAmount) *
+        uGrayscaleReveal *
+        mix(0.55, 0.0, colorReveal);
+      color = mix(color, vec3(grayscaleContrast), grayscaleAmount);
+
+      float scanlineMotion = uTime * 2.6;
+      float scanlineStrength = mix(0.12, 0.055, uHoverAmount);
+      float scanline = 1.0 - scanlineStrength + scanlineStrength * sin(
+        curvedUv.y * 720.0 + scanlineMotion
+      );
+      float verticalMask = 0.97 + 0.03 * sin(curvedUv.x * 1050.0);
+
+      float rollingLineSpeed = mix(0.055, 0.075, 1.0 - uStaticAmount);
+      float rollingLineWidth = mix(12.0, 35.0, 1.0 - uStaticAmount);
+      float rollingLinePosition = fract(
+        uTime * rollingLineSpeed + uPhase * 0.11
+      );
+      float rollingLine = exp(
+        -pow(
+          (curvedUv.y - rollingLinePosition) * rollingLineWidth,
+          2.0
+        )
+      );
+      float rollingLineStrength = mix(0.018, 0.055, 1.0 - uStaticAmount);
+
+      float noiseTime = floor((uTime + uPhase) * 24.0);
+      float noise = random(
+        curvedUv * vec2(912.0, 517.0) + noiseTime
+      );
+      float noiseStrength = mix(0.018, 0.035, 1.0 - uStaticAmount) *
+        mix(1.0, 0.24, uHoverAmount);
+
+      float idleSweepPosition = fract(uTime * 0.065 + uPhase * 0.17);
+      float idleSweep = exp(
+        -pow((curvedUv.y - idleSweepPosition) * 42.0, 2.0)
+      ) * uInteractiveAmount * (1.0 - uHoverAmount);
+
+      float powerAmount = clamp(uPowerAmount, 0.0, 1.0);
+      float distanceToCenterLine = abs(curvedUv.y - 0.5);
+      float revealHeight = powerAmount * 0.58;
+      float powerMask = 1.0 - smoothstep(
+        revealHeight,
+        revealHeight + 0.022,
+        distanceToCenterLine
+      );
+      float ignitionEnvelope =
+        smoothstep(0.015, 0.12, powerAmount) *
+        (1.0 - smoothstep(0.38, 0.82, powerAmount));
+      float ignitionLine = exp(
+        -pow((distanceToCenterLine - revealHeight) * 82.0, 2.0)
+      ) * ignitionEnvelope;
+      color = color * powerMask * step(0.001, powerAmount) +
+        vec3(0.52, 0.61, 0.64) * ignitionLine * 0.42;
+
+      vec2 titleLocalUv = jitteredUv;
+      vec2 stableTitleLocalUv = screenUv;
+      if (uTitleAspect > uScreenAspect) {
+        float titleVisibleWidth = uScreenAspect / uTitleAspect;
+        titleLocalUv.x = (jitteredUv.x - 0.5) * titleVisibleWidth + 0.5;
+        stableTitleLocalUv.x = (screenUv.x - 0.5) * titleVisibleWidth + 0.5;
+      } else {
+        float titleVisibleHeight = uTitleAspect / uScreenAspect;
+        titleLocalUv.y = (jitteredUv.y - 0.5) * titleVisibleHeight + 0.5;
+        stableTitleLocalUv.y = (screenUv.y - 0.5) * titleVisibleHeight + 0.5;
+      }
+      vec2 titleUv = mix(uTitleUvRect.xy, uTitleUvRect.zw, titleLocalUv);
+      titleUv = clamp(titleUv, vec2(0.001), vec2(0.999));
+      vec4 introTitleSample = texture2D(uIntroTitleCanvas, titleUv);
+      vec4 titleSample = texture2D(uTitleCanvas, titleUv);
+      float introTitleColorSeparation = (
+        0.0022 + distanceFromCenter * 0.003
+      ) * mix(1.0, 0.28, uHoverAmount);
+      vec2 introTitleRedUv = clamp(
+        titleUv + vec2(introTitleColorSeparation, 0.0),
+        vec2(0.001),
+        vec2(0.999)
+      );
+      vec2 introTitleBlueUv = clamp(
+        titleUv - vec2(introTitleColorSeparation, 0.0),
+        vec2(0.001),
+        vec2(0.999)
+      );
+      vec4 introTitleRedSample = texture2D(
+        uIntroTitleCanvas,
+        introTitleRedUv
+      );
+      vec4 introTitleBlueSample = texture2D(
+        uIntroTitleCanvas,
+        introTitleBlueUv
+      );
+      vec4 titleRedSample = texture2D(uTitleCanvas, introTitleRedUv);
+      vec4 titleBlueSample = texture2D(uTitleCanvas, introTitleBlueUv);
+      vec3 introTitleCrtColor = vec3(
+        introTitleRedSample.r,
+        introTitleSample.g,
+        introTitleBlueSample.b
+      );
+      vec3 titleCrtColor = vec3(
+        titleRedSample.r,
+        titleSample.g,
+        titleBlueSample.b
+      );
+      float introTitleCrtAlpha = max(
+        introTitleSample.a,
+        max(introTitleRedSample.a, introTitleBlueSample.a)
+      );
+      float titleCrtAlpha = max(
+        titleSample.a,
+        max(titleRedSample.a, titleBlueSample.a)
+      );
+      vec2 titleCharacterCell = floor(stableTitleLocalUv * vec2(50.0));
+      vec2 titleCharacterUv = (titleCharacterCell + 0.5) / 50.0;
+      vec2 titleCellScreenUv = titleCharacterUv;
+      if (uTitleAspect > uScreenAspect) {
+        float titleVisibleWidth = uScreenAspect / uTitleAspect;
+        titleCellScreenUv.x =
+          (titleCharacterUv.x - 0.5) / titleVisibleWidth + 0.5;
+      } else {
+        float titleVisibleHeight = uTitleAspect / uScreenAspect;
+        titleCellScreenUv.y =
+          (titleCharacterUv.y - 0.5) / titleVisibleHeight + 0.5;
+      }
+      float titleCharacterNoise = random(
+        titleCharacterCell + vec2(uPhase * 3.17, uPhase * 7.31)
+      );
+      float introHoverDistance = length(
+        (titleCellScreenUv - uIntroPointerUv) * vec2(uScreenAspect, 1.0)
+      );
+      float introHoverNoise = random(
+        titleCharacterCell + vec2(uPhase * 8.17 + 19.4, uPhase * 2.63 + 5.8)
+      );
+      float introHoverPattern = clamp(
+        0.48 +
+        0.16 * sin(titleCharacterCell.x * 0.57 + titleCharacterCell.y * 0.83) +
+        0.12 * sin(titleCharacterCell.x * 1.19 - titleCharacterCell.y * 0.41) +
+        0.14 * (introHoverNoise - 0.5),
+        0.22,
+        0.82
+      );
+      float introHoverCore = 1.0 - smoothstep(
+        0.018,
+        0.3,
+        introHoverDistance
+      );
+      float introHoverDensity = clamp(
+        introHoverPattern + pow(introHoverCore, 1.05) * 0.52,
+        0.22,
+        1.0
+      );
+      float introHoverMask =
+        (1.0 - smoothstep(
+          0.1,
+          ${INTRO_HOVER_OUTER_RANGE.toFixed(2)},
+          introHoverDistance
+        )) *
+        introHoverDensity *
+        uIntroHoverAmount;
+      vec2 introGlobalUv =
+        uIntroGridOffset + titleCellScreenUv * uIntroGridScale;
+      vec2 introWaveDelta =
+        (introGlobalUv - uIntroWaveOrigin) * vec2(2.5, 1.0);
+      float introWaveRadius = uIntroWaveProgress * 2.75;
+      float introWaveMask =
+        (1.0 - smoothstep(
+          introWaveRadius - 0.18,
+          introWaveRadius + 0.18,
+          length(introWaveDelta)
+        )) * smoothstep(0.0, 0.025, uIntroWaveProgress);
+      float introPatternCoordinate = fract(
+        introGlobalUv.x * 0.82 +
+        introGlobalUv.y * 0.38 -
+        uTime * 0.075
+      );
+      float introPatternDistance = abs(introPatternCoordinate - 0.5);
+      float introPatternBand = 1.0 - smoothstep(
+        0.055,
+        0.25,
+        introPatternDistance
+      );
+      float introPatternTexture =
+        0.5 +
+        0.12 * sin(
+          titleCharacterCell.x * 0.31 +
+          titleCharacterCell.y * 0.47 +
+          uTime * 0.32
+        );
+      float introIdlePattern =
+        introPatternBand * introPatternTexture * uIntroIdlePatternAmount;
+      float introAsciiField = max(
+        max(introHoverMask, introWaveMask),
+        introIdlePattern
+      );
+      float introConversionThreshold = 0.04 + titleCharacterNoise * 0.92;
+      float introAsciiMix = step(
+        introConversionThreshold,
+        introAsciiField
+      );
+      float introRegularAmount =
+        uIntroTitleOnScreenAmount * (1.0 - introAsciiMix);
+      float introAsciiAmount = max(
+        uTitleOnScreenAmount,
+        uIntroTitleOnScreenAmount * introAsciiMix
+      );
+      color = mix(
+        color,
+        introTitleCrtColor,
+        introTitleCrtAlpha * introRegularAmount
+      );
+      float titleDissolveNoise = random(
+        titleCharacterCell +
+        vec2(uPhase * 5.71 + 13.2, uPhase * 1.83 + 7.4)
+      );
+      float titleCharacterDelay = 0.02 + titleDissolveNoise * 0.72;
+      float titleCharacterVisibility = 1.0 - smoothstep(
+        titleCharacterDelay,
+        titleCharacterDelay + 0.24,
+        uTitleFadeProgress
+      );
+      color = mix(
+        color,
+        titleCrtColor,
+        titleCrtAlpha * introAsciiAmount * titleCharacterVisibility
+      );
+
+      // The media, social logos and intro title now share this exact CRT pass.
+      color *= scanline * verticalMask;
+      color += rollingLine * rollingLineStrength;
+      color += (noise - 0.5) * noiseStrength;
+      color += color * idleSweep * 0.085;
+
+      vec2 edgeDistance = abs(curvedUv - 0.5) * 2.0;
+      float vignette = 1.0 - pow(
+        max(edgeDistance.x, edgeDistance.y),
+        2.8
+      ) * 0.58;
+      color *= clamp(vignette, 0.25, 1.0);
+
+      float edgeMask =
+        smoothstep(0.0, 0.018, curvedUv.x) *
+        smoothstep(0.0, 0.018, curvedUv.y) *
+        smoothstep(0.0, 0.018, 1.0 - curvedUv.x) *
+        smoothstep(0.0, 0.018, 1.0 - curvedUv.y);
+
+      color = color * (1.08 + uHoverAmount * 0.16) +
+        vec3(0.006, 0.012, 0.014) +
+        vec3(0.008, 0.018, 0.011) * uHoverAmount;
+      color *= mix(1.0, 0.34, uDimAmount);
+      gl_FragColor = vec4(color * edgeMask, 1.0);
+    }
+  `;
+
+function createCrtScreenMaterial(mediaKey, phase) {
+  const material = new THREE.ShaderMaterial({
+    name: "CRTScreenShader",
+    uniforms: {
+      uMedia: { value: getScreenTexture(mediaKey) },
+      uSocialAsciiCanvas: {
+        value: socialAsciiScreenTextures.get(mediaKey) ?? blankScreenTexture,
+      },
+      uTitleCanvas: { value: sharedTitleTexture },
+      uIntroTitleCanvas: { value: introTitleTexture },
+      uTime: { value: 0 },
+      uStaticAmount: { value: mediaKey === "static" ? 1 : 0 },
+      uPhase: { value: phase },
+      uMediaAspect: {
+        value: screenMediaAspectCache.get(mediaKey) ?? 16 / 9,
+      },
+      uScreenAspect: { value: CRT_SCREEN_ASPECT },
+      uTitleAspect: { value: introTitleCanvas.width / introTitleCanvas.height },
+      uAsciiAmount: { value: mediaKey === "bicycleVideo" ? 1 : 0 },
+      uSocialAmount: { value: SOCIAL_LINKS[mediaKey] ? 1 : 0 },
+      uSocialHoverActive: { value: 0 },
+      uHoverAmount: { value: 0 },
+      uGrayscaleReveal: { value: 0 },
+      uInteractiveAmount: { value: mediaKey === "static" ? 0 : 1 },
+      uDimAmount: { value: 0 },
+      uPowerAmount: { value: 0 },
+      uIntroTitleOnScreenAmount: { value: 0 },
+      uTitleOnScreenAmount: { value: 0 },
+      uTitleFadeProgress: { value: 0 },
+      uIntroHoverAmount: { value: 0 },
+      uIntroIdlePatternAmount: { value: 0 },
+      uIntroWaveProgress: { value: 0 },
+      uTitleUvRect: { value: new THREE.Vector4(0, 0, 1, 1) },
+      uIntroPointerUv: { value: new THREE.Vector2(0.5, 0.5) },
+      uIntroGridOffset: { value: new THREE.Vector2() },
+      uIntroGridScale: { value: new THREE.Vector2(0.2, 0.5) },
+      uIntroWaveOrigin: { value: new THREE.Vector2(0.5, 0.5) },
+      uSocialPointerUv: { value: new THREE.Vector2(0.5, 0.5) },
+      uScreenUvMin: { value: new THREE.Vector2(0.001689, 0.121829) },
+      uScreenUvMax: { value: new THREE.Vector2(0.998311, 0.878171) },
+    },
+    vertexShader: CRT_VERTEX_SHADER,
+    fragmentShader: CRT_FRAGMENT_SHADER,
+    toneMapped: false,
+  });
+
+  material.userData.mediaKey = mediaKey;
+  material.userData.interactionTarget = 0;
+  material.userData.socialHoverTarget = 0;
+  material.userData.introHoverTarget = 0;
+  material.userData.introIdlePatternTarget = 0;
+  material.userData.dimTarget = 0;
+  material.userData.bootDelay = (
+    Math.sin(phase * 12.9898 + 4.37) * 43758.5453
+  ) % 1;
+  material.userData.bootDelay = Math.abs(material.userData.bootDelay) * 0.6;
+  crtScreenMaterials.push(material);
+  return material;
+}
+
+function applyScreenMaterial(
+  tvUnit,
+  mediaKey,
+  phase,
+  rowIndex,
+  unitIndex,
+) {
+  const screenMaterial = createCrtScreenMaterial(mediaKey, phase);
+  const isInteractive = mediaKey !== "static";
+
+  const registerScreen = (object, materialIndices) => {
+    const screenEntry = {
+      mesh: object,
+      material: screenMaterial,
+      materialIndices,
+      mediaKey,
+      rowIndex,
+      unitIndex,
+    };
+    allScreenEntries.push(screenEntry);
+
+    if (isInteractive) {
+      object.userData.screenInteraction = screenEntry;
+      interactiveScreenMeshes.push(object);
+    }
   };
 
-  return introAsciiMetrics;
-}
+  tvUnit.traverse((object) => {
+    if (!object.isMesh) return;
 
-function getIntroSourceRect(video, targetAspect) {
-  const sourceAspect = video.videoWidth / video.videoHeight;
-  let sx = 0;
-  let sy = 0;
-  let sw = video.videoWidth;
-  let sh = video.videoHeight;
+    if (Array.isArray(object.material)) {
+      const screenMaterialIndices = [];
+      object.material = object.material.map((material, materialIndex) => {
+        if (material?.name !== "TVScreen") return material;
+        screenMaterialIndices.push(materialIndex);
+        return screenMaterial;
+      });
 
-  if (sourceAspect > targetAspect) {
-    sw = Math.round(video.videoHeight * targetAspect);
-    sx = Math.round((video.videoWidth - sw) / 2);
-  } else {
-    sh = Math.round(video.videoWidth / targetAspect);
-    sy = Math.round((video.videoHeight - sh) / 2);
-  }
-
-  return { sx, sy, sw, sh };
-}
-
-function renderIntroAsciiFrame() {
-  if (!introAsciiEl) return;
-
-  const pattern = activeIntroAsciiPattern;
-  const metrics = getIntroAsciiMetrics(introAsciiEl);
-  if (!metrics) return;
-
-  const { columns, rows, width, height } = metrics;
-  const hasVideo = introVideoEl &&
-    introCanvasEl &&
-    introCanvasCtx &&
-    introVideoBgEl &&
-    introVideoBgCtx &&
-    introVideoEl.videoWidth &&
-    introVideoEl.videoHeight &&
-    introVideoEl.readyState >= 2;
-
-  let videoData = null;
-
-  if (hasVideo) {
-    const targetAspect = columns / rows;
-    const { sx, sy, sw, sh } = getIntroSourceRect(introVideoEl, targetAspect);
-
-    if (introCanvasEl.width !== columns || introCanvasEl.height !== rows) {
-      introCanvasEl.width = columns;
-      introCanvasEl.height = rows;
-    }
-
-    if (introVideoBgEl.width !== columns || introVideoBgEl.height !== rows) {
-      introVideoBgEl.width = columns;
-      introVideoBgEl.height = rows;
-    }
-
-    introCanvasCtx.drawImage(introVideoEl, sx, sy, sw, sh, 0, 0, columns, rows);
-    videoData = introCanvasCtx.getImageData(0, 0, columns, rows).data;
-
-    introVideoBgCtx.imageSmoothingEnabled = true;
-    introVideoBgCtx.clearRect(0, 0, columns, rows);
-    introVideoBgCtx.drawImage(introVideoEl, sx, sy, sw, sh, 0, 0, columns, rows);
-  }
-
-  const pointerGridX = introPointerSmoothX * Math.max(0, columns - 1);
-  const pointerGridY = introPointerSmoothY * Math.max(0, rows - 1);
-
-  function getPatternChar(sampleX, sampleY) {
-    const waveA = Math.sin((sampleX * 0.65) + (introAsciiFrame * 0.08));
-    const waveB = Math.cos((sampleY * 0.72) - (introAsciiFrame * 0.06));
-    const waveC = Math.sin((sampleX + sampleY) * 0.3 + introAsciiFrame * 0.04);
-    const mix = (waveA + waveB + waveC + 3) / 6;
-    const index = Math.max(0, Math.min(pattern.length - 1, Math.floor(mix * pattern.length)));
-    return pattern[index];
-  }
-
-  function getVideoChar(sampleX, sampleY) {
-    if (!videoData) return null;
-    const clampedX = Math.max(0, Math.min(columns - 1, sampleX));
-    const clampedY = Math.max(0, Math.min(rows - 1, sampleY));
-    const offset = (clampedY * columns + clampedX) * 4;
-    const r = videoData[offset];
-    const g = videoData[offset + 1];
-    const b = videoData[offset + 2];
-    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-    const index = Math.max(0, Math.min(pattern.length - 1, Math.floor(Math.pow(luminance, 0.9) * pattern.length)));
-    return pattern[index];
-  }
-
-  let output = "";
-
-  for (let y = 0; y < rows; y += 1) {
-    for (let x = 0; x < columns; x += 1) {
-      let nextChar = getVideoChar(x, y) ?? getPatternChar(x, y);
-
-      if (introPointerActive) {
-        const dx = x - pointerGridX;
-        const dy = y - pointerGridY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < cursorRadius) {
-          const force = 1 - distance / cursorRadius;
-          const easedForce = force * force * (3 - 2 * force);
-          const angle = Math.atan2(dy, dx);
-          const swirl = angle + Math.sin(introAsciiFrame * 0.045 + x * 0.09 + y * 0.05) * 1.2;
-          const noiseX = Math.sin((x + introAsciiFrame * 0.8) * cursorNoiseScale + y * 0.07);
-          const noiseY = Math.cos((y - introAsciiFrame * 0.6) * cursorNoiseScale + x * 0.06);
-          const flowX = Math.cos(swirl) * easedForce * cursorFlowStrength + noiseX * easedForce * 1.4;
-          const flowY = Math.sin(swirl) * easedForce * cursorFlowStrength + noiseY * easedForce * 1.2;
-          const shiftedX = Math.max(0, Math.min(columns - 1, Math.round(x + flowX)));
-          const shiftedY = Math.max(0, Math.min(rows - 1, Math.round(y + flowY)));
-          const scatteredChar = getVideoChar(shiftedX, shiftedY) ?? getPatternChar(shiftedX, shiftedY);
-          const scatteredIndex = Math.max(0, pattern.indexOf(scatteredChar));
-
-          if (easedForce > 0.82) {
-            nextChar = scatteredIndex <= 1 ? " " : pattern[Math.max(0, scatteredIndex - 1)];
-          } else if (easedForce > 0.48) {
-            nextChar = scatteredIndex <= 0 ? " " : scatteredChar;
-          } else {
-            nextChar = scatteredChar;
-          }
-        }
+      if (screenMaterialIndices.length > 0) {
+        registerScreen(object, screenMaterialIndices);
       }
-
-      output += nextChar;
-    }
-    output += "\n";
-  }
-
-  introAsciiEl.textContent = output;
-  introVideoBgEl.style.width = `${width}px`;
-  introVideoBgEl.style.height = `${height}px`;
-}
-
-function animateIntroAscii(timestamp) {
-  const frameInterval = introPointerActive ? 34 : 50;
-
-  if (timestamp - introAsciiLastTime > frameInterval) {
-    introAsciiFrame += 1;
-    introAsciiLastTime = timestamp;
-    if (introPointerActive) {
-      introPointerSmoothX += (introPointerX - introPointerSmoothX) * 0.18;
-      introPointerSmoothY += (introPointerY - introPointerSmoothY) * 0.18;
-    } else {
-      introPointerSmoothX += (0.5 - introPointerSmoothX) * 0.06;
-      introPointerSmoothY += (0.5 - introPointerSmoothY) * 0.06;
+      return;
     }
 
-    renderIntroAsciiFrame();
-  }
-
-  window.requestAnimationFrame(animateIntroAscii);
+    if (object.material?.name === "TVScreen") {
+      object.material = screenMaterial;
+      registerScreen(object, [0]);
+    }
+  });
 }
 
-function animateMusicProgress() {
-  if (musicIsPlaying && !isSeekingMusic) {
-    updateMusicPlayerUi();
-  }
+function configureSharedTitleScreens(tvWall) {
+  if (allScreenEntries.length === 0) return;
 
-  window.requestAnimationFrame(animateMusicProgress);
-}
+  const wallBounds = new THREE.Box3().makeEmpty();
+  const screenBounds = new THREE.Box3();
 
-function revealUiIfReady() {
-  if (uiReady || !backgroundReady || !firstFrameReady) return;
-  uiReady = true;
-  siteShell.classList.add("is-ready");
-  loadingScreen.classList.add("is-hidden");
-}
+  allScreenEntries.forEach((entry) => {
+    screenBounds.setFromObject(entry.mesh);
+    wallBounds.union(screenBounds);
+  });
 
-function showHeroMediaFallback() {
-  stopRendering();
-  hasLoadedFrame = true;
-  firstFrameReady = true;
-  asciiOutput.textContent = [
-    "onder balta",
-    "",
-    "media offline",
-    "local files can be restored from assets/optimized-media",
-  ].join("\n");
-  revealUiIfReady();
-}
+  const wallWidth = wallBounds.max.x - wallBounds.min.x;
+  const wallHeight = wallBounds.max.y - wallBounds.min.y;
+  if (wallWidth <= 0 || wallHeight <= 0) return;
 
-function openPost(index) {
-  const post = galleryPosts[index];
-  if (!post) return;
-
-  postPanel.classList.remove("is-game");
-  postGameWrap.hidden = true;
-  postGameFrame.removeAttribute("src");
-  clearPostCarousel();
-
-  if (setupPostCarousel(post)) {
-    postBanner.hidden = true;
-    postBannerVideo.dataset.allowPause = "true";
-    postBannerVideo.pause();
-    postBannerVideo.hidden = true;
-    postBannerVideo.removeAttribute("src");
-  } else if (post.mediaType === "video") {
-    postBanner.hidden = true;
-    postBannerVideo.hidden = false;
-    postBannerVideo.src = post.image;
-    postBannerVideo.setAttribute("aria-label", post.alt);
-    postBannerVideo.style.objectPosition = "";
-    delete postBannerVideo.dataset.allowPause;
-    watchVideo(postBannerVideo);
-    safePlayVideo(postBannerVideo);
-  } else if (post.mediaType === "game" && !post.embedDisabled) {
-    postPanel.classList.add("is-game");
-    postBanner.hidden = true;
-    postBannerVideo.dataset.allowPause = "true";
-    postBannerVideo.pause();
-    postBannerVideo.hidden = true;
-    postBannerVideo.removeAttribute("src");
-    postGameWrap.hidden = false;
-    activeGameFrameWidth = post.gameWidth || GAME_FRAME_WIDTH;
-    activeGameFrameHeight = post.gameHeight || GAME_FRAME_HEIGHT;
-    activeGameWrapWidth = post.wrapWidth || activeGameFrameWidth;
-    activeGameWrapHeight = post.wrapHeight || activeGameFrameHeight;
-    postGameWrap.style.aspectRatio = `${activeGameWrapWidth} / ${activeGameWrapHeight}`;
-    postGameFrame.style.width = `${activeGameFrameWidth}px`;
-    postGameFrame.style.height = `${activeGameFrameHeight}px`;
-    postGameFrame.src = post.gameUrl;
-    updateGameFrameScale();
-    requestAnimationFrame(updateGameFrameScale);
-  } else if (post.mediaType === "game") {
-    postBannerVideo.dataset.allowPause = "true";
-    postBannerVideo.pause();
-    postBannerVideo.hidden = true;
-    postBannerVideo.removeAttribute("src");
-    postBanner.hidden = false;
-    postBanner.src = post.image;
-    postBanner.alt = post.alt;
-  } else {
-    postBannerVideo.dataset.allowPause = "true";
-    postBannerVideo.pause();
-    postBannerVideo.hidden = true;
-    postBannerVideo.removeAttribute("src");
-    postBanner.hidden = false;
-    postBanner.src = post.image;
-    postBanner.alt = post.alt;
-  }
-
-  postMeta.textContent = `${post.category} / ${post.year}`;
-  postTitle.textContent = post.title;
-  postContent.innerHTML = post.body.map((paragraph) => `<p>${paragraph}</p>`).join("");
-  postActions.innerHTML = post.externalUrl
-    ? `<a class="post-action-link" href="${post.externalUrl}" target="_blank" rel="noreferrer">${post.actionLabel || "visit"}</a>`
-    : "";
-  postOverlay.hidden = false;
-  document.body.style.overflow = "hidden";
-}
-
-function updateGameFrameScale() {
-  if (postGameWrap.hidden) return;
-
-  const wrapRect = postGameWrap.getBoundingClientRect();
-  if (!wrapRect.width || !wrapRect.height) return;
-
-  const scale = Math.min(
-    wrapRect.width / activeGameFrameWidth,
-    wrapRect.height / activeGameFrameHeight
+  introLetterScreenEntries.length = 0;
+  introLetterScreenEntries.push(
+    ...allScreenEntries.filter((entry) => entry.rowIndex === 0 || entry.rowIndex === 1),
   );
+  introLetterTitleBounds = new THREE.Box3().makeEmpty();
+  introLetterScreenEntries.forEach((entry) => {
+    screenBounds.setFromObject(entry.mesh);
+    introLetterTitleBounds.union(screenBounds);
+  });
 
-  postGameWrap.style.setProperty("--game-scale", String(scale));
-}
+  const introBoundsWidth = introLetterTitleBounds.max.x - introLetterTitleBounds.min.x;
+  const introBoundsHeight = introLetterTitleBounds.max.y - introLetterTitleBounds.min.y;
+  const introScreenWidth = introBoundsWidth / 5;
+  const introScreenHeight = introBoundsHeight / 2;
+  const hoverMarginX =
+    introScreenWidth *
+    (INTRO_HOVER_OUTER_RANGE / CRT_SCREEN_ASPECT) *
+    1.06;
+  const hoverMarginY =
+    introScreenHeight * INTRO_HOVER_OUTER_RANGE * 1.06;
 
-function closePost() {
-  postPanel.classList.remove("is-game");
-  postBannerVideo.dataset.allowPause = "true";
-  postBannerVideo.pause();
-  postBannerVideo.removeAttribute("src");
-  clearPostCarousel();
-  postGameFrame.removeAttribute("src");
-  postGameWrap.hidden = true;
-  postGameWrap.style.removeProperty("--game-scale");
-  postGameWrap.style.removeProperty("aspect-ratio");
-  postGameFrame.style.removeProperty("width");
-  postGameFrame.style.removeProperty("height");
-  activeGameFrameWidth = GAME_FRAME_WIDTH;
-  activeGameFrameHeight = GAME_FRAME_HEIGHT;
-  activeGameWrapWidth = GAME_FRAME_WIDTH;
-  activeGameWrapHeight = GAME_FRAME_HEIGHT;
-  postActions.innerHTML = "";
-  postOverlay.hidden = true;
-  document.body.style.overflow = "";
-}
-
-window.addEventListener("resize", updateGameFrameScale);
-
-postCarouselPrev.addEventListener("click", () => {
-  const total = postCarouselViewport.querySelectorAll(".post-carousel-slide").length;
-  if (!total) return;
-  updatePostCarousel((postCarouselIndex - 1 + total) % total);
-});
-
-postCarouselNext.addEventListener("click", () => {
-  const total = postCarouselViewport.querySelectorAll(".post-carousel-slide").length;
-  if (!total) return;
-  updatePostCarousel((postCarouselIndex + 1) % total);
-});
-
-function getColumns() {
-  if (window.innerWidth < 380) return Math.round(42 * renderScale);
-  if (window.innerWidth < 540) return Math.round(54 * 1.18 * renderScale);
-  if (window.innerWidth < 860) return Math.round(72 * 1.12 * renderScale);
-  return Math.round(96 * renderScale);
-}
-
-function updateMeta() {
-  return;
-}
-
-function resizeCanvas() {
-  if (!sourceVideo.videoWidth || !sourceVideo.videoHeight) return;
-
-  const columns = getColumns();
-  const aspectRatio = sourceVideo.videoHeight / sourceVideo.videoWidth;
-  const rows = Math.max(24, Math.round(columns * aspectRatio * 0.58));
-
-  frameCanvas.width = columns;
-  frameCanvas.height = rows;
-  displayCanvas.width = columns;
-  displayCanvas.height = rows;
-  displayFrameBuffer = displayCtx.createImageData(columns, rows);
-}
-
-function getAsciiChar(r, g, b) {
-  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  const boosted = Math.min(1, Math.pow(1 - luminance, 0.92) * 1.08);
-
-  if (boosted < 0.22) {
-    return " ";
+  if (introHoverHitArea) {
+    scene.remove(introHoverHitArea);
+    introHoverHitArea.geometry.dispose();
+    introHoverHitArea.material.dispose();
   }
-
-  const index = Math.min(charset.length - 1, Math.floor(boosted * (charset.length - 1)));
-  return charset[Math.max(1, index)];
-}
-
-function getPixelStrength(r, g, b) {
-  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  return Math.min(1, Math.pow(1 - luminance, 0.92) * 1.08);
-}
-
-function frameToAscii() {
-  if (!sourceVideo.videoWidth || !sourceVideo.videoHeight) return;
-  frameTick += 1;
-
-  if (pointerActive) {
-    smoothPointerX += (pointerX - smoothPointerX) * cursorFadeSpeed;
-    smoothPointerY += (pointerY - smoothPointerY) * cursorFadeSpeed;
-  }
-
-  const cropLeft = Math.floor(sourceVideo.videoWidth * leftCropRatio);
-  const cropTop = Math.floor(sourceVideo.videoHeight * topCropRatio);
-  const cropRight = Math.floor(sourceVideo.videoWidth * rightCropRatio);
-  const cropBottom = Math.floor(sourceVideo.videoHeight * bottomCropRatio);
-  const cropWidth = sourceVideo.videoWidth - cropLeft - cropRight;
-  const cropHeight = sourceVideo.videoHeight - cropTop - cropBottom;
-
-  ctx.drawImage(
-    sourceVideo,
-    cropLeft,
-    cropTop,
-    cropWidth,
-    cropHeight,
-    0,
-    0,
-    frameCanvas.width,
-    frameCanvas.height
+  introHoverHitArea = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      introBoundsWidth + hoverMarginX * 2,
+      introBoundsHeight + hoverMarginY * 2,
+    ),
+    new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      colorWrite: false,
+      side: THREE.DoubleSide,
+    }),
   );
-  const { data, width, height } = ctx.getImageData(0, 0, frameCanvas.width, frameCanvas.height);
-  const displayData = displayFrameBuffer.data;
-  let ascii = "";
+  introHoverHitArea.name = "Intro TV wall hover area";
+  introHoverHitArea.position.set(
+    (introLetterTitleBounds.min.x + introLetterTitleBounds.max.x) * 0.5,
+    (introLetterTitleBounds.min.y + introLetterTitleBounds.max.y) * 0.5,
+    introLetterTitleBounds.max.z + 0.04,
+  );
+  scene.add(introHoverHitArea);
+  introHoverHitArea.updateMatrixWorld(true);
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const offset = (y * width + x) * 4;
-      const r = data[offset];
-      const g = data[offset + 1];
-      const b = data[offset + 2];
-      const strength = getPixelStrength(r, g, b);
+  drawSharedTitleTexture(introBoundsWidth / introBoundsHeight);
+  drawIntroTitleTexture(introBoundsWidth / introBoundsHeight);
 
-      displayData[offset] = r;
-      displayData[offset + 1] = g;
-      displayData[offset + 2] = b;
-      displayData[offset + 3] = strength < 0.12
-        ? 0
-        : Math.min(255, Math.round((strength - 0.12) / 0.88 * 255));
+  allScreenEntries.forEach((entry) => {
+    entry.material.uniforms.uTitleUvRect.value.set(0, 0, 1, 1);
 
-      let nextChar = getAsciiChar(r, g, b);
+    if (entry.rowIndex !== 0 && entry.rowIndex !== 1) return;
+    const word = entry.rowIndex === 1 ? "onder" : "balta";
+    const character = word[entry.unitIndex];
+    if (!character) return;
 
-      if (pointerActive) {
-        const dx = x - smoothPointerX;
-        const dy = y - smoothPointerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+    const letterTextures = getIntroLetterTextureSet(character);
+    entry.material.uniforms.uIntroTitleCanvas.value = letterTextures.regularTexture;
+    entry.material.uniforms.uTitleCanvas.value = letterTextures.asciiTexture;
+    entry.material.uniforms.uTitleAspect.value = 1;
+    entry.material.uniforms.uIntroGridOffset.value.set(
+      entry.unitIndex * 0.2,
+      entry.rowIndex * 0.5,
+    );
+    entry.material.userData.introLetterIndex =
+      entry.rowIndex === 1 ? entry.unitIndex : entry.unitIndex + 5;
+    entry.material.userData.introFadeDelay =
+      entry.unitIndex * 0.045 +
+      (entry.rowIndex === 0 ? 0.055 : 0) +
+      ((entry.unitIndex * 7 + entry.rowIndex * 3) % 5) * 0.004;
+  });
 
-        if (distance < cursorRadius) {
-          const force = 1 - distance / cursorRadius;
-          const easedForce = force * force * (3 - 2 * force);
-          const angle = Math.atan2(dy, dx);
-          const swirl = angle + Math.sin(frameTick * 0.045 + x * 0.09 + y * 0.05) * 1.2;
-          const noiseX = Math.sin((x + frameTick * 0.8) * cursorNoiseScale + y * 0.07);
-          const noiseY = Math.cos((y - frameTick * 0.6) * cursorNoiseScale + x * 0.06);
-          const flowX = Math.cos(swirl) * easedForce * cursorFlowStrength + noiseX * easedForce * 1.4;
-          const flowY = Math.sin(swirl) * easedForce * cursorFlowStrength + noiseY * easedForce * 1.2;
-          const shiftedX = Math.max(0, Math.min(width - 1, Math.round(x + flowX)));
-          const shiftedY = Math.max(0, Math.min(height - 1, Math.round(y + flowY)));
-          const shiftedOffset = (shiftedY * width + shiftedX) * 4;
-          const sr = data[shiftedOffset];
-          const sg = data[shiftedOffset + 1];
-          const sb = data[shiftedOffset + 2];
-          const scatteredChar = getAsciiChar(sr, sg, sb);
-          const scatteredLuminance = (0.2126 * sr + 0.7152 * sg + 0.0722 * sb) / 255;
-          const scatteredBoosted = Math.min(1, Math.pow(1 - scatteredLuminance, 0.92) * 1.08);
-          const scatteredIndex = Math.min(charset.length - 1, Math.floor(scatteredBoosted * (charset.length - 1)));
+  const tvWallBounds = new THREE.Box3().setFromObject(tvWall);
+  const title = "onder balta";
+  const letterHeight = wallHeight * 0.235;
+  const letterGap = letterHeight * 0.025;
+  const wordGap = letterHeight * 0.34;
+  const titleCenterX = (wallBounds.min.x + wallBounds.max.x) * 0.5;
+  const titleCenterY = (wallBounds.min.y + wallBounds.max.y) * 0.5;
+  const letterEntries = [];
+  let titleWidth = 0;
 
-          if (easedForce > 0.82) {
-            nextChar = scatteredBoosted < 0.3 ? " " : charset[Math.max(1, scatteredIndex - 1)];
-          } else if (easedForce > 0.48) {
-            nextChar = scatteredBoosted < 0.24 ? " " : scatteredChar;
-          } else {
-            nextChar = scatteredChar;
-          }
-        }
-      }
-
-      ascii += nextChar;
-    }
-    ascii += "\n";
-  }
-
-  displayCtx.putImageData(displayFrameBuffer, 0, 0);
-  asciiOutput.textContent = ascii;
-}
-
-function renderLoop() {
-  if (!isRendering) return;
-
-  if (sourceVideo.readyState >= 2) {
-    if (sourceVideo.paused || sourceVideo.ended) {
-      safePlayVideo(sourceVideo);
+  [...title].forEach((character, characterIndex) => {
+    if (character === " ") {
+      titleWidth += wordGap;
+      return;
     }
 
-    resizeCanvas();
-    frameToAscii();
-  }
+    const canvas = document.createElement("canvas");
+    const letterEntry = {
+      canvas,
+      character,
+      characterIndex,
+      texture: null,
+      mesh: null,
+    };
+    drawFloatingTitleLetter(letterEntry);
 
-  animationHandle = window.requestAnimationFrame(renderLoop);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = Math.min(
+      renderer.capabilities.getMaxAnisotropy(),
+      8,
+    );
+    letterEntry.texture = texture;
+
+    const letterWidth = letterHeight * (canvas.width / canvas.height);
+    letterEntry.width = letterWidth;
+    titleWidth += letterWidth + letterGap;
+    letterEntries.push(letterEntry);
+  });
+
+  titleWidth -= letterGap;
+  floatingTitleGroup = new THREE.Group();
+  floatingTitleGroup.name = "Floating title signal";
+  floatingTitleGroup.visible = FLOATING_TITLE_ENABLED;
+
+  floatingTitleHitArea = new THREE.Mesh(
+    new THREE.PlaneGeometry(titleWidth + letterHeight * 0.35, letterHeight * 1.55),
+    new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      colorWrite: false,
+    }),
+  );
+  floatingTitleHitArea.position.set(
+    titleCenterX,
+    titleCenterY,
+    tvWallBounds.max.z + 0.28,
+  );
+  floatingTitleGroup.add(floatingTitleHitArea);
+
+  let letterX = titleCenterX - titleWidth * 0.5;
+
+  letterEntries.forEach((entry, visibleIndex) => {
+    const phase = entry.characterIndex * 1.73 + visibleIndex * 0.41;
+    const material = new THREE.MeshBasicMaterial({
+      map: entry.texture,
+      transparent: true,
+      opacity: 0.92,
+      depthTest: true,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(entry.width, letterHeight),
+      material,
+    );
+    const basePosition = new THREE.Vector3(
+      letterX + entry.width * 0.5,
+      titleCenterY + Math.sin(phase * 0.82) * letterHeight * 0.055 +
+        (visibleIndex - (letterEntries.length - 1) * 0.5) * letterHeight * 0.013,
+      tvWallBounds.max.z + 0.2 + Math.sin(phase * 1.31) * 0.055,
+    );
+    const baseRotation = new THREE.Euler(
+      Math.sin(phase * 0.7) * 0.018,
+      Math.sin(phase * 1.17) * 0.045,
+      Math.sin(phase) * 0.036,
+    );
+    const outwardDirection = visibleIndex < letterEntries.length * 0.5 ? -1 : 1;
+    const scatterOffset = new THREE.Vector3(
+      outwardDirection * (0.16 + (visibleIndex % 3) * 0.09),
+      Math.sin(phase * 2.13) * 0.24,
+      0.12 + ((visibleIndex * 7) % 5) * 0.035,
+    );
+    const scatterRotation = new THREE.Euler(
+      Math.sin(phase * 1.43) * 0.12,
+      Math.sin(phase * 0.93) * 0.2,
+      Math.sin(phase * 1.77) * 0.18,
+    );
+
+    mesh.position.copy(basePosition);
+    mesh.rotation.copy(baseRotation);
+    mesh.userData.titleLetter = entry;
+    floatingTitleGroup.add(mesh);
+
+    Object.assign(entry, {
+      mesh,
+      material,
+      phase,
+      basePosition,
+      baseRotation,
+      scatterOffset,
+      scatterRotation,
+    });
+    floatingTitleLetters.push(entry);
+    letterX += entry.width + letterGap;
+
+    if (entry.characterIndex === 4) letterX += wordGap;
+  });
+
+  scene.add(floatingTitleGroup);
 }
 
-function startRendering() {
-  if (isRendering) return;
-  isRendering = true;
-  renderLoop();
-}
-
-function stopRendering() {
-  isRendering = false;
-  if (animationHandle) {
-    window.cancelAnimationFrame(animationHandle);
-    animationHandle = null;
-  }
-}
-
-sourceVideo.addEventListener("loadedmetadata", () => {
-  resizeCanvas();
-  updateMeta();
-});
-
-sourceVideo.addEventListener("loadeddata", () => {
-  hasLoadedFrame = true;
-  resizeCanvas();
-  updateMeta();
-  frameToAscii();
-  startRendering();
-  firstFrameReady = true;
-  revealUiIfReady();
-});
-
-sourceVideo.addEventListener("canplay", () => {
-  if (!hasLoadedFrame) {
-    resizeCanvas();
-    updateMeta();
-    frameToAscii();
-    hasLoadedFrame = true;
-    startRendering();
-    firstFrameReady = true;
-    revealUiIfReady();
-  }
-});
-
-sourceVideo.addEventListener("play", () => {
-  startRendering();
-});
-sourceVideo.addEventListener("pause", () => {
-  if (sourceVideo.dataset.allowPause) {
-    stopRendering();
+function updateTitleTransferTarget() {
+  if (!FLOATING_TITLE_ENABLED || !floatingTitleHitArea) {
+    titleTransferTarget = 0;
     return;
   }
 
-  safePlayVideo(sourceVideo);
-  startRendering();
-});
-sourceVideo.addEventListener("ended", () => {
-  if (sourceVideo.loop) {
-    sourceVideo.currentTime = 0;
-    safePlayVideo(sourceVideo);
-    startRendering();
+  raycaster.setFromCamera(pointerNdc, camera);
+  const pointerIsOverTitle = raycaster.intersectObject(
+    floatingTitleHitArea,
+    false,
+  ).length > 0;
+
+  titleTransferTarget = pointerIsOverTitle && !focusedScreen ? 1 : 0;
+}
+
+function beginIntroSequence(
+  elapsedTime = performance.now() * 0.001,
+  pointerHit = getIntroPointerHit(),
+) {
+  if (
+    introStage !== "waiting" ||
+    introLetterScreenEntries.length === 0 ||
+    !pointerHit
+  ) return;
+
+  introWaveOrigin.copy(pointerHit.globalUv);
+  crtScreenMaterials.forEach((material) => {
+    material.uniforms.uIntroWaveOrigin.value.copy(introWaveOrigin);
+    material.userData.introHoverTarget = 0;
+  });
+  introStage = "handoff";
+  introStageStartedAt = elapsedTime;
+  introSequenceStartedAt = elapsedTime;
+  setHoveredScreen(null);
+}
+
+function getIntroPointerHit() {
+  if (
+    introLetterScreenEntries.length === 0 ||
+    !introLetterTitleBounds ||
+    !introHoverHitArea
+  ) return null;
+
+  raycaster.setFromCamera(pointerNdc, camera);
+  const intersection = raycaster.intersectObject(introHoverHitArea, false)[0];
+  if (!intersection?.point) return null;
+
+  const boundsWidth = introLetterTitleBounds.max.x - introLetterTitleBounds.min.x;
+  const boundsHeight = introLetterTitleBounds.max.y - introLetterTitleBounds.min.y;
+  if (boundsWidth <= 0 || boundsHeight <= 0) return null;
+
+  const globalUv = new THREE.Vector2(
+    (intersection.point.x - introLetterTitleBounds.min.x) / boundsWidth,
+    (intersection.point.y - introLetterTitleBounds.min.y) / boundsHeight,
+  );
+  const unitIndex = THREE.MathUtils.clamp(Math.floor(globalUv.x * 5), 0, 4);
+  const rowIndex = THREE.MathUtils.clamp(Math.floor(globalUv.y * 2), 0, 1);
+  const entry = introLetterScreenEntries.find(
+    (screenEntry) =>
+      screenEntry.unitIndex === unitIndex && screenEntry.rowIndex === rowIndex,
+  ) ?? null;
+  const localUv = new THREE.Vector2(
+    globalUv.x * 5 - unitIndex,
+    globalUv.y * 2 - rowIndex,
+  );
+  return { entry, localUv, globalUv };
+}
+
+function isPointerOverIntroTitle() {
+  return Boolean(getIntroPointerHit());
+}
+
+function smoothProgress(value) {
+  const clamped = THREE.MathUtils.clamp(value, 0, 1);
+  return clamped * clamped * (3 - 2 * clamped);
+}
+
+function getIntroCameraAmount(elapsedTime) {
+  if (introStage === "waiting") return 1;
+  if (introSequenceStartedAt <= 0) return 0;
+
+  return 1 - smoothProgress(
+    (elapsedTime - introSequenceStartedAt) / INTRO_CAMERA_PULL_DURATION,
+  );
+}
+
+function updateCeilingFlicker(elapsedTime, deltaTime) {
+  const sequenceTime = Math.max(0, elapsedTime - introSequenceStartedAt);
+  const flickerIsActive =
+    introSequenceStartedAt > 0 &&
+    (
+      introStage === "handoff" ||
+      introStage === "fade" ||
+      (introStage === "powering" && sequenceTime < 2.26)
+    );
+  let targetPower = 1;
+  let hardOutageAmount = 0;
+
+  if (flickerIsActive) {
+    const sequenceEnvelope =
+      smoothProgress(sequenceTime / 0.12) *
+      (1 - smoothProgress(
+        (sequenceTime - (INTRO_CAMERA_PULL_DURATION - 0.2)) / 0.2,
+      ));
+    const dropoutA = Math.exp(-Math.pow((sequenceTime - 0.2) / 0.055, 2)) * 0.6;
+    const dropoutB = Math.exp(-Math.pow((sequenceTime - 0.48) / 0.075, 2)) * 0.38;
+    const dropoutC = Math.exp(-Math.pow((sequenceTime - 0.91) / 0.09, 2)) * 0.72;
+    const dropoutD = Math.exp(-Math.pow((sequenceTime - 1.34) / 0.065, 2)) * 0.48;
+    const dropoutE = Math.exp(-Math.pow((sequenceTime - 1.58) / 0.095, 2)) * 0.64;
+    const hardOutageA =
+      smoothProgress((sequenceTime - 0.84) / 0.025) *
+      (1 - smoothProgress((sequenceTime - 0.93) / 0.028));
+    const hardOutageB =
+      smoothProgress((sequenceTime - 1.38) / 0.04) *
+      (1 - smoothProgress((sequenceTime - 2.22) / 0.045));
+    hardOutageAmount = Math.max(hardOutageA, hardOutageB);
+    const electricalFlutter =
+      Math.sin(sequenceTime * 47.0 + 0.8) * 0.055 +
+      Math.sin(sequenceTime * 83.0 + 2.1) * 0.028;
+    const dropout = Math.max(
+      dropoutA,
+      dropoutB,
+      dropoutC,
+      dropoutD,
+      dropoutE,
+    );
+
+    targetPower = THREE.MathUtils.clamp(
+      1 - dropout * sequenceEnvelope + electricalFlutter * sequenceEnvelope,
+      0.16,
+      1,
+    ) * (1 - hardOutageAmount);
+  }
+
+  const responseSpeed = targetPower < ceilingLightPower ? 32 : 18;
+  const responseEase = 1 - Math.exp(-deltaTime * responseSpeed);
+  ceilingLightPower += (targetPower - ceilingLightPower) * responseEase;
+
+  const outageMultiplier = 1 - hardOutageAmount;
+  const visiblePanelPower =
+    (0.14 + ceilingLightPower * 0.86) * outageMultiplier;
+  ceilingPanelMaterial.color
+    .copy(ceilingPanelBaseColor)
+    .multiplyScalar(visiblePanelPower);
+  keyLight.intensity =
+    KEY_LIGHT_BASE_INTENSITY *
+    (0.16 + ceilingLightPower * 0.84) *
+    outageMultiplier;
+
+  ceilingFixtures.forEach(({ areaLight, baseIntensity }, fixtureIndex) => {
+    const fixtureVariation = flickerIsActive
+      ? 1 +
+        Math.sin(elapsedTime * (39 + fixtureIndex * 5) + fixtureIndex * 1.7) *
+          0.025 *
+          (1 - ceilingLightPower)
+      : 1;
+    areaLight.intensity =
+      baseIntensity *
+      (0.1 + ceilingLightPower * 0.9) *
+      fixtureVariation *
+      outageMultiplier;
+  });
+}
+
+function updateSiteHeaderVisibility() {
+  if (!siteHeader) return;
+
+  const shouldShowHeader =
+    introStage === "done" && focusTarget === 0 && !focusedScreen;
+  if (shouldShowHeader === siteHeaderVisible) return;
+
+  siteHeaderVisible = shouldShowHeader;
+  siteHeader.classList.toggle("is-visible", shouldShowHeader);
+  siteHeader.setAttribute("aria-hidden", String(!shouldShowHeader));
+  siteHeader.inert = !shouldShowHeader;
+}
+
+function updateIntroSequence(elapsedTime) {
+  if (introLetterScreenEntries.length === 0) return;
+
+  const pointerHit = introStage === "waiting" ? getIntroPointerHit() : null;
+  introLetterScreenEntries.forEach((entry) => {
+    entry.material.userData.introHoverTarget = 0;
+    entry.material.userData.introIdlePatternTarget =
+      introStage === "waiting" ? 1 : 0;
+  });
+  if (pointerHit) {
+    introLetterScreenEntries.forEach((entry) => {
+      const gridOffsetX = entry.unitIndex * 0.2;
+      const gridOffsetY = entry.rowIndex * 0.5;
+      entry.material.userData.introHoverTarget = 1;
+      entry.material.uniforms.uIntroPointerUv.value.set(
+        (pointerHit.globalUv.x - gridOffsetX) / 0.2,
+        (pointerHit.globalUv.y - gridOffsetY) / 0.5,
+      );
+    });
+  }
+
+  let regularTitleOnScreens = introStage === "waiting" ? 1 : 0;
+  let titleOnScreens = 0;
+  let asciiFadeElapsed = null;
+  let introWaveProgress = 0;
+
+  if (introStage === "handoff") {
+    const progress = smoothProgress(
+      (elapsedTime - introStageStartedAt) / INTRO_HANDOFF_DURATION,
+    );
+    regularTitleOnScreens = 1;
+    introWaveProgress = progress;
+
+    if (elapsedTime - introStageStartedAt >= INTRO_HANDOFF_DURATION) {
+      introStage = "fade";
+      introStageStartedAt = elapsedTime;
+    }
+  } else if (introStage === "fade") {
+    asciiFadeElapsed = elapsedTime - introStageStartedAt;
+    titleOnScreens = 1;
+    introWaveProgress = 1;
+
+    if (asciiFadeElapsed >= INTRO_FADE_DURATION) {
+      introStage = "powering";
+      introStageStartedAt = elapsedTime;
+    }
+  } else if (introStage === "powering") {
+    const powerElapsed = elapsedTime - introStageStartedAt;
+    crtScreenMaterials.forEach((material) => {
+      const localProgress = THREE.MathUtils.clamp(
+        (powerElapsed - material.userData.bootDelay) / 0.48,
+        0,
+        1,
+      );
+      material.uniforms.uPowerAmount.value = 1 - Math.pow(1 - localProgress, 3);
+    });
+
+    if (powerElapsed >= INTRO_POWER_DURATION) {
+      introStage = "done";
+      introCompletedAt = elapsedTime;
+    }
+  }
+
+  const grayscaleReveal = introStage === "done"
+    ? smoothProgress(
+        (elapsedTime - introCompletedAt - GRAYSCALE_FADE_DELAY) /
+          GRAYSCALE_FADE_DURATION,
+      )
+    : 0;
+
+  crtScreenMaterials.forEach((material) => {
+    const isIntroLetterScreen = introLetterScreenEntries.some(
+      (entry) => entry.material === material,
+    );
+    material.uniforms.uIntroTitleOnScreenAmount.value = isIntroLetterScreen
+      ? regularTitleOnScreens
+      : 0;
+    let characterFadeProgress = 0;
+    if (isIntroLetterScreen && asciiFadeElapsed !== null) {
+      const fadeDelay = material.userData.introFadeDelay ?? 0;
+      characterFadeProgress = smoothProgress(
+        (asciiFadeElapsed - fadeDelay * 0.25) / 0.78,
+      );
+    }
+    material.uniforms.uTitleOnScreenAmount.value = isIntroLetterScreen
+      ? titleOnScreens
+      : 0;
+    material.uniforms.uTitleFadeProgress.value = characterFadeProgress;
+    material.uniforms.uIntroWaveProgress.value = isIntroLetterScreen
+      ? introWaveProgress
+      : 0;
+    material.uniforms.uGrayscaleReveal.value = grayscaleReveal;
+    if (introStage !== "powering" && introStage !== "done") {
+      material.uniforms.uPowerAmount.value = 0;
+    } else if (introStage === "done") {
+      material.uniforms.uPowerAmount.value = 1;
+    }
+  });
+}
+
+function setHoveredScreen(nextScreen) {
+  if (hoveredScreen === nextScreen) return;
+
+  if (
+    hoveredScreen &&
+    (hoveredScreen !== focusedScreen || focusTarget === 0)
+  ) {
+    hoveredScreen.material.userData.interactionTarget = 0;
+    hoveredScreen.material.userData.socialHoverTarget = 0;
+  }
+
+  hoveredScreen = nextScreen;
+
+  if (hoveredScreen) {
+    hoveredScreen.material.userData.interactionTarget = 1;
+    hoveredScreen.material.userData.socialHoverTarget =
+      SOCIAL_LINKS[hoveredScreen.mediaKey] ? 1 : 0;
+  }
+
+  const hasHover = Boolean(hoveredScreen);
+  const hoveredSocial = hoveredScreen && SOCIAL_LINKS[hoveredScreen.mediaKey];
+  const hoveredExternal = hoveredScreen &&
+    EXTERNAL_SCREEN_LINKS[hoveredScreen.mediaKey];
+  viewCursor.textContent = hoveredSocial?.label ?? hoveredExternal?.label ?? "view";
+  roomStage.classList.toggle("is-screen-hovered", hasHover);
+  viewCursor.classList.toggle("is-visible", hasHover);
+}
+
+function updateHoveredScreen() {
+  if (
+    introStage !== "done" ||
+    focusTarget > 0 ||
+    interactiveScreenMeshes.length === 0
+  ) {
+    setHoveredScreen(null);
     return;
   }
-  stopRendering();
-});
 
-sourceVideo.addEventListener("error", () => {
-  showHeroMediaFallback();
-});
+  raycaster.setFromCamera(pointerNdc, camera);
+  const intersections = raycaster.intersectObjects(
+    interactiveScreenMeshes,
+    false,
+  );
+  const validIntersection = intersections.find((intersection) => {
+    const entry = intersection.object.userData.screenInteraction;
+    const materialIndex = intersection.face?.materialIndex ?? 0;
+    return entry?.materialIndices.includes(materialIndex);
+  });
 
-window.addEventListener("resize", () => {
-  introAsciiMetrics = null;
-  resizeCanvas();
-  if (hasLoadedFrame) {
-    frameToAscii();
+  const validEntry = validIntersection?.object.userData.screenInteraction;
+  if (validEntry && SOCIAL_LINKS[validEntry.mediaKey] && validIntersection.uv) {
+    const uvMin = validEntry.material.uniforms.uScreenUvMin.value;
+    const uvMax = validEntry.material.uniforms.uScreenUvMax.value;
+    validEntry.material.uniforms.uSocialPointerUv.value.set(
+      THREE.MathUtils.clamp(
+        (validIntersection.uv.x - uvMin.x) / (uvMax.x - uvMin.x),
+        0,
+        1,
+      ),
+      THREE.MathUtils.clamp(
+        (validIntersection.uv.y - uvMin.y) / (uvMax.y - uvMin.y),
+        0,
+        1,
+      ),
+    );
   }
-  updateGalleryVisibility();
-});
 
-asciiOutput.addEventListener("mousemove", (event) => {
-  const rect = asciiOutput.getBoundingClientRect();
-  const relativeX = (event.clientX - rect.left) / rect.width;
-  const relativeY = (event.clientY - rect.top) / rect.height;
+  setHoveredScreen(validEntry ?? null);
+}
 
-  pointerX = Math.max(0, Math.min(frameCanvas.width - 1, Math.round(relativeX * frameCanvas.width)));
-  pointerY = Math.max(0, Math.min(frameCanvas.height - 1, Math.round(relativeY * frameCanvas.height)));
+function updateProjectPanelSideOffset(deltaTime, snap = false) {
+  if (!focusedScreen || focusTarget === 0) return;
 
-  if (!pointerActive) {
-    smoothPointerX = pointerX;
-    smoothPointerY = pointerY;
+  camera.updateMatrixWorld(true);
+  focusedScreenBounds.setFromObject(focusedScreen.mesh);
+  let projectedMinX = Infinity;
+  let projectedMaxX = -Infinity;
+
+  [focusedScreenBounds.min.x, focusedScreenBounds.max.x].forEach((x) => {
+    [focusedScreenBounds.min.y, focusedScreenBounds.max.y].forEach((y) => {
+      [focusedScreenBounds.min.z, focusedScreenBounds.max.z].forEach((z) => {
+        projectedScreenCorner.set(x, y, z).project(camera);
+        const screenX = (projectedScreenCorner.x * 0.5 + 0.5) * window.innerWidth;
+        projectedMinX = Math.min(projectedMinX, screenX);
+        projectedMaxX = Math.max(projectedMaxX, screenX);
+      });
+    });
+  });
+
+  if (!Number.isFinite(projectedMinX) || !Number.isFinite(projectedMaxX)) return;
+
+  const panelOnLeft = projectPanel.classList.contains("is-left");
+  const mirroredScreenGap = panelOnLeft
+    ? window.innerWidth - projectedMaxX
+    : projectedMinX;
+  const targetOffset = THREE.MathUtils.clamp(
+    mirroredScreenGap,
+    24,
+    window.innerWidth * 0.46,
+  );
+
+  if (snap || projectPanelSideOffset === null) {
+    projectPanelSideOffset = targetOffset;
+  } else {
+    const offsetEase = 1 - Math.exp(-deltaTime * 11);
+    projectPanelSideOffset += (
+      targetOffset - projectPanelSideOffset
+    ) * offsetEase;
   }
 
-  pointerActive = true;
-});
-
-asciiOutput.addEventListener("mouseleave", () => {
-  pointerActive = false;
-});
-
-galleryGrid.addEventListener("click", (event) => {
-  const trigger = event.target.closest("[data-post-index]");
-  if (!trigger) return;
-  openPost(Number(trigger.dataset.postIndex));
-});
-
-postClose.addEventListener("click", closePost);
-postBackdrop.addEventListener("click", closePost);
-if (musicPlayerClose) {
-  musicPlayerClose.addEventListener("click", closeMusicPlayerModal);
-}
-if (musicPlayerPanel) {
-  musicPlayerPanel.addEventListener("pointerdown", (event) => event.stopPropagation());
-  musicPlayerPanel.addEventListener("click", (event) => event.stopPropagation());
-}
-if (musicPrev) {
-  musicPrev.addEventListener("click", () => {
-    updateSelectedTrack(activeMusicTrackIndex - 1);
-  });
-}
-if (musicNext) {
-  musicNext.addEventListener("click", () => {
-    updateSelectedTrack(activeMusicTrackIndex + 1);
-  });
-}
-if (musicPlayToggle) {
-  musicPlayToggle.addEventListener("click", () => setMusicPlayerState(!musicIsPlaying));
-}
-if (musicTrackToggle && musicTrackList) {
-  musicTrackToggle.addEventListener("click", () => {
-    const nextIsOpen = musicTrackList.hidden;
-    musicTrackList.hidden = !nextIsOpen;
-    musicTrackToggle.setAttribute("aria-expanded", String(nextIsOpen));
-    const toggleIcon = musicTrackToggle.querySelector("[aria-hidden='true']");
-    if (toggleIcon) toggleIcon.textContent = nextIsOpen ? "-" : "+";
-  });
-}
-if (musicTrackList) {
-  musicTrackList.addEventListener("click", (event) => {
-    const trackItem = event.target.closest(".music-track-item");
-    if (!trackItem) return;
-    updateSelectedTrack(Number(trackItem.dataset.trackIndex));
-  });
-}
-if (musicProgressBar) {
-  musicProgressBar.addEventListener("pointerdown", (event) => {
-    isSeekingMusic = true;
-    musicProgressBar.setPointerCapture(event.pointerId);
-    seekMusicToRatio(getPointerRatio(event, musicProgressBar));
-  });
-  musicProgressBar.addEventListener("pointermove", (event) => {
-    if (!isSeekingMusic) return;
-    seekMusicToRatio(getPointerRatio(event, musicProgressBar));
-  });
-  musicProgressBar.addEventListener("pointerup", (event) => {
-    isSeekingMusic = false;
-    if (musicProgressBar.hasPointerCapture(event.pointerId)) {
-      musicProgressBar.releasePointerCapture(event.pointerId);
-    }
-  });
-  musicProgressBar.addEventListener("pointercancel", (event) => {
-    isSeekingMusic = false;
-    if (musicProgressBar.hasPointerCapture(event.pointerId)) {
-      musicProgressBar.releasePointerCapture(event.pointerId);
-    }
-  });
-  musicProgressBar.addEventListener("keydown", (event) => {
-    const duration = getActiveTrackDuration();
-    if (!duration) return;
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      musicAudio.currentTime = Math.max(0, musicAudio.currentTime - 5);
-      updateMusicPlayerUi();
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      musicAudio.currentTime = Math.min(duration, musicAudio.currentTime + 5);
-      updateMusicPlayerUi();
-    }
-  });
-}
-if (musicVolumeBar) {
-  musicVolumeBar.addEventListener("pointerdown", (event) => {
-    isChangingVolume = true;
-    musicVolumeBar.setPointerCapture(event.pointerId);
-    setVolumeToRatio(getPointerRatio(event, musicVolumeBar));
-  });
-  musicVolumeBar.addEventListener("pointermove", (event) => {
-    if (!isChangingVolume) return;
-    setVolumeToRatio(getPointerRatio(event, musicVolumeBar));
-  });
-  musicVolumeBar.addEventListener("pointerup", (event) => {
-    isChangingVolume = false;
-    if (musicVolumeBar.hasPointerCapture(event.pointerId)) {
-      musicVolumeBar.releasePointerCapture(event.pointerId);
-    }
-  });
-  musicVolumeBar.addEventListener("pointercancel", (event) => {
-    isChangingVolume = false;
-    if (musicVolumeBar.hasPointerCapture(event.pointerId)) {
-      musicVolumeBar.releasePointerCapture(event.pointerId);
-    }
-  });
-  musicVolumeBar.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      setVolumeToRatio(musicVolume - 0.05);
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      setVolumeToRatio(musicVolume + 0.05);
-    }
-  });
-}
-musicAudio.addEventListener("loadedmetadata", updateMusicPlayerUi);
-musicAudio.addEventListener("timeupdate", updateMusicPlayerUi);
-musicAudio.addEventListener("ended", () => updateSelectedTrack(activeMusicTrackIndex + 1, true));
-musicAudio.addEventListener("pause", () => {
-  if (!musicAudio.ended) setMusicPlayerState(false);
-});
-musicAudio.addEventListener("play", () => {
-  musicIsPlaying = true;
-  if (musicPlayToggle) musicPlayToggle.textContent = "||";
-});
-setMusicPlayerState(false);
-musicAudio.volume = musicVolume;
-loadActiveTrack();
-updateVolumeUi();
-updateMusicPlayerUi();
-
-if (scrollCue) {
-  scrollCue.addEventListener("click", () => {
-    const galleryTop = galleryGrid.getBoundingClientRect().top + window.scrollY;
-    const revealPoint = Math.max(0, galleryTop - 96);
-    window.scrollTo({ top: revealPoint, behavior: "smooth" });
-  });
+  projectPanel.style.setProperty(
+    "--project-side-offset",
+    `${projectPanelSideOffset.toFixed(2)}px`,
+  );
 }
 
+function showProjectPanel(project, panelOnLeft, mediaKey) {
+  projectMeta.textContent = project.meta;
+  projectTitle.textContent = project.title;
+  projectDescription.textContent = project.description;
+  projectPanel.classList.toggle("is-left", panelOnLeft);
+  roomStage.classList.toggle("is-panel-left", panelOnLeft);
+  projectPanel.classList.add("is-visible");
+  projectPanel.setAttribute("aria-hidden", "false");
+  projectPanel.inert = false;
+  roomStage.classList.add("is-project-open");
+
+  const media = TV_SCREEN_MEDIA[mediaKey];
+  const gallery = getProjectGallery(project, media);
+  const hasGallery = gallery.length > 0;
+  const hasVideo = !hasGallery && media?.type === "video";
+  projectPreview.hidden = !hasGallery && !hasVideo;
+
+  if (hasGallery) {
+    const firstImage = gallery[0];
+    projectPreviewVideo.pause();
+    projectPreviewVideo.hidden = true;
+    projectPreviewImage.hidden = false;
+    projectPreviewImage.src = firstImage.src;
+    projectPreviewImage.alt = firstImage.alt ?? `${project.title} preview`;
+    projectPreviewLabel.textContent = gallery.length > 1 ? "view gallery" : "view";
+    projectPreview.setAttribute("aria-label", `View ${project.title}`);
+  } else if (hasVideo) {
+    projectPreviewImage.hidden = true;
+    projectPreviewVideo.hidden = false;
+    projectPreviewVideo.muted = true;
+    if (projectPreviewVideo.dataset.mediaKey !== mediaKey) {
+      projectPreviewVideo.src = media.src;
+      projectPreviewVideo.dataset.mediaKey = mediaKey;
+      projectPreviewVideo.load();
+    }
+    projectPreviewVideo.play().catch(() => {});
+    projectPreviewLabel.textContent = "watch";
+    projectPreview.setAttribute("aria-label", `Watch ${project.title}`);
+  }
+
+  if (project.url) {
+    projectLink.href = project.url;
+    projectLink.hidden = false;
+  } else {
+    projectLink.hidden = true;
+    projectLink.removeAttribute("href");
+  }
+}
+
+function selectScreen(entry) {
+  const social = SOCIAL_LINKS[entry.mediaKey];
+  if (social) {
+    window.open(social.url, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  const external = EXTERNAL_SCREEN_LINKS[entry.mediaKey];
+  if (external) {
+    window.open(external.url, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  const project = TV_PROJECTS[entry.mediaKey];
+  if (!project || focusedScreen) return;
+
+  setHoveredScreen(null);
+  focusedScreen = entry;
+  focusTarget = 1;
+  projectPanelSideOffset = null;
+  entry.material.userData.interactionTarget = 1;
+
+  new THREE.Box3()
+    .setFromObject(entry.mesh)
+    .getCenter(interactionWorldPosition);
+
+  const tvOnLeft = interactionWorldPosition.x <= 0;
+  focusCameraPosition.set(
+    interactionWorldPosition.x,
+    interactionWorldPosition.y,
+    interactionWorldPosition.z + 2.95,
+  );
+  focusLookTarget.set(
+    interactionWorldPosition.x + (tvOnLeft ? 0.95 : -0.95),
+    interactionWorldPosition.y,
+    interactionWorldPosition.z,
+  );
+
+  crtScreenMaterials.forEach((material) => {
+    material.userData.dimTarget = material === entry.material ? 0 : 1;
+  });
+  showProjectPanel(project, !tvOnLeft, entry.mediaKey);
+}
+
+function setCleanViewOrigin() {
+  if (!focusedScreen) return;
+
+  focusedScreenBounds
+    .setFromObject(focusedScreen.mesh)
+    .getCenter(projectedScreenCorner);
+  projectedScreenCorner.project(camera);
+  cleanView.style.setProperty(
+    "--clean-origin-x",
+    `${((projectedScreenCorner.x * 0.5 + 0.5) * 100).toFixed(2)}%`,
+  );
+  cleanView.style.setProperty(
+    "--clean-origin-y",
+    `${((-projectedScreenCorner.y * 0.5 + 0.5) * 100).toFixed(2)}%`,
+  );
+}
+
+function setCleanMediaAspect(aspect) {
+  if (!Number.isFinite(aspect) || aspect <= 0) return;
+  cleanView.style.setProperty("--clean-aspect", aspect.toFixed(6));
+}
+
+function getProjectGallery(project, media) {
+  if (Array.isArray(project?.gallery) && project.gallery.length > 0) {
+    return project.gallery;
+  }
+
+  if (media?.type === "image") {
+    return [
+      {
+        src: media.src,
+        alt: `${project?.title ?? "project"} image`,
+      },
+    ];
+  }
+
+  return [];
+}
+
+function showCleanGalleryItem(index) {
+  if (cleanGalleryItems.length === 0) return;
+
+  cleanGalleryIndex = (
+    index + cleanGalleryItems.length
+  ) % cleanGalleryItems.length;
+  const item = cleanGalleryItems[cleanGalleryIndex];
+
+  cleanImage.classList.add("is-changing");
+  cleanImage.alt = item.alt ?? `${cleanViewTitle.textContent} image`;
+  cleanImage.src = item.src;
+  cleanGalleryCount.textContent = `${cleanGalleryIndex + 1} / ${cleanGalleryItems.length}`;
+
+  if (cleanImage.complete && cleanImage.naturalWidth > 0) {
+    setCleanMediaAspect(cleanImage.naturalWidth / cleanImage.naturalHeight);
+    requestAnimationFrame(() => cleanImage.classList.remove("is-changing"));
+  }
+}
+
+function openCleanView() {
+  if (!focusedScreen) return;
+
+  const mediaKey = focusedScreen.mediaKey;
+  const media = TV_SCREEN_MEDIA[mediaKey];
+  const project = TV_PROJECTS[mediaKey];
+  const gallery = getProjectGallery(project, media);
+  if (gallery.length === 0 && media?.type !== "video") return;
+
+  setHoveredScreen(null);
+  projectPreviewVideo.pause();
+  setCleanViewOrigin();
+  cleanViewTitle.textContent = project?.title ?? "media";
+
+  if (gallery.length > 0) {
+    cleanViewMode = "gallery";
+    cleanGalleryItems = gallery;
+    cleanGalleryIndex = 0;
+    cleanVideo.pause();
+    cleanVideo.hidden = true;
+    cleanImage.hidden = false;
+    cleanGalleryNav.hidden = gallery.length < 2;
+    showCleanGalleryItem(0);
+  } else {
+    cleanViewMode = "video";
+    cleanGalleryItems = [];
+    cleanGalleryNav.hidden = true;
+    cleanImage.hidden = true;
+    cleanVideo.hidden = false;
+
+    if (cleanVideo.dataset.mediaKey !== mediaKey) {
+      cleanVideo.src = media.src;
+      cleanVideo.dataset.mediaKey = mediaKey;
+      cleanVideo.load();
+    }
+
+    const roomVideo = screenVideoByMediaKey.get(mediaKey);
+    if (roomVideo && Number.isFinite(roomVideo.currentTime)) {
+      try {
+        cleanVideo.currentTime = roomVideo.currentTime;
+      } catch (error) {
+        // Metadata may not be ready yet; playback still starts normally.
+      }
+    }
+
+    cleanVideo.muted = false;
+  }
+
+  cleanView.classList.add("is-visible");
+  cleanView.setAttribute("aria-hidden", "false");
+  cleanView.inert = false;
+  projectPanel.inert = true;
+  roomStage.classList.add("is-clean-view-open");
+  if (cleanViewMode === "video") cleanVideo.play().catch(() => {});
+  cleanViewClose.focus({ preventScroll: true });
+}
+
+function closeCleanView({ restoreFocus = true } = {}) {
+  if (!cleanView.classList.contains("is-visible")) return;
+
+  if (cleanViewMode === "video") {
+    const mediaKey = cleanVideo.dataset.mediaKey;
+    const roomVideo = screenVideoByMediaKey.get(mediaKey);
+    if (roomVideo && Number.isFinite(cleanVideo.currentTime)) {
+      try {
+        roomVideo.currentTime = cleanVideo.currentTime;
+      } catch (error) {
+        // The room video can safely continue from its existing frame.
+      }
+    }
+    cleanVideo.pause();
+  }
+
+  cleanView.classList.remove("is-visible");
+  cleanView.setAttribute("aria-hidden", "true");
+  cleanView.inert = true;
+  roomStage.classList.remove("is-clean-view-open");
+
+  if (projectPanel.classList.contains("is-visible")) {
+    projectPanel.inert = false;
+    if (!projectPreview.hidden && !projectPreviewVideo.hidden) {
+      projectPreviewVideo.play().catch(() => {});
+    }
+    if (restoreFocus && !projectPreview.hidden) {
+      projectPreview.focus({ preventScroll: true });
+    }
+  }
+}
+
+function closeProject() {
+  if (!focusedScreen || focusTarget === 0) return;
+
+  closeCleanView({ restoreFocus: false });
+
+  focusTarget = 0;
+  setHoveredScreen(null);
+  crtScreenMaterials.forEach((material) => {
+    material.userData.interactionTarget = 0;
+    material.userData.socialHoverTarget = 0;
+    material.userData.dimTarget = 0;
+  });
+  projectPanel.classList.remove("is-visible");
+  projectPanel.setAttribute("aria-hidden", "true");
+  projectPanel.inert = true;
+  projectPreviewVideo.pause();
+  projectClose.blur();
+  roomStage.classList.remove("is-project-open");
+  roomStage.classList.remove("is-panel-left");
+}
+
+canvas.addEventListener("click", () => {
+  if (introStage === "waiting") {
+    if (isPointerOverIntroTitle()) beginIntroSequence();
+    return;
+  }
+
+  if (introStage !== "done") return;
+
+  if (focusTarget > 0) {
+    closeProject();
+    return;
+  }
+
+  if (!focusedScreen && hoveredScreen) {
+    selectScreen(hoveredScreen);
+  }
+});
+projectClose.addEventListener("click", closeProject);
+projectPreview.addEventListener("click", openCleanView);
+cleanViewClose.addEventListener("click", () => closeCleanView());
+cleanView.addEventListener("click", (event) => {
+  if (event.target === cleanView) closeCleanView();
+});
+cleanVideo.addEventListener("loadedmetadata", () => {
+  if (!cleanVideo.videoWidth || !cleanVideo.videoHeight) return;
+  setCleanMediaAspect(cleanVideo.videoWidth / cleanVideo.videoHeight);
+});
+cleanImage.addEventListener("load", () => {
+  setCleanMediaAspect(cleanImage.naturalWidth / cleanImage.naturalHeight);
+  requestAnimationFrame(() => cleanImage.classList.remove("is-changing"));
+});
+cleanGalleryPrev.addEventListener("click", () => {
+  showCleanGalleryItem(cleanGalleryIndex - 1);
+});
+cleanGalleryNext.addEventListener("click", () => {
+  showCleanGalleryItem(cleanGalleryIndex + 1);
+});
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && musicPlayerPanel && !musicPlayerPanel.hidden) {
-    closeMusicPlayerModal();
+  if (cleanView.classList.contains("is-visible") && cleanViewMode === "gallery") {
+    if (event.key === "ArrowLeft") {
+      showCleanGalleryItem(cleanGalleryIndex - 1);
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      showCleanGalleryItem(cleanGalleryIndex + 1);
+      return;
+    }
+  }
+  if (event.key !== "Escape") return;
+  if (cleanView.classList.contains("is-visible")) {
+    closeCleanView();
     return;
   }
-
-  if (event.key === "Escape" && !postOverlay.hidden) {
-    closePost();
-  }
+  closeProject();
 });
 
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    ensureHeroRendering();
-    ensureAllVideosPlaying();
-  }
-});
+function startScreenVideos() {
+  let waitingForInteraction = false;
 
-renderGallery();
-try {
-  initSpeakerModel();
-} catch {
-  enableSpeakerFallback();
+  const retryPlayback = () => {
+    activeScreenVideos.forEach((video) => {
+      video.play().catch(() => {});
+    });
+  };
+
+  activeScreenVideos.forEach((video) => {
+    video.play().catch(() => {
+      if (waitingForInteraction) return;
+      waitingForInteraction = true;
+      window.addEventListener("pointerdown", retryPlayback, { once: true });
+    });
+  });
 }
-setupGalleryAdAscii();
-ensureAllVideosPlaying();
-window.requestAnimationFrame(animateIntroAscii);
-window.requestAnimationFrame(animateMusicProgress);
-updateGalleryVisibility();
-window.addEventListener("scroll", updateGalleryVisibility, { passive: true });
-window.setInterval(ensureHeroRendering, 700);
-window.setInterval(ensureAllVideosPlaying, 1400);
-const bgImage = new Image();
-bgImage.onload = () => {
-  backgroundReady = true;
-  revealUiIfReady();
-};
-bgImage.onerror = () => {
-  backgroundReady = true;
-  revealUiIfReady();
-};
-bgImage.src = mediaAssets.backgroundImage;
-if (mediaAssets.heroVideo) {
-  sourceVideo.src = mediaAssets.heroVideo;
-  sourceVideo.load();
-  watchVideo(sourceVideo);
-  safePlayVideo(sourceVideo);
-} else {
-  showHeroMediaFallback();
+
+const tvLoader = new GLTFLoader();
+
+tvLoader.load(
+  "assets/models/crt-tv-timothy-ahene.glb",
+  ({ scene: tv }) => {
+    tv.traverse((object) => {
+      if (!object.isMesh) return;
+
+      object.castShadow = true;
+      object.receiveShadow = true;
+
+      const materials = Array.isArray(object.material)
+        ? object.material
+        : [object.material];
+
+      materials.forEach((material) => {
+        if (material?.map) {
+          material.map.anisotropy = Math.min(
+            renderer.capabilities.getMaxAnisotropy(),
+            8,
+          );
+        }
+      });
+    });
+
+    tv.rotation.y = Math.PI;
+    tv.updateMatrixWorld(true);
+
+    const initialBounds = new THREE.Box3().setFromObject(tv);
+    const initialSize = initialBounds.getSize(new THREE.Vector3());
+    const baseScale = TV_TARGET_HEIGHT / initialSize.y;
+
+    tv.scale.setScalar(baseScale);
+    tv.updateMatrixWorld(true);
+
+    const scaledBounds = new THREE.Box3().setFromObject(tv);
+    const scaledCenter = scaledBounds.getCenter(new THREE.Vector3());
+
+    tv.position.x -= scaledCenter.x;
+    tv.position.y -= scaledBounds.min.y;
+    tv.position.z -= scaledBounds.min.z;
+
+    const tvTemplate = new THREE.Group();
+    tvTemplate.add(tv);
+    tvTemplate.updateMatrixWorld(true);
+
+    const templateBounds = new THREE.Box3().setFromObject(tvTemplate);
+    const templateSize = templateBounds.getSize(new THREE.Vector3());
+
+    const tvWall = new THREE.Group();
+    let rowBottom = 0;
+
+    TV_WALL_ROWS.forEach(({ offsetX, scales }, rowIndex) => {
+      const rowUnits = [];
+      let rowWidth = 0;
+      let rowHeight = 0;
+
+      scales.forEach((unitScale, unitIndex) => {
+        const tvUnit = tvTemplate.clone(true);
+        const unitWidth = templateSize.x * unitScale;
+        const unitHeight = templateSize.y * unitScale;
+        const mediaKey = TV_SCREEN_LAYOUT[rowIndex]?.[unitIndex] ?? "static";
+
+        applyScreenMaterial(
+          tvUnit,
+          mediaKey,
+          rowIndex * 5.73 + unitIndex * 1.91,
+          rowIndex,
+          unitIndex,
+        );
+
+        tvUnit.scale.setScalar(unitScale);
+        tvUnit.position.set(
+          rowWidth + unitWidth / 2,
+          rowBottom,
+          TV_WALL_Z,
+        );
+
+        rowUnits.push(tvUnit);
+        rowWidth += unitWidth + TV_HORIZONTAL_GAP;
+        rowHeight = Math.max(rowHeight, unitHeight);
+      });
+
+      rowWidth -= TV_HORIZONTAL_GAP;
+
+      rowUnits.forEach((tvUnit) => {
+        tvUnit.position.x += offsetX - rowWidth / 2;
+        tvWall.add(tvUnit);
+      });
+
+      rowBottom += rowHeight + TV_VERTICAL_GAP;
+    });
+
+    scene.add(tvWall);
+    tvWall.updateMatrixWorld(true);
+    configureSharedTitleScreens(tvWall);
+    configureScreenGlowLights();
+    startScreenVideos();
+    render();
+    requestAnimationFrame(() => loadingScreen.classList.add("is-hidden"));
+  },
+  undefined,
+  (error) => {
+    console.error("CRT TV model could not be loaded.", error);
+    requestAnimationFrame(() => loadingScreen.classList.add("is-hidden"));
+  },
+);
+
+function render() {
+  const elapsedTime = performance.now() * 0.001;
+  const deltaTime = Math.min(Math.max(elapsedTime - previousFrameTime, 0), 0.05);
+  previousFrameTime = elapsedTime;
+
+  const followEase = 1 - Math.exp(-deltaTime * 3.1);
+  if (!focusedScreen) {
+    smoothedPointer.lerp(pointerTarget, followEase);
+  }
+
+  const motionScale = reducedMotionQuery.matches ? 0.18 : 1;
+  const irregularDrift =
+    Math.sin(elapsedTime * 0.23 + 1.3) *
+    Math.sin(elapsedTime * 0.67 + 0.4);
+  const handheldX = (
+    Math.sin(elapsedTime * 0.61 + 0.8) * 0.014 +
+    Math.sin(elapsedTime * 1.43 + 2.1) * 0.006 +
+    irregularDrift * 0.004
+  ) * motionScale;
+  const handheldY = (
+    Math.sin(elapsedTime * 0.37 + 1.4) * 0.011 +
+    Math.sin(elapsedTime * 1.17 + 0.3) * 0.0045 +
+    Math.sin(elapsedTime * 0.19 + 2.8) * 0.006
+  ) * motionScale;
+  const handheldZ = (
+    Math.sin(elapsedTime * 0.33 + 2.7) * 0.011 +
+    Math.sin(elapsedTime * 0.89 + 0.5) * 0.004
+  ) * motionScale;
+  const handheldLookX = (
+    Math.sin(elapsedTime * 0.43 + 0.2) * 0.065 +
+    Math.sin(elapsedTime * 1.07 + 1.9) * 0.024 +
+    Math.sin(elapsedTime * 2.31 + 0.6) * 0.008 +
+    irregularDrift * 0.016
+  ) * motionScale;
+  const handheldLookY = (
+    Math.sin(elapsedTime * 0.31 + 2.5) * 0.044 +
+    Math.sin(elapsedTime * 0.83 + 0.7) * 0.018 +
+    Math.sin(elapsedTime * 2.03 + 1.2) * 0.006
+  ) * motionScale;
+
+  const introCameraAmount = getIntroCameraAmount(elapsedTime);
+  const introPointerDamping = THREE.MathUtils.lerp(
+    1,
+    0.56,
+    introCameraAmount,
+  );
+  const activeCameraHeight = THREE.MathUtils.lerp(
+    EYE_HEIGHT,
+    INTRO_CAMERA_HEIGHT,
+    introCameraAmount,
+  );
+
+  homeCameraPosition.set(
+    (smoothedPointer.x * 0.035 + handheldX) * introPointerDamping,
+    activeCameraHeight +
+      (smoothedPointer.y * 0.018 + handheldY) * introPointerDamping,
+    handheldZ + INTRO_CAMERA_Z * introCameraAmount,
+  );
+  homeLookTarget.set(
+    (smoothedPointer.x * 0.52 + handheldLookX) * introPointerDamping,
+    activeCameraHeight +
+      (smoothedPointer.y * 0.27 + handheldLookY) * introPointerDamping,
+    -ROOM_DEPTH / 2,
+  );
+
+  const focusEase = 1 - Math.exp(
+    -deltaTime * (reducedMotionQuery.matches ? 9 : 3.8),
+  );
+  focusAmount += (focusTarget - focusAmount) * focusEase;
+
+  if (
+    focusTarget === 0 &&
+    focusAmount < FOCUS_RELEASE_THRESHOLD &&
+    focusedScreen
+  ) {
+    focusAmount = 0;
+    focusedScreen = null;
+  }
+
+  const smoothFocus = focusAmount * focusAmount * (3 - 2 * focusAmount);
+
+  if (focusedScreen) {
+    movingFocusCameraPosition.copy(focusCameraPosition);
+    movingFocusCameraPosition.x += handheldX * 0.32;
+    movingFocusCameraPosition.y += handheldY * 0.32;
+    movingFocusCameraPosition.z += handheldZ * 0.2;
+
+    movingFocusLookTarget.copy(focusLookTarget);
+    movingFocusLookTarget.x += handheldLookX * 0.22;
+    movingFocusLookTarget.y += handheldLookY * 0.22;
+
+    camera.position.lerpVectors(
+      homeCameraPosition,
+      movingFocusCameraPosition,
+      smoothFocus,
+    );
+    finalLookTarget.lerpVectors(
+      homeLookTarget,
+      movingFocusLookTarget,
+      smoothFocus,
+    );
+  } else {
+    camera.position.copy(homeCameraPosition);
+    finalLookTarget.copy(homeLookTarget);
+  }
+
+  camera.lookAt(finalLookTarget);
+  camera.rotation.z += (
+    Math.sin(elapsedTime * 0.27 + 1.1) * 0.003 +
+    Math.sin(elapsedTime * 0.73 + 2.4) * 0.0012 +
+    Math.sin(elapsedTime * 1.91 + 0.2) * 0.00035
+  ) * motionScale * THREE.MathUtils.lerp(1, 0.35, smoothFocus);
+
+  updateProjectPanelSideOffset(deltaTime);
+  updateTitleTransferTarget();
+  updateHoveredScreen();
+
+  const materialEase = 1 - Math.exp(-deltaTime * 10);
+  const socialHoverEase = 1 - Math.exp(-deltaTime * 4.2);
+  titleTransferAmount += (
+    titleTransferTarget - titleTransferAmount
+  ) * materialEase;
+  const smoothTitleTransfer =
+    titleTransferAmount * titleTransferAmount * (3 - 2 * titleTransferAmount);
+
+  floatingTitleLetters.forEach((entry, letterIndex) => {
+    const idleMotion = reducedMotionQuery.matches ? 0 : 1;
+    const quietFloatY = Math.sin(elapsedTime * 0.54 + entry.phase) * 0.009 * idleMotion;
+    const quietFloatZ = Math.sin(elapsedTime * 0.41 + entry.phase * 1.4) * 0.008 * idleMotion;
+    const glitchGate = Math.sin(elapsedTime * 31 + entry.phase * 8.1) > 0.72 ? 1 : 0;
+    const horizontalGlitch = glitchGate * smoothTitleTransfer *
+      Math.sin(elapsedTime * 53 + letterIndex) * 0.045 * idleMotion;
+
+    entry.mesh.position.copy(entry.basePosition);
+    entry.mesh.position.addScaledVector(entry.scatterOffset, smoothTitleTransfer);
+    entry.mesh.position.x += horizontalGlitch;
+    entry.mesh.position.y += quietFloatY;
+    entry.mesh.position.z += quietFloatZ;
+    entry.mesh.rotation.set(
+      entry.baseRotation.x + entry.scatterRotation.x * smoothTitleTransfer,
+      entry.baseRotation.y + entry.scatterRotation.y * smoothTitleTransfer,
+      entry.baseRotation.z + entry.scatterRotation.z * smoothTitleTransfer,
+    );
+
+    const glitchOpacity = glitchGate && smoothTitleTransfer > 0.08 ? 0.58 : 1;
+    entry.material.opacity =
+      (0.92 - smoothTitleTransfer * 0.26) *
+      glitchOpacity *
+      (1 - smoothFocus);
+  });
+
+  crtScreenMaterials.forEach((material) => {
+    material.uniforms.uTime.value = elapsedTime;
+    material.uniforms.uHoverAmount.value += (
+      material.userData.interactionTarget -
+      material.uniforms.uHoverAmount.value
+    ) * materialEase;
+    material.uniforms.uSocialHoverActive.value += (
+      material.userData.socialHoverTarget -
+      material.uniforms.uSocialHoverActive.value
+    ) * socialHoverEase;
+    material.uniforms.uIntroHoverAmount.value =
+      material.userData.introHoverTarget;
+    material.uniforms.uIntroIdlePatternAmount.value =
+      material.userData.introIdlePatternTarget;
+    material.uniforms.uDimAmount.value += (
+      material.userData.dimTarget - material.uniforms.uDimAmount.value
+    ) * materialEase;
+    material.uniforms.uTitleOnScreenAmount.value = 0;
+  });
+
+  updateIntroSequence(elapsedTime);
+  updateCeilingFlicker(elapsedTime, deltaTime);
+  updateSiteHeaderVisibility();
+  updateScreenGlowLights(elapsedTime, deltaTime);
+
+  const lightEntry = focusTarget > 0 ? focusedScreen : hoveredScreen;
+  const lightTargetIntensity = lightEntry ? (focusTarget > 0 ? 4.2 : 2.6) : 0;
+  interactionLight.intensity += (
+    lightTargetIntensity - interactionLight.intensity
+  ) * materialEase;
+
+  if (lightEntry) {
+    lightEntry.mesh.getWorldPosition(interactionWorldPosition);
+    interactionWorldPosition.z += 0.65;
+    interactionLight.position.lerp(interactionWorldPosition, materialEase);
+    if (lightEntry.glowLight) {
+      interactionLight.color.lerp(lightEntry.glowLight.color, materialEase);
+    }
+  }
+
+  renderer.render(scene, camera);
 }
+
+function handleResize() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(width, height, false);
+  projectPanelSideOffset = null;
+  render();
+}
+
+window.addEventListener("resize", handleResize);
+
+renderer.setAnimationLoop(render);
