@@ -237,7 +237,7 @@ const galleryPosts = [
     {
       type: "intro",
       body: [
-        "Hey! I'm onder. I love building things, and this is a place where I share and archive what I create."
+        "I'm Onder, and this is a collection of things I've&nbsp;made."
       ]
     },
   {
