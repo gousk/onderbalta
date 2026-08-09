@@ -4,12 +4,26 @@ import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUnifo
 
 const canvas = document.querySelector("#roomCanvas");
 const roomStage = document.querySelector(".room-stage");
+const metaDescription = document.querySelector("#metaDescription");
 const loadingScreen = document.querySelector("#loadingScreen");
 const webglFallback = document.querySelector("#webglFallback");
 const viewCursor = document.querySelector("#viewCursor");
 const siteHeader = document.querySelector("#siteHeader");
 const headerWordmark = document.querySelector("#headerWordmark");
+const primaryNav = document.querySelector("#primaryNav");
+const homeButton = document.querySelector("#homeButton");
+const aboutMeButton = document.querySelector("#aboutMeButton");
+const languageSwitch = document.querySelector("#languageSwitch");
+const languageEnglish = document.querySelector("#languageEnglish");
+const languageTurkish = document.querySelector("#languageTurkish");
+const aboutGameButton = document.querySelector("#aboutGameButton");
+const aboutWindow = document.querySelector("#aboutWindow");
+const aboutWindowBar = document.querySelector("#aboutWindowBar");
+const aboutWindowTitle = document.querySelector("#aboutWindowTitle");
+const aboutWindowClose = document.querySelector("#aboutWindowClose");
+const headerInfoText = document.querySelector("#headerInfoText");
 const projectPanel = document.querySelector("#projectPanel");
+const projectWindowTitle = document.querySelector("#projectWindowTitle");
 const projectClose = document.querySelector("#projectClose");
 const projectMeta = document.querySelector("#projectMeta");
 const projectTitle = document.querySelector("#projectTitle");
@@ -29,18 +43,96 @@ const cleanGalleryPrev = document.querySelector("#cleanGalleryPrev");
 const cleanGalleryNext = document.querySelector("#cleanGalleryNext");
 const cleanGalleryCount = document.querySelector("#cleanGalleryCount");
 
+const MOBILE_LAYOUT_QUERY = window.matchMedia(
+  "(max-width: 760px) and (orientation: portrait)",
+);
+const FORCE_MOBILE_PREVIEW =
+  new URLSearchParams(window.location.search).get("mobile") === "1";
+let mobileLayoutActive = FORCE_MOBILE_PREVIEW || MOBILE_LAYOUT_QUERY.matches;
+
+document.documentElement.classList.toggle(
+  "is-mobile-preview",
+  FORCE_MOBILE_PREVIEW,
+);
+document.documentElement.classList.toggle(
+  "is-mobile-layout",
+  mobileLayoutActive,
+);
+
+function getStageViewport() {
+  const bounds = roomStage.getBoundingClientRect();
+  return {
+    width: Math.max(1, bounds.width),
+    height: Math.max(1, bounds.height),
+    left: bounds.left,
+    top: bounds.top,
+  };
+}
+
+function getRendererPixelRatio() {
+  const maximumPixelRatio = mobileLayoutActive ? 1.25 : 2;
+  return Math.min(window.devicePixelRatio, maximumPixelRatio);
+}
+
 const ROOM_WIDTH = 18;
 const ROOM_HEIGHT = 6;
 const ROOM_DEPTH = 18;
-const EYE_HEIGHT = 2.82;
+const EYE_HEIGHT = 2.38;
+const DEFAULT_CAMERA_Z = -1.35;
 const TV_TARGET_HEIGHT = 1.6;
 const TV_WALL_Z = -ROOM_DEPTH / 2 + 0.04;
 const TV_HORIZONTAL_GAP = 0.015;
 const TV_VERTICAL_GAP = -0.035;
-const TV_WALL_ROWS = [
+const TV_DESKTOP_WALL_ROWS = [
   { offsetX: -0.08, scales: [1, 0.98, 1.01, 0.97, 0.99] },
   { offsetX: 0.12, scales: [0.98, 1, 0.97, 1.01, 0.98] },
   { offsetX: -0.04, scales: [0.99, 0.97, 1, 0.98] },
+];
+const TV_MOBILE_WALL_ROWS = [
+  {
+    offsetX: -0.015,
+    columns: 3,
+    entries: [
+      { rowIndex: 1, unitIndex: 4, scale: 0.71, columnIndex: 0 },
+      { rowIndex: 2, unitIndex: 3, scale: 0.72, columnIndex: 1 },
+      { rowIndex: 0, unitIndex: 4, scale: 0.71, columnIndex: 2 },
+    ],
+  },
+  {
+    offsetX: 0.02,
+    columns: 3,
+    entries: [
+      { rowIndex: 1, unitIndex: 3, scale: 0.71, columnIndex: 0 },
+      { rowIndex: 2, unitIndex: 2, scale: 0.71, columnIndex: 1 },
+      { rowIndex: 0, unitIndex: 3, scale: 0.72, columnIndex: 2 },
+    ],
+  },
+  {
+    offsetX: -0.025,
+    columns: 3,
+    entries: [
+      { rowIndex: 1, unitIndex: 2, scale: 0.7, columnIndex: 0 },
+      { rowIndex: 2, unitIndex: 1, scale: 0.69, columnIndex: 1 },
+      { rowIndex: 0, unitIndex: 2, scale: 0.7, columnIndex: 2 },
+    ],
+  },
+  {
+    offsetX: 0.025,
+    columns: 3,
+    entries: [
+      { rowIndex: 1, unitIndex: 1, scale: 0.71, columnIndex: 0 },
+      { rowIndex: 2, unitIndex: 0, scale: 0.7, columnIndex: 1 },
+      { rowIndex: 0, unitIndex: 1, scale: 0.72, columnIndex: 2 },
+    ],
+  },
+  {
+    offsetX: -0.02,
+    columns: 3,
+    entries: [
+      { rowIndex: 1, unitIndex: 0, scale: 0.7, columnIndex: 0 },
+      { rowIndex: 0, unitIndex: 0, scale: 0.71, columnIndex: 2 },
+    ],
+  },
 ];
 const SOCIAL_LINKS = {
   socialLinkedin: {
@@ -99,43 +191,270 @@ const TV_SCREEN_MEDIA = {
 const TV_PROJECTS = {
   scene01: {
     title: "scene 01",
-    meta: "environment   2026",
+    meta: "2025",
     description:
-      "A Unity environment study built around procedural god rays bird flocks and horse systems",
+      "A Unity environment study built around procedural god rays, bird flocks, and horse systems.",
   },
   scene02: {
     title: "scene 02",
-    meta: "environment   2026",
+    meta: "2025",
     description:
-      "A Unity experiment focused on procedural blob tracking and responsive motion",
+      "A Unity experiment focused on procedural blob tracking and responsive motion.",
   },
   scene03: {
     title: "scene 03",
-    meta: "environment   2026",
+    meta: "2025",
     description:
-      "A test intro sequence created for Bicycle Club games and videos",
+      "A test intro sequence created for bicycle club games and videos.",
   },
   bicycleVideo: {
     title: "bicycle club",
-    meta: "website   2026",
+    meta: "2025",
     description:
-      "A dense terminal inspired platform built with React Vite Supabase and an interface shaped by ASCII imagery",
+      "A dense, terminal-inspired platform built with React, Vite, and Supabase, with an interface shaped by ASCII imagery.",
     url: "https://bicycleclub.net",
     gallery: [
       {
         src: "assets/optimized-media/bicycle-club-site.webp",
-        alt: "Bicycle Club website interface",
+        alt: "bicycle club website interface",
       },
     ],
   },
   nullGame: {
     title: "null",
-    meta: "game   prototype",
+    meta: "2025",
     description:
-      "A fast paced level based movement shooter currently being developed as a playable prototype",
+      "A fast-paced, level-based movement shooter currently being developed as a playable prototype.",
     url: "https://gousk.itch.io/null",
   },
+  deliveryGuy: {
+    title: "delivery guy simulator",
+    meta: "2025",
+    description:
+      "A delivery game we are currently developing as bicycle club.",
+    url: "https://store.steampowered.com/app/3377340/Delivery_Guy_Simulator/",
+    previewUrl: "https://www.youtube.com/watch?v=leXbs1gXaL4",
+    linkLabel: "wishlist on steam",
+  },
 };
+
+const UI_COPY = {
+  en: {
+    documentTitle: "onder balta - game developer",
+    metaDescription: "A three-dimensional portfolio space by onder balta.",
+    roomLabel: "3D portfolio space",
+    canvasLabel: "A concrete room viewed from its center",
+    webglFallback: "This 3D space requires WebGL to be enabled in your browser.",
+    primaryNavigation: "Primary navigation",
+    home: "home",
+    aboutMe: "about me",
+    switchLanguage: "Switch language to Turkish",
+    aboutWindowTitle: "about_me.txt",
+    closeAbout: "Close about window",
+    aboutText:
+      "Hey, Im Önder. I am an information systems engineering graduate and a game developer interested in technical art and stylized graphics. Currently developing our own game, Delivery Guy Simulator, as bicycle club. If you find it interesting, please check it out and consider adding it to your wishlist.",
+    showDeliveryGuy: "show delivery guy simulator",
+    projectWindowTitle: "project_view.exe",
+    closeProject: "Close project view",
+    view: "view",
+    click: "click",
+    viewGallery: "view gallery",
+    watch: "watch",
+    visitProject: "visit project",
+    wishlistOnSteam: "wishlist on steam",
+    viewProject: (title) => `View ${title}`,
+    watchProject: (title) => `Watch ${title}`,
+    backToRoom: "back to room",
+    previous: "prev",
+    next: "next",
+    previousImage: "Previous image",
+    nextImage: "Next image",
+    imageAlt: (title) => `${title} image`,
+    previewAlt: (title) => `${title} preview`,
+    media: "media",
+  },
+  tr: {
+    documentTitle: "onder balta - game developer",
+    metaDescription: "onder balta tarafından oluşturulan üç boyutlu portfolyo alanı.",
+    roomLabel: "3B portfolyo alanı",
+    canvasLabel: "Merkezinden görülen beton bir oda",
+    webglFallback: "Bu 3B alanı görüntülemek için tarayıcınızda WebGL etkin olmalıdır.",
+    primaryNavigation: "Ana navigasyon",
+    home: "ana sayfa",
+    aboutMe: "hakkımda",
+    switchLanguage: "Dili İngilizceye çevir",
+    aboutWindowTitle: "hakkımda.txt",
+    closeAbout: "Hakkımda penceresini kapat",
+    aboutText:
+      "Merhabalar ben Önder, bilişim sistemleri mühendisliği mezunu bir oyun geliştiricisiyim. Technical art ve stilize grafikler ile ilgiliyim. Aktif olarak bicycle club adı altında kendi oyunumuz Delivery Guy Simulator’ı geliştiriyoruz. İlginizi çekerse göz atmanız ve istek listenize eklemeniz bizi mutlu eder.",
+    showDeliveryGuy: "Delivery Guy Simulator’ı incele",
+    projectWindowTitle: "proje_gorunumu.exe",
+    closeProject: "Proje görünümünü kapat",
+    view: "incele",
+    click: "tıkla",
+    viewGallery: "galeriyi aç",
+    watch: "izle",
+    visitProject: "projeyi ziyaret et",
+    wishlistOnSteam: "steam istek listesine ekle",
+    viewProject: (title) => `${title} projesini görüntüle`,
+    watchProject: (title) => `${title} videosunu izle`,
+    backToRoom: "odaya dön",
+    previous: "önceki",
+    next: "sonraki",
+    previousImage: "Önceki görsel",
+    nextImage: "Sonraki görsel",
+    imageAlt: (title) => `${title} görseli`,
+    previewAlt: (title) => `${title} önizlemesi`,
+    media: "medya",
+  },
+};
+
+const PROJECT_COPY = {
+  en: {
+    scene01: {
+      title: "scene 01",
+      meta: "2025",
+      description:
+        "A Unity environment study built around procedural god rays, bird flocks, and horse systems.",
+    },
+    scene02: {
+      title: "scene 02",
+      meta: "2025",
+      description:
+        "A Unity experiment focused on procedural blob tracking and responsive motion.",
+    },
+    scene03: {
+      title: "scene 03",
+      meta: "2025",
+      description: "A test intro sequence created for bicycle club games and videos.",
+    },
+    bicycleVideo: {
+      title: "bicycle club",
+      meta: "2025",
+      description:
+        "A dense, terminal-inspired platform built with React, Vite, and Supabase, with an interface shaped by ASCII imagery.",
+      galleryAlts: ["bicycle club website interface"],
+    },
+    nullGame: {
+      title: "null",
+      meta: "2025",
+      description:
+        "A fast-paced, level-based movement shooter currently being developed as a playable prototype.",
+    },
+    deliveryGuy: {
+      title: "delivery guy simulator",
+      meta: "2025",
+      description: "A delivery game we are currently developing as bicycle club.",
+      linkLabel: "wishlist on steam",
+    },
+  },
+  tr: {
+    scene01: {
+      title: "sahne 01",
+      meta: "2025",
+      description:
+        "Prosedürel tanrı ışınları, kuş sürüleri ve at sistemleri etrafında geliştirilmiş bir Unity çevre çalışması.",
+    },
+    scene02: {
+      title: "sahne 02",
+      meta: "2025",
+      description:
+        "Prosedürel blob takibi ve duyarlı hareket üzerine odaklanan bir Unity deneyi.",
+    },
+    scene03: {
+      title: "sahne 03",
+      meta: "2025",
+      description:
+        "bicycle club oyunları ve videoları için hazırlanmış bir intro sekansı denemesi.",
+    },
+    bicycleVideo: {
+      title: "bicycle club",
+      meta: "2025",
+      description:
+        "React, Vite ve Supabase ile geliştirilmiş, arayüzü ASCII görselleri etrafında şekillenen yoğun ve terminal esintili bir platform.",
+      galleryAlts: ["bicycle club web sitesi arayüzü"],
+    },
+    nullGame: {
+      title: "null",
+      meta: "2025",
+      description:
+        "Oynanabilir bir prototip olarak geliştirilen hızlı tempolu, bölüm tabanlı bir hareket nişancı oyunu.",
+    },
+    deliveryGuy: {
+      title: "delivery guy simulator",
+      meta: "2025",
+      description: "bicycle club olarak geliştirmekte olduğumuz bir teslimat oyunu.",
+      linkLabel: "steam istek listesine ekle",
+    },
+  },
+};
+
+const LANGUAGE_STORAGE_KEY = "onderbalta.language";
+let currentLanguage = "en";
+
+function getSavedLanguage() {
+  try {
+    const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return UI_COPY[savedLanguage] ? savedLanguage : "en";
+  } catch (error) {
+    return "en";
+  }
+}
+
+function saveLanguage(language) {
+  try {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch (error) {
+    // The selected language still works for this visit if storage is unavailable.
+  }
+}
+
+function getUiCopy() {
+  return UI_COPY[currentLanguage];
+}
+
+const ONDER_FONT_ASCII_MAP = Object.freeze({
+  Ç: "C",
+  Ğ: "G",
+  İ: "I",
+  Ö: "O",
+  Ş: "S",
+  Ü: "U",
+  Â: "A",
+  Î: "I",
+  Û: "U",
+  ç: "c",
+  ğ: "g",
+  ı: "i",
+  ö: "o",
+  ş: "s",
+  ü: "u",
+  â: "a",
+  î: "i",
+  û: "u",
+});
+
+function formatForOnderFont(value) {
+  return String(value ?? "").replace(
+    /[ÇĞİÖŞÜÂÎÛçğıöşüâîû]/g,
+    (character) => ONDER_FONT_ASCII_MAP[character],
+  );
+}
+
+function getLocalizedProject(mediaKey) {
+  const project = TV_PROJECTS[mediaKey];
+  if (!project) return null;
+
+  const localizedCopy = PROJECT_COPY[currentLanguage]?.[mediaKey] ?? {};
+  const localizedProject = { ...project, ...localizedCopy };
+  if (Array.isArray(project.gallery)) {
+    localizedProject.gallery = project.gallery.map((item, index) => ({
+      ...item,
+      alt: localizedCopy.galleryAlts?.[index] ?? item.alt,
+    }));
+  }
+  return localizedProject;
+}
 
 let renderer;
 
@@ -151,8 +470,9 @@ try {
   throw error;
 }
 
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight, false);
+const initialViewport = getStageViewport();
+renderer.setPixelRatio(getRendererPixelRatio());
+renderer.setSize(initialViewport.width, initialViewport.height, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.82;
@@ -164,12 +484,12 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x171819);
 
 const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
+  mobileLayoutActive ? 52 : 60,
+  initialViewport.width / initialViewport.height,
   0.1,
   100,
 );
-camera.position.set(0, EYE_HEIGHT, 0);
+camera.position.set(0, EYE_HEIGHT, DEFAULT_CAMERA_Z);
 camera.lookAt(0, EYE_HEIGHT, -ROOM_DEPTH / 2);
 
 const pointerTarget = new THREE.Vector2();
@@ -190,6 +510,188 @@ const interactionWorldPosition = new THREE.Vector3();
 const focusedScreenBounds = new THREE.Box3();
 const projectedScreenCorner = new THREE.Vector3();
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+let headerInfoHasTyped = false;
+let headerInfoTypingTimer = null;
+const headerInfoTypingWords = [];
+let aboutWindowRequestedOpen = false;
+let aboutWindowHasAutoOpened = false;
+let aboutWindowAutoOpenTimer = null;
+let aboutWindowDragState = null;
+
+function prepareHeaderInfoTypingText() {
+  const fullText = headerInfoText.dataset.text ?? "";
+  const typingFragment = document.createDocumentFragment();
+  headerInfoTypingWords.length = 0;
+
+  fullText.split(/(\s+)/).forEach((textPart) => {
+    if (/^\s+$/.test(textPart)) {
+      typingFragment.append(document.createTextNode(textPart));
+      return;
+    }
+
+    const word = document.createElement("span");
+    word.className = "header-info-word";
+    word.textContent = textPart;
+    headerInfoTypingWords.push(word);
+    typingFragment.append(word);
+  });
+
+  headerInfoText.replaceChildren(typingFragment);
+}
+
+function beginHeaderInfoTyping() {
+  if (
+    headerInfoHasTyped ||
+    headerInfoTypingTimer !== null ||
+    !aboutWindow.classList.contains("is-visible")
+  ) {
+    return;
+  }
+
+  if (reducedMotionQuery.matches) {
+    headerInfoTypingWords.forEach((word) => {
+      word.classList.add("is-visible");
+    });
+    headerInfoHasTyped = true;
+    return;
+  }
+
+  headerInfoTypingTimer = window.setTimeout(() => {
+    headerInfoTypingTimer = null;
+    if (!aboutWindow.classList.contains("is-visible")) return;
+
+    headerInfoHasTyped = true;
+    let wordIndex = 0;
+
+    const typeNextWord = () => {
+      headerInfoTypingWords[wordIndex]?.classList.add("is-visible");
+      wordIndex += 1;
+
+      if (wordIndex < headerInfoTypingWords.length) {
+        headerInfoTypingTimer = window.setTimeout(typeNextWord, 46);
+        return;
+      }
+
+      headerInfoTypingTimer = null;
+    };
+
+    typeNextWord();
+  }, 680);
+}
+
+function syncAboutWindowVisibility() {
+  const shouldShowAboutWindow =
+    aboutWindowRequestedOpen && siteHeaderVisible;
+  aboutWindow.classList.toggle("is-visible", shouldShowAboutWindow);
+  aboutWindow.setAttribute("aria-hidden", String(!shouldShowAboutWindow));
+  aboutWindow.inert = !shouldShowAboutWindow;
+
+  if (shouldShowAboutWindow) beginHeaderInfoTyping();
+}
+
+function openAboutWindow() {
+  aboutWindowRequestedOpen = true;
+  syncAboutWindowVisibility();
+}
+
+function closeAboutWindow() {
+  aboutWindowRequestedOpen = false;
+  syncAboutWindowVisibility();
+  aboutMeButton.focus({ preventScroll: true });
+}
+
+function clampAboutWindowPosition() {
+  if (mobileLayoutActive) {
+    aboutWindow.style.removeProperty("left");
+    aboutWindow.style.removeProperty("top");
+    return;
+  }
+  if (!aboutWindow.style.left || !aboutWindow.style.top) return;
+
+  const bounds = aboutWindow.getBoundingClientRect();
+  const edgeInset = window.innerWidth <= 700 ? 8 : 12;
+  const nextLeft = THREE.MathUtils.clamp(
+    bounds.left,
+    edgeInset,
+    Math.max(edgeInset, window.innerWidth - bounds.width - edgeInset),
+  );
+  const nextTop = THREE.MathUtils.clamp(
+    bounds.top,
+    edgeInset,
+    Math.max(edgeInset, window.innerHeight - bounds.height - edgeInset),
+  );
+  aboutWindow.style.left = `${nextLeft}px`;
+  aboutWindow.style.top = `${nextTop}px`;
+}
+
+aboutMeButton.addEventListener("click", openAboutWindow);
+aboutWindowClose.addEventListener("click", closeAboutWindow);
+aboutGameButton.addEventListener("click", () => {
+  const deliveryGuyScreen = allScreenEntries.find(
+    (entry) => entry.mediaKey === "deliveryGuy",
+  );
+  if (!deliveryGuyScreen || focusedScreen) return;
+
+  aboutWindowRequestedOpen = false;
+  syncAboutWindowVisibility();
+  focusProjectScreen(deliveryGuyScreen);
+});
+
+aboutWindowBar.addEventListener("pointerdown", (event) => {
+  if (
+    mobileLayoutActive ||
+    event.button !== 0 ||
+    event.target.closest("button")
+  ) return;
+
+  const bounds = aboutWindow.getBoundingClientRect();
+  aboutWindow.style.left = `${bounds.left}px`;
+  aboutWindow.style.top = `${bounds.top}px`;
+  aboutWindowDragState = {
+    pointerId: event.pointerId,
+    pointerX: event.clientX,
+    pointerY: event.clientY,
+    windowX: bounds.left,
+    windowY: bounds.top,
+  };
+  aboutWindowBar.setPointerCapture(event.pointerId);
+  event.preventDefault();
+});
+
+aboutWindowBar.addEventListener("pointermove", (event) => {
+  if (aboutWindowDragState?.pointerId !== event.pointerId) return;
+
+  const bounds = aboutWindow.getBoundingClientRect();
+  const edgeInset = window.innerWidth <= 700 ? 8 : 12;
+  const nextLeft = THREE.MathUtils.clamp(
+    aboutWindowDragState.windowX +
+      event.clientX -
+      aboutWindowDragState.pointerX,
+    edgeInset,
+    Math.max(edgeInset, window.innerWidth - bounds.width - edgeInset),
+  );
+  const nextTop = THREE.MathUtils.clamp(
+    aboutWindowDragState.windowY +
+      event.clientY -
+      aboutWindowDragState.pointerY,
+    edgeInset,
+    Math.max(edgeInset, window.innerHeight - bounds.height - edgeInset),
+  );
+  aboutWindow.style.left = `${nextLeft}px`;
+  aboutWindow.style.top = `${nextTop}px`;
+});
+
+function finishAboutWindowDrag(event) {
+  if (aboutWindowDragState?.pointerId !== event.pointerId) return;
+  if (aboutWindowBar.hasPointerCapture(event.pointerId)) {
+    aboutWindowBar.releasePointerCapture(event.pointerId);
+  }
+  aboutWindowDragState = null;
+}
+
+aboutWindowBar.addEventListener("pointerup", finishAboutWindowDrag);
+aboutWindowBar.addEventListener("pointercancel", finishAboutWindowDrag);
+
 const FOCUS_RELEASE_THRESHOLD = 0.03;
 let hoveredScreen = null;
 let focusedScreen = null;
@@ -200,22 +702,137 @@ let cleanViewMode = null;
 let cleanGalleryItems = [];
 let cleanGalleryIndex = 0;
 let previousFrameTime = performance.now() * 0.001;
+const SCENE_BLOCKING_UI_SELECTOR = [
+  ".site-header",
+  ".about-window",
+  ".project-panel",
+  ".clean-view",
+].join(",");
+
+function setLanguage(language) {
+  if (!UI_COPY[language]) return;
+  currentLanguage = language;
+  saveLanguage(language);
+  const copy = getUiCopy();
+
+  document.documentElement.lang = language;
+  document.title = copy.documentTitle;
+  metaDescription.content = copy.metaDescription;
+  roomStage.setAttribute("aria-label", copy.roomLabel);
+  canvas.setAttribute("aria-label", copy.canvasLabel);
+  webglFallback.textContent = copy.webglFallback;
+  primaryNav.setAttribute("aria-label", copy.primaryNavigation);
+  homeButton.textContent = copy.home;
+  aboutMeButton.textContent = copy.aboutMe;
+  languageSwitch.setAttribute("aria-label", copy.switchLanguage);
+  languageEnglish.classList.toggle("is-active", language === "en");
+  languageTurkish.classList.toggle("is-active", language === "tr");
+  aboutWindowTitle.textContent = copy.aboutWindowTitle;
+  aboutWindowClose.setAttribute("aria-label", copy.closeAbout);
+  aboutGameButton.textContent = copy.showDeliveryGuy;
+  projectWindowTitle.textContent = copy.projectWindowTitle;
+  projectClose.setAttribute("aria-label", copy.closeProject);
+  cleanViewClose.textContent = copy.backToRoom;
+  cleanGalleryPrev.textContent = copy.previous;
+  cleanGalleryPrev.setAttribute("aria-label", copy.previousImage);
+  cleanGalleryNext.textContent = copy.next;
+  cleanGalleryNext.setAttribute("aria-label", copy.nextImage);
+
+  if (headerInfoTypingTimer !== null) {
+    window.clearTimeout(headerInfoTypingTimer);
+    headerInfoTypingTimer = null;
+  }
+  headerInfoHasTyped = false;
+  headerInfoText.dataset.text = copy.aboutText;
+  headerInfoText.setAttribute("aria-label", copy.aboutText);
+  prepareHeaderInfoTypingText();
+  if (aboutWindow.classList.contains("is-visible")) beginHeaderInfoTyping();
+
+  updateViewCursorLabel();
+
+  if (focusedScreen && projectPanel.classList.contains("is-visible")) {
+    const panelOnLeft = projectPanel.classList.contains("is-left");
+    showProjectPanel(
+      getLocalizedProject(focusedScreen.mediaKey),
+      panelOnLeft,
+      focusedScreen.mediaKey,
+    );
+  }
+
+  if (focusedScreen && cleanView.classList.contains("is-visible")) {
+    const mediaKey = focusedScreen.mediaKey;
+    const project = getLocalizedProject(mediaKey);
+    cleanViewTitle.textContent = project?.title ?? copy.media;
+    if (cleanViewMode === "gallery") {
+      cleanGalleryItems = getProjectGallery(project, TV_SCREEN_MEDIA[mediaKey]);
+      showCleanGalleryItem(cleanGalleryIndex);
+    }
+  }
+}
+
+languageSwitch.addEventListener("click", () => {
+  setLanguage(currentLanguage === "en" ? "tr" : "en");
+});
+
+setLanguage(getSavedLanguage());
+
+function suspendScenePointerInteractions() {
+  pointerTarget.set(0, 0);
+  pointerNdc.set(2, 2);
+  setHoveredScreen(null);
+  roomStage.classList.remove("is-screen-hovered");
+  viewCursor.classList.remove("is-visible");
+}
 
 function handlePointerMove(event) {
+  viewCursor.style.transform = `translate3d(${event.clientX + 16}px, ${event.clientY + 16}px, 0)`;
+  if (
+    event.target instanceof Element &&
+    event.target.closest(SCENE_BLOCKING_UI_SELECTOR)
+  ) {
+    suspendScenePointerInteractions();
+    return;
+  }
+
+  const viewport = getStageViewport();
+  if (
+    event.clientX < viewport.left ||
+    event.clientX > viewport.left + viewport.width ||
+    event.clientY < viewport.top ||
+    event.clientY > viewport.top + viewport.height
+  ) {
+    suspendScenePointerInteractions();
+    return;
+  }
   const pointerX = THREE.MathUtils.clamp(
-    (event.clientX / window.innerWidth) * 2 - 1,
+    ((event.clientX - viewport.left) / viewport.width) * 2 - 1,
     -1,
     1,
   );
   const pointerY = THREE.MathUtils.clamp(
-    1 - (event.clientY / window.innerHeight) * 2,
+    1 - ((event.clientY - viewport.top) / viewport.height) * 2,
     -1,
     1,
   );
 
   pointerTarget.set(pointerX, pointerY);
   pointerNdc.set(pointerX, pointerY);
-  viewCursor.style.transform = `translate3d(${event.clientX + 16}px, ${event.clientY + 16}px, 0)`;
+}
+
+function syncPointerFromEvent(event) {
+  const viewport = getStageViewport();
+  const pointerX = THREE.MathUtils.clamp(
+    ((event.clientX - viewport.left) / viewport.width) * 2 - 1,
+    -1,
+    1,
+  );
+  const pointerY = THREE.MathUtils.clamp(
+    1 - ((event.clientY - viewport.top) / viewport.height) * 2,
+    -1,
+    1,
+  );
+  pointerNdc.set(pointerX, pointerY);
+  if (!mobileLayoutActive) pointerTarget.set(pointerX, pointerY);
 }
 
 function resetPointerTarget() {
@@ -225,7 +842,13 @@ function resetPointerTarget() {
 }
 
 window.addEventListener("pointermove", handlePointerMove, { passive: true });
+canvas.addEventListener("pointerdown", syncPointerFromEvent, { passive: true });
 document.documentElement.addEventListener("mouseleave", resetPointerTarget);
+[siteHeader, aboutWindow, projectPanel, cleanView].forEach((element) => {
+  element.addEventListener("pointerenter", suspendScenePointerInteractions);
+});
+aboutWindow.addEventListener("pointerdown", (event) => event.stopPropagation());
+aboutWindow.addEventListener("click", (event) => event.stopPropagation());
 
 const smoothWhiteMaterial = new THREE.MeshStandardMaterial({
   color: 0xf7f7f4,
@@ -369,7 +992,10 @@ const keyLight = new THREE.SpotLight(
 keyLight.position.set(0, ROOM_HEIGHT - 0.36, -1.5);
 keyLight.target.position.set(0, 0.5, -5);
 keyLight.castShadow = true;
-keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.mapSize.set(
+  mobileLayoutActive ? 1024 : 2048,
+  mobileLayoutActive ? 1024 : 2048,
+);
 keyLight.shadow.camera.near = 0.2;
 keyLight.shadow.camera.far = 18;
 keyLight.shadow.bias = -0.00025;
@@ -398,6 +1024,7 @@ function createCeilingFixture(z, intensity) {
   );
   housing.position.set(0, ROOM_HEIGHT - 0.075, z);
   housing.castShadow = true;
+  housing.visible = !mobileLayoutActive;
   scene.add(housing);
 
   const panel = new THREE.Mesh(
@@ -406,6 +1033,7 @@ function createCeilingFixture(z, intensity) {
   );
   panel.position.set(0, ROOM_HEIGHT - 0.132, z);
   panel.rotation.x = Math.PI / 2;
+  panel.visible = !mobileLayoutActive;
   scene.add(panel);
 
   const areaLight = new THREE.RectAreaLight(
@@ -417,7 +1045,12 @@ function createCeilingFixture(z, intensity) {
   areaLight.position.set(0, ROOM_HEIGHT - 0.16, z);
   areaLight.lookAt(0, 0, z);
   scene.add(areaLight);
-  ceilingFixtures.push({ areaLight, baseIntensity: intensity });
+  ceilingFixtures.push({
+    areaLight,
+    baseIntensity: intensity,
+    housing,
+    panel,
+  });
 }
 
 createCeilingFixture(3.8, 2.1);
@@ -449,33 +1082,37 @@ let nextScreenLightSampleAt = 0;
 
 const sharedTitleCanvas = document.createElement("canvas");
 const sharedTitleContext = sharedTitleCanvas.getContext("2d");
-const FLOATING_TITLE_ENABLED = false;
 const INTRO_HANDOFF_DURATION = 0.92;
 const INTRO_FADE_DURATION = 0.9;
 const INTRO_POWER_DURATION = 1.15;
+const SOCIAL_ICON_REVEAL_DELAY = 0.18;
+const SOCIAL_ICON_REVEAL_DURATION = 1.72;
 const INTRO_CAMERA_PULL_DURATION = INTRO_HANDOFF_DURATION + INTRO_FADE_DURATION;
 const GRAYSCALE_FADE_DELAY = 0.34;
 const GRAYSCALE_FADE_DURATION = 0.82;
+const INTRO_CUE_IDLE_DELAY = 4.2;
+const INTRO_CUE_REVEAL_DURATION = 0.28;
 const CRT_SCREEN_ASPECT = 1.3126972362;
 const INTRO_HOVER_OUTER_RANGE = 1.55;
-const INTRO_CAMERA_Z = -1.35;
+const INTRO_CAMERA_Z = -1.8;
 const INTRO_CAMERA_HEIGHT = 2.38;
+const MOBILE_DEFAULT_CAMERA_Z = -0.35;
+const MOBILE_INTRO_CAMERA_Z = -1.16;
+const MOBILE_DEFAULT_CAMERA_HEIGHT = 3.18;
+const MOBILE_INTRO_CAMERA_HEIGHT = 2.72;
 let sharedTitleWallAspect = 1.6;
 let sharedTitleTexture;
 let introTitleTexture;
 let introLetterTitleBounds = null;
 let introHoverHitArea = null;
+let introClickHitArea = null;
 let introStage = "waiting";
 let introStageStartedAt = 0;
 let introSequenceStartedAt = 0;
 let introCompletedAt = 0;
+let introCueIdleStartedAt = null;
 let siteHeaderVisible = false;
 const introWaveOrigin = new THREE.Vector2(0.5, 0.5);
-let floatingTitleGroup = null;
-let floatingTitleHitArea = null;
-const floatingTitleLetters = [];
-let titleTransferAmount = 0;
-let titleTransferTarget = 0;
 
 function getIntroTitleLayout(context, canvasWidth, canvasHeight) {
   const preferredFontSize = canvasHeight * 0.43;
@@ -668,34 +1305,38 @@ function drawIntroTitleTexture(wallAspect = sharedTitleWallAspect) {
     960,
     1600,
   );
-  introTitleCanvas.width = canvasWidth;
-  introTitleCanvas.height = canvasHeight;
+  if (
+    introTitleCanvas.width !== canvasWidth ||
+    introTitleCanvas.height !== canvasHeight
+  ) {
+    introTitleCanvas.width = canvasWidth;
+    introTitleCanvas.height = canvasHeight;
+  }
   introTitleContext.clearRect(0, 0, introTitleCanvas.width, introTitleCanvas.height);
-  if (drawIntroTvLetters(
+  const drewTvLetters = drawIntroTvLetters(
     introTitleContext,
     introTitleCanvas.width,
     introTitleCanvas.height,
     true,
-  )) {
-    if (introTitleTexture) introTitleTexture.needsUpdate = true;
-    return;
-  }
-
-  const titleLayout = getIntroTitleLayout(
-    introTitleContext,
-    introTitleCanvas.width,
-    introTitleCanvas.height,
   );
-  introTitleContext.textAlign = "center";
-  introTitleContext.textBaseline = "middle";
-  introTitleContext.font = `500 ${titleLayout.fontSize}px "Onder Medium", sans-serif`;
-  introTitleContext.fillStyle = "#ffffff";
-  introTitleContext.shadowColor = "rgba(255, 255, 255, 0.76)";
-  introTitleContext.shadowBlur = Math.max(24, introTitleCanvas.height * 0.025);
-  titleLayout.lines.forEach(({ text, y }) => {
-    introTitleContext.fillText(text, introTitleCanvas.width * 0.5, y);
-  });
-  introTitleContext.shadowBlur = 0;
+
+  if (!drewTvLetters) {
+    const titleLayout = getIntroTitleLayout(
+      introTitleContext,
+      introTitleCanvas.width,
+      introTitleCanvas.height,
+    );
+    introTitleContext.textAlign = "center";
+    introTitleContext.textBaseline = "middle";
+    introTitleContext.font = `500 ${titleLayout.fontSize}px "Onder Medium", sans-serif`;
+    introTitleContext.fillStyle = "#ffffff";
+    introTitleContext.shadowColor = "rgba(255, 255, 255, 0.76)";
+    introTitleContext.shadowBlur = Math.max(24, introTitleCanvas.height * 0.025);
+    titleLayout.lines.forEach(({ text, y }) => {
+      introTitleContext.fillText(text, introTitleCanvas.width * 0.5, y);
+    });
+    introTitleContext.shadowBlur = 0;
+  }
 
   if (introTitleTexture) introTitleTexture.needsUpdate = true;
 }
@@ -709,6 +1350,17 @@ introTitleTexture.anisotropy = Math.min(
   renderer.capabilities.getMaxAnisotropy(),
   8,
 );
+
+const introCueSpriteTexture = new THREE.TextureLoader().load(
+  "assets/optimized-media/chicago95-arrow-cursor.png",
+  render,
+);
+introCueSpriteTexture.colorSpace = THREE.SRGBColorSpace;
+introCueSpriteTexture.minFilter = THREE.NearestFilter;
+introCueSpriteTexture.magFilter = THREE.NearestFilter;
+introCueSpriteTexture.generateMipmaps = false;
+introCueSpriteTexture.wrapS = THREE.ClampToEdgeWrapping;
+introCueSpriteTexture.wrapT = THREE.ClampToEdgeWrapping;
 
 const introLetterTextureCache = new Map();
 
@@ -726,7 +1378,7 @@ function drawIntroLetterTextureSet(letterSet) {
   maskCanvas.width = width;
   maskCanvas.height = height;
   const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
-  const fontSize = height * 0.64;
+  const fontSize = height * (mobileLayoutActive ? 0.74 : 0.64);
 
   regularContext.clearRect(0, 0, width, height);
   regularContext.fillStyle = "#ffffff";
@@ -743,7 +1395,7 @@ function drawIntroLetterTextureSet(letterSet) {
   const maskPixels = maskContext.getImageData(0, 0, width, height).data;
   const asciiContext = asciiCanvas.getContext("2d");
   const characters = ".`',:;~-+=*#%@";
-  const cellSize = 16;
+  const cellSize = mobileLayoutActive ? 28 : 16;
   asciiContext.clearRect(0, 0, width, height);
   asciiContext.textAlign = "center";
   asciiContext.textBaseline = "middle";
@@ -828,32 +1480,6 @@ function getIntroLetterTextureSet(character) {
   return letterSet;
 }
 
-function drawFloatingTitleLetter(letterEntry) {
-  const { canvas, character, texture } = letterEntry;
-  const context = canvas.getContext("2d");
-  const fontSize = 240;
-  context.font = `500 ${fontSize}px "Onder Medium", sans-serif`;
-  const measuredWidth = context.measureText(character).width;
-  canvas.width = Math.ceil(measuredWidth + 104);
-  canvas.height = 340;
-
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.font = `500 ${fontSize}px "Onder Medium", sans-serif`;
-  context.fillStyle = "#ffffff";
-  context.shadowColor = "rgba(255, 255, 255, 0.82)";
-  context.shadowBlur = 34;
-  context.fillText(character, canvas.width * 0.5, canvas.height * 0.51);
-  context.shadowBlur = 0;
-
-  if (texture) texture.needsUpdate = true;
-}
-
-function redrawFloatingTitleLetters() {
-  floatingTitleLetters.forEach((entry) => drawFloatingTitleLetter(entry));
-}
-
 const socialScreenCanvases = new Map();
 const socialScreenTextures = new Map();
 const socialAsciiScreenCanvases = new Map();
@@ -867,7 +1493,8 @@ function drawSocialIconMask(mediaKey, maskCanvas) {
   maskContext.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
   maskContext.fillStyle = "#ffffff";
 
-  const iconSize = Math.min(maskCanvas.width, maskCanvas.height) * 0.36;
+  const iconSize = Math.min(maskCanvas.width, maskCanvas.height) *
+    (mobileLayoutActive ? 0.24 : 0.36);
   const iconX = (maskCanvas.width - iconSize) * 0.5;
   const iconY = (maskCanvas.height - iconSize) * 0.5;
 
@@ -915,6 +1542,20 @@ function drawSocialScreenTexture(mediaKey) {
   maskCanvas.width = pixelCanvas.width;
   maskCanvas.height = pixelCanvas.height;
   if (drawSocialIconMask(mediaKey, maskCanvas)) {
+    if (mobileLayoutActive) {
+      pixelContext.save();
+      pixelContext.shadowColor = "rgba(255, 255, 255, 0.72)";
+      pixelContext.shadowBlur = 16;
+      pixelContext.drawImage(maskCanvas, 0, 0);
+      pixelContext.restore();
+
+      const pixelTexture = socialScreenTextures.get(mediaKey);
+      const asciiTexture = socialAsciiScreenTextures.get(mediaKey);
+      if (pixelTexture) pixelTexture.needsUpdate = true;
+      if (asciiTexture) asciiTexture.needsUpdate = true;
+      return;
+    }
+
     const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
     const maskPixels = maskContext.getImageData(
       0,
@@ -922,7 +1563,7 @@ function drawSocialScreenTexture(mediaKey) {
       maskCanvas.width,
       maskCanvas.height,
     ).data;
-    const socialCharacterColumns = 64;
+    const socialCharacterColumns = mobileLayoutActive ? 34 : 64;
     const cellSize = pixelCanvas.width / socialCharacterColumns;
 
     pixelContext.fillStyle = "#ffffff";
@@ -1022,42 +1663,82 @@ Object.keys(SOCIAL_LINKS).forEach((mediaKey) => {
   }
 });
 
-function drawHeaderAsciiWordmark() {
+let headerWordmarkMaskPixels = null;
+let headerWordmarkAnimationStartedAt = null;
+let headerWordmarkAnimationComplete = false;
+const HEADER_WORDMARK_ANIMATION_DURATION = 1.32;
+
+function drawHeaderAsciiWordmark(animationTime = performance.now(), refreshMask = false) {
   if (!headerWordmark) return;
 
   const width = 880;
   const height = 184;
-  const cellSize = 8;
+  const cellSize = mobileLayoutActive ? 18 : 10;
   const context = headerWordmark.getContext("2d");
-  const maskCanvas = document.createElement("canvas");
-  const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
 
-  headerWordmark.width = width;
-  headerWordmark.height = height;
-  maskCanvas.width = width;
-  maskCanvas.height = height;
+  if (headerWordmark.width !== width || headerWordmark.height !== height) {
+    headerWordmark.width = width;
+    headerWordmark.height = height;
+  }
 
-  maskContext.clearRect(0, 0, width, height);
-  maskContext.fillStyle = "#ffffff";
-  const wordmarkText = "onder balta";
-  const initialFontSize = 112;
-  maskContext.font = `500 ${initialFontSize}px "Onder Medium", sans-serif`;
-  const initialMetrics = maskContext.measureText(wordmarkText);
-  const fittedFontSize = initialFontSize * Math.min(
-    1,
-    (width - 96) / Math.max(initialMetrics.width, 1),
+  if (mobileLayoutActive || headerWordmarkAnimationStartedAt === null) {
+    context.clearRect(0, 0, width, height);
+    const wordmark = "onder balta";
+    const preferredFontSize = 118;
+    context.font = `500 ${preferredFontSize}px "Onder Medium", sans-serif`;
+    const measuredWidth = Math.max(context.measureText(wordmark).width, 1);
+    const horizontalPadding = 0;
+    const fittedFontSize = preferredFontSize * Math.min(
+      1,
+      (width - horizontalPadding * 2) / measuredWidth,
+    );
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    context.font = `500 ${fittedFontSize}px "Onder Medium", sans-serif`;
+    context.fillStyle = "rgba(248, 250, 247, 0.98)";
+    context.shadowColor = "rgba(236, 245, 239, 0.48)";
+    context.shadowBlur = 9;
+    context.fillText(wordmark, horizontalPadding, height * 0.53);
+    context.shadowBlur = 0;
+    return;
+  }
+
+  if (!headerWordmarkMaskPixels || refreshMask) {
+    const maskCanvas = document.createElement("canvas");
+    const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+
+    maskContext.clearRect(0, 0, width, height);
+    maskContext.fillStyle = "#ffffff";
+    const wordmarkText = "onder balta";
+    const initialFontSize = 118;
+    maskContext.font = `500 ${initialFontSize}px "Onder Medium", sans-serif`;
+    const initialMetrics = maskContext.measureText(wordmarkText);
+    const fittedFontSize = initialFontSize * Math.min(
+      1,
+      (width - 8) / Math.max(initialMetrics.width, 1),
+    );
+    maskContext.font = `500 ${fittedFontSize}px "Onder Medium", sans-serif`;
+    maskContext.textAlign = "left";
+    maskContext.textBaseline = "middle";
+    maskContext.fillText(wordmarkText, 0, height * 0.53);
+    headerWordmarkMaskPixels = maskContext.getImageData(0, 0, width, height).data;
+  }
+
+  const characters = ".:+*#%@";
+  const patternTime = animationTime * 0.0022;
+  const animationElapsed = Math.max(
+    0,
+    (animationTime - headerWordmarkAnimationStartedAt) * 0.001,
   );
-  maskContext.font = `500 ${fittedFontSize}px "Onder Medium", sans-serif`;
-  const fittedMetrics = maskContext.measureText(wordmarkText);
-  const ascent = fittedMetrics.actualBoundingBoxAscent || fittedFontSize * 0.72;
-  const descent = fittedMetrics.actualBoundingBoxDescent || fittedFontSize * 0.2;
-  const wordmarkBaseline = (height + ascent - descent) * 0.5;
-  maskContext.textAlign = "center";
-  maskContext.textBaseline = "alphabetic";
-  maskContext.fillText(wordmarkText, width * 0.5, wordmarkBaseline);
-
-  const maskPixels = maskContext.getImageData(0, 0, width, height).data;
-  const characters = ".,:;-=+*#%@";
+  const easeAnimation = (value) => {
+    const clamped = THREE.MathUtils.clamp(value, 0, 1);
+    return clamped * clamped * (3 - 2 * clamped);
+  };
+  const asciiAppearProgress = easeAnimation(animationElapsed / 0.42);
+  const pixelRiseProgress = easeAnimation((animationElapsed - 0.28) / 0.58);
+  const solidRevealProgress = easeAnimation((animationElapsed - 0.82) / 0.5);
   context.clearRect(0, 0, width, height);
   context.font = `700 ${cellSize * 0.92}px Menlo, Monaco, monospace`;
   context.textAlign = "center";
@@ -1080,18 +1761,27 @@ function drawHeaderAsciiWordmark() {
       samplePoints.forEach(([sampleX, sampleY]) => {
         const pixelX = Math.max(0, Math.min(width - 1, Math.round(sampleX)));
         const pixelY = Math.max(0, Math.min(height - 1, Math.round(sampleY)));
-        coverage += maskPixels[(pixelY * width + pixelX) * 4 + 3] / 255;
+        coverage +=
+          headerWordmarkMaskPixels[(pixelY * width + pixelX) * 4 + 3] / 255;
       });
       coverage /= samplePoints.length;
       if (coverage < 0.08) continue;
 
-      const noise = ((x * 19 + y * 37) % 43) / 42;
-      const texture =
-        0.5 +
-        Math.sin(x * 0.073 + y * 0.041) * 0.19 +
-        Math.sin(x * 0.021 - y * 0.067) * 0.14;
+      const cellNoise = Math.abs(
+        Math.sin(x * 12.9898 + y * 78.233) * 43758.5453,
+      ) % 1;
+      if (asciiAppearProgress < cellNoise * 0.88) continue;
+
+      const column = x / cellSize;
+      const row = y / cellSize;
+      const diagonalWave = 0.5 + 0.5 * Math.sin(
+        column * 0.58 - row * 0.76 - patternTime * 2.15,
+      );
+      const crossWave = 0.5 + 0.5 * Math.sin(
+        column * 0.19 + row * 0.48 + patternTime * 1.25,
+      );
       const tone = THREE.MathUtils.clamp(
-        coverage * 0.68 + texture * 0.2 + noise * 0.12,
+        coverage * 0.64 + diagonalWave * 0.24 + crossWave * 0.12,
         0,
         1,
       );
@@ -1100,11 +1790,52 @@ function drawHeaderAsciiWordmark() {
         Math.floor(tone * characters.length),
       );
 
-      context.fillStyle = `rgba(244, 248, 245, ${0.48 + coverage * 0.5})`;
-      context.fillText(characters[characterIndex], x, y);
+      const asciiLayerAlpha = (0.48 + coverage * 0.5) *
+        (1 - solidRevealProgress);
+      if (asciiLayerAlpha > 0.001) {
+        context.fillStyle = `rgba(244, 248, 245, ${asciiLayerAlpha})`;
+        context.fillText(characters[characterIndex], x, y);
+      }
+
+      const bottomUpPosition = 1 - y / height;
+      const pixelThreshold = bottomUpPosition + (cellNoise - 0.5) * 0.16;
+      if (pixelRiseProgress >= pixelThreshold) {
+        const pixelAlpha = (0.72 + coverage * 0.28) *
+          (1 - solidRevealProgress);
+        context.fillStyle = `rgba(248, 250, 247, ${pixelAlpha})`;
+        context.fillRect(
+          x - cellSize * 0.5,
+          y - cellSize * 0.5,
+          cellSize,
+          cellSize,
+        );
+      }
     }
   }
 
+  if (solidRevealProgress > 0) {
+    const wordmark = "onder balta";
+    const preferredFontSize = 118;
+    context.font = `500 ${preferredFontSize}px "Onder Medium", sans-serif`;
+    const measuredWidth = Math.max(context.measureText(wordmark).width, 1);
+    const fittedFontSize = preferredFontSize * Math.min(
+      1,
+      (width - 8) / measuredWidth,
+    );
+    context.save();
+    context.globalAlpha = solidRevealProgress;
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    context.font = `500 ${fittedFontSize}px "Onder Medium", sans-serif`;
+    context.fillStyle = "rgba(248, 250, 247, 0.98)";
+    context.shadowColor = "rgba(236, 245, 239, 0.48)";
+    context.shadowBlur = 9;
+    context.fillText(wordmark, 0, height * 0.53);
+    context.restore();
+  }
+
+  headerWordmarkAnimationComplete =
+    animationElapsed >= HEADER_WORDMARK_ANIMATION_DURATION;
   context.shadowBlur = 0;
 }
 
@@ -1114,9 +1845,9 @@ document.fonts?.load('500 160px "Onder Medium"').then(() => {
   drawSharedTitleTexture();
   drawIntroTitleTexture();
   introLetterTextureCache.forEach(drawIntroLetterTextureSet);
-  redrawFloatingTitleLetters();
   Object.keys(SOCIAL_LINKS).forEach(drawSocialScreenTexture);
-  drawHeaderAsciiWordmark();
+  drawHeaderAsciiWordmark(performance.now(), true);
+  fitProjectTitle();
 });
 
 const blankScreenTexture = new THREE.DataTexture(
@@ -1281,10 +2012,21 @@ function sampleScreenLight(mediaKey, texture) {
 }
 
 function configureScreenGlowLights() {
+  screenGlowEntries.forEach(({ entry, light }) => {
+    if (entry.glowLight === light) entry.glowLight = null;
+    scene.remove(light);
+  });
+  screenGlowEntries.length = 0;
+
   const screenBounds = new THREE.Box3();
   const screenCenter = new THREE.Vector3();
+  const lightEntries = mobileLayoutActive
+    ? allScreenEntries.filter((entry, index) => (
+        entry.mediaKey !== "static" && index % 2 === 0
+      )).slice(0, 6)
+    : allScreenEntries;
 
-  allScreenEntries.forEach((entry, index) => {
+  lightEntries.forEach((entry, index) => {
     screenBounds.setFromObject(entry.mesh);
     screenBounds.getCenter(screenCenter);
 
@@ -1300,6 +2042,18 @@ function configureScreenGlowLights() {
       phase: index * 1.731 + entry.rowIndex * 0.47,
       targetColor: new THREE.Color(0xcbd4da),
     });
+  });
+}
+
+function syncScreenGlowLightPositions() {
+  const screenBounds = new THREE.Box3();
+  const screenCenter = new THREE.Vector3();
+
+  screenGlowEntries.forEach(({ entry, light }) => {
+    screenBounds.setFromObject(entry.mesh);
+    screenBounds.getCenter(screenCenter);
+    light.position.copy(screenCenter);
+    light.position.z += 0.48;
   });
 }
 
@@ -1338,7 +2092,7 @@ function updateScreenGlowLights(elapsedTime, deltaTime) {
       material.uniforms.uTitleOnScreenAmount.value,
     );
     const dimAmount = material.uniforms.uDimAmount.value;
-    const isStatic = entry.mediaKey === "static";
+    const isStatic = material.uniforms.uStaticAmount.value > 0.5;
 
     if (titleAmount > 0.01) {
       targetColor.set(0xdde3e6);
@@ -1347,7 +2101,7 @@ function updateScreenGlowLights(elapsedTime, deltaTime) {
     } else {
       const filteredColorAmount = THREE.MathUtils.lerp(
         1,
-        0.45,
+        0.8,
         grayscaleReveal,
       );
       const contentColorAmount = Math.max(hoverAmount, filteredColorAmount);
@@ -1389,14 +2143,17 @@ const CRT_FRAGMENT_SHADER = `
     uniform sampler2D uSocialAsciiCanvas;
     uniform sampler2D uTitleCanvas;
     uniform sampler2D uIntroTitleCanvas;
+    uniform sampler2D uIntroCueSprite;
     uniform float uTime;
     uniform float uStaticAmount;
+    uniform float uMobileLayout;
     uniform float uPhase;
     uniform float uMediaAspect;
     uniform float uScreenAspect;
     uniform float uTitleAspect;
     uniform float uAsciiAmount;
     uniform float uSocialAmount;
+    uniform float uSocialRevealProgress;
     uniform float uSocialHoverActive;
     uniform float uHoverAmount;
     uniform float uGrayscaleReveal;
@@ -1413,10 +2170,13 @@ const CRT_FRAGMENT_SHADER = `
     uniform vec2 uIntroPointerUv;
     uniform vec2 uIntroGridOffset;
     uniform vec2 uIntroGridScale;
+    uniform vec2 uIntroCuePosition;
     uniform vec2 uIntroWaveOrigin;
     uniform vec2 uSocialPointerUv;
     uniform vec2 uScreenUvMin;
     uniform vec2 uScreenUvMax;
+    uniform float uIntroCueClick;
+    uniform float uIntroCueVisible;
     varying vec2 vUv;
 
     float random(vec2 point) {
@@ -1484,7 +2244,15 @@ const CRT_FRAGMENT_SHADER = `
         float staticNoise = random(
           staticCell + vec2(staticFrame, uPhase * 7.0)
         );
-        float staticLuminance = 0.035 + staticNoise * 0.19;
+        float staticFlickerFrame = floor((uTime + uPhase) * 6.0);
+        float staticFlickerNoise = random(
+          vec2(staticFlickerFrame, uPhase * 31.7)
+        );
+        float staticFlicker =
+          (0.93 + staticFlickerNoise * 0.1) *
+          (0.978 + sin(uTime * 4.8 + uPhase * 4.1) * 0.022);
+        float staticLuminance =
+          (0.035 + staticNoise * 0.19) * staticFlicker;
         color = vec3(
           staticLuminance * 0.78,
           staticLuminance * 0.84,
@@ -1492,9 +2260,10 @@ const CRT_FRAGMENT_SHADER = `
         );
       } else {
         vec2 sampleUv = mediaUv;
+        float mediaAsciiColumns = 112.0;
         vec2 asciiGrid = vec2(
-          112.0,
-          max(8.0, floor(112.0 / (uMediaAspect * (10.0 / 6.0))))
+          mediaAsciiColumns,
+          max(8.0, floor(mediaAsciiColumns / (uMediaAspect * (10.0 / 6.0))))
         );
 
         if (uAsciiAmount > 0.5) {
@@ -1559,8 +2328,12 @@ const CRT_FRAGMENT_SHADER = `
         float socialVisibleHeight = uMediaAspect / uScreenAspect;
         socialStableUv.y = (screenUv.y - 0.5) * socialVisibleHeight + 0.5;
       }
-      vec2 socialCharacterCell = floor(socialStableUv * vec2(64.0));
-      vec2 socialCharacterUv = (socialCharacterCell + 0.5) / 64.0;
+      float socialCharacterColumns = mix(64.0, 34.0, uMobileLayout);
+      vec2 socialCharacterCell = floor(
+        socialStableUv * vec2(socialCharacterColumns)
+      );
+      vec2 socialCharacterUv =
+        (socialCharacterCell + 0.5) / socialCharacterColumns;
       vec2 socialCellScreenUv = socialCharacterUv;
       if (uMediaAspect > uScreenAspect) {
         float socialVisibleWidth = uScreenAspect / uMediaAspect;
@@ -1606,7 +2379,9 @@ const CRT_FRAGMENT_SHADER = `
       );
       float socialConversionThreshold = 0.04 + socialCharacterNoise * 0.92;
       float socialAsciiMix =
-        step(socialConversionThreshold, socialAsciiField) * uSocialAmount;
+        step(socialConversionThreshold, socialAsciiField) *
+        uSocialAmount *
+        (1.0 - uStaticAmount);
       float socialColorSeparation = 0.0016 + distanceFromCenter * 0.0024;
       vec2 socialRedUv = clamp(
         mediaUv + vec2(socialColorSeparation, 0.0),
@@ -1623,7 +2398,53 @@ const CRT_FRAGMENT_SHADER = `
         texture2D(uSocialAsciiCanvas, mediaUv).g,
         texture2D(uSocialAsciiCanvas, socialBlueUv).b
       );
-      color = mix(color, socialAsciiColor, socialAsciiMix);
+      vec3 socialPixelColor = color;
+      vec3 socialFinalColor = mix(
+        socialPixelColor,
+        socialAsciiColor,
+        socialAsciiMix
+      );
+      float socialRevealProgress = clamp(uSocialRevealProgress, 0.0, 1.0);
+      float socialAsciiAppear = smoothstep(
+        0.0,
+        0.34,
+        socialRevealProgress
+      );
+      float socialPixelRise = smoothstep(
+        0.2,
+        0.68,
+        socialRevealProgress
+      );
+      float socialFinalReveal = smoothstep(
+        0.64,
+        1.0,
+        socialRevealProgress
+      );
+      float socialAsciiRevealMask =
+        step(socialCharacterNoise * 0.88, socialAsciiAppear) *
+        (1.0 - socialFinalReveal);
+      float socialBottomUpPosition = 1.0 - socialCellScreenUv.y;
+      float socialPixelThreshold = socialBottomUpPosition +
+        (socialCharacterNoise - 0.5) * 0.16;
+      float socialPixelRevealMask =
+        step(socialPixelThreshold, socialPixelRise) *
+        (1.0 - socialFinalReveal);
+      vec3 socialAnimatedColor = max(
+        socialAsciiColor * socialAsciiRevealMask,
+        socialPixelColor * socialPixelRevealMask
+      );
+      socialAnimatedColor = mix(
+        socialAnimatedColor,
+        socialFinalColor,
+        socialFinalReveal
+      );
+      color = mix(
+        color,
+        socialAnimatedColor,
+        uSocialAmount *
+          (1.0 - uMobileLayout) *
+          (1.0 - uStaticAmount)
+      );
 
       // Grade the source image before the CRT pass so scanlines, rolling
       // luminance, noise and phosphor glow remain visible above the filter.
@@ -1640,7 +2461,7 @@ const CRT_FRAGMENT_SHADER = `
       float grayscaleAmount =
         (1.0 - uStaticAmount) *
         uGrayscaleReveal *
-        mix(0.55, 0.0, colorReveal);
+        mix(0.20, 0.0, colorReveal);
       color = mix(color, vec3(grayscaleContrast), grayscaleAmount);
 
       float scanlineMotion = uTime * 2.6;
@@ -1669,6 +2490,18 @@ const CRT_FRAGMENT_SHADER = `
       );
       float noiseStrength = mix(0.018, 0.035, 1.0 - uStaticAmount) *
         mix(1.0, 0.24, uHoverAmount);
+
+      float staticBandFrame = floor((uTime + uPhase) * 4.0);
+      float staticBandRow = floor(curvedUv.y * 58.0);
+      float staticBandNoise = random(
+        vec2(staticBandRow, staticBandFrame + uPhase * 19.0)
+      ) - 0.5;
+      float staticBandWave =
+        sin(curvedUv.y * 56.0 - uTime * 1.6 + uPhase * 3.1) * 0.011 +
+        sin(curvedUv.y * 21.0 + uTime * 0.6 + uPhase * 1.7) * 0.007;
+      float staticHorizontalInterference =
+        (staticBandNoise * 0.024 + staticBandWave) * uStaticAmount;
+      color += vec3(staticHorizontalInterference);
 
       float idleSweepPosition = fract(uTime * 0.065 + uPhase * 0.17);
       float idleSweep = exp(
@@ -1748,8 +2581,12 @@ const CRT_FRAGMENT_SHADER = `
         titleSample.a,
         max(titleRedSample.a, titleBlueSample.a)
       );
-      vec2 titleCharacterCell = floor(stableTitleLocalUv * vec2(50.0));
-      vec2 titleCharacterUv = (titleCharacterCell + 0.5) / 50.0;
+      float titleCharacterColumns = mix(50.0, 28.0, uMobileLayout);
+      vec2 titleCharacterCell = floor(
+        stableTitleLocalUv * vec2(titleCharacterColumns)
+      );
+      vec2 titleCharacterUv =
+        (titleCharacterCell + 0.5) / titleCharacterColumns;
       vec2 titleCellScreenUv = titleCharacterUv;
       if (uTitleAspect > uScreenAspect) {
         float titleVisibleWidth = uScreenAspect / uTitleAspect;
@@ -1861,11 +2698,60 @@ const CRT_FRAGMENT_SHADER = `
         titleCrtColor,
         titleCrtAlpha * introAsciiAmount * titleCharacterVisibility
       );
+      vec2 cueGlobalUv = uIntroGridOffset + screenUv * uIntroGridScale;
+      vec2 cuePoint = vec2(
+        (cueGlobalUv.x - uIntroCuePosition.x) /
+          uIntroGridScale.x * uScreenAspect,
+        -(cueGlobalUv.y - uIntroCuePosition.y) /
+          uIntroGridScale.y
+      );
+      float cueClickActive = step(0.0, uIntroCueClick);
+      float cueClickProgress = clamp(uIntroCueClick, 0.0, 1.0);
+      float cuePress = cueClickActive *
+        sin(cueClickProgress * 3.14159265) * 0.12;
+      cuePoint /= max(0.82, 1.0 - cuePress);
+
+      const float cueHeight = 0.15;
+      const float cueAspect = 11.0 / 19.0;
+      vec2 cueSize = vec2(cueHeight * cueAspect, cueHeight);
+      vec2 cueSpriteUv = vec2(
+        cuePoint.x / cueSize.x,
+        1.0 - cuePoint.y / cueSize.y
+      );
+      float cueSpriteBounds =
+        step(0.0, cueSpriteUv.x) *
+        step(cueSpriteUv.x, 1.0) *
+        step(0.0, cueSpriteUv.y) *
+        step(cueSpriteUv.y, 1.0);
+      vec4 cueSprite = texture2D(
+        uIntroCueSprite,
+        clamp(cueSpriteUv, vec2(0.0), vec2(1.0))
+      );
+      float cueSpriteAlpha = cueSprite.a * cueSpriteBounds;
+      float cueRingRadius = mix(0.025, 0.145, cueClickProgress);
+      float cueRing = (
+        1.0 - smoothstep(
+          0.006,
+          0.014,
+          abs(length(cuePoint) - cueRingRadius)
+        )
+      ) * cueClickActive * (1.0 - cueClickProgress);
+      float cueVisibility = uIntroCueVisible * uIntroTitleOnScreenAmount;
+      color = mix(
+        color,
+        cueSprite.rgb,
+        cueSpriteAlpha * cueVisibility
+      );
+      color = mix(color, vec3(1.0), cueRing * cueVisibility);
 
       // The media, social logos and intro title now share this exact CRT pass.
+      float crtSignalVisibility = max(
+        step(0.001, powerAmount),
+        max(uIntroTitleOnScreenAmount, uTitleOnScreenAmount)
+      );
       color *= scanline * verticalMask;
-      color += rollingLine * rollingLineStrength;
-      color += (noise - 0.5) * noiseStrength;
+      color += rollingLine * rollingLineStrength * crtSignalVisibility;
+      color += (noise - 0.5) * noiseStrength * crtSignalVisibility;
       color += color * idleSweep * 0.085;
 
       vec2 edgeDistance = abs(curvedUv - 0.5) * 2.0;
@@ -1899,8 +2785,10 @@ function createCrtScreenMaterial(mediaKey, phase) {
       },
       uTitleCanvas: { value: sharedTitleTexture },
       uIntroTitleCanvas: { value: introTitleTexture },
+      uIntroCueSprite: { value: introCueSpriteTexture },
       uTime: { value: 0 },
       uStaticAmount: { value: mediaKey === "static" ? 1 : 0 },
+      uMobileLayout: { value: Number(mobileLayoutActive) },
       uPhase: { value: phase },
       uMediaAspect: {
         value: screenMediaAspectCache.get(mediaKey) ?? 16 / 9,
@@ -1908,7 +2796,12 @@ function createCrtScreenMaterial(mediaKey, phase) {
       uScreenAspect: { value: CRT_SCREEN_ASPECT },
       uTitleAspect: { value: introTitleCanvas.width / introTitleCanvas.height },
       uAsciiAmount: { value: mediaKey === "bicycleVideo" ? 1 : 0 },
-      uSocialAmount: { value: SOCIAL_LINKS[mediaKey] ? 1 : 0 },
+      uSocialAmount: {
+        value: SOCIAL_LINKS[mediaKey] && !mobileLayoutActive ? 1 : 0,
+      },
+      uSocialRevealProgress: {
+        value: SOCIAL_LINKS[mediaKey] && !mobileLayoutActive ? 0 : 1,
+      },
       uSocialHoverActive: { value: 0 },
       uHoverAmount: { value: 0 },
       uGrayscaleReveal: { value: 0 },
@@ -1925,10 +2818,13 @@ function createCrtScreenMaterial(mediaKey, phase) {
       uIntroPointerUv: { value: new THREE.Vector2(0.5, 0.5) },
       uIntroGridOffset: { value: new THREE.Vector2() },
       uIntroGridScale: { value: new THREE.Vector2(0.2, 0.5) },
+      uIntroCuePosition: { value: new THREE.Vector2(0.1, 0.75) },
       uIntroWaveOrigin: { value: new THREE.Vector2(0.5, 0.5) },
       uSocialPointerUv: { value: new THREE.Vector2(0.5, 0.5) },
       uScreenUvMin: { value: new THREE.Vector2(0.001689, 0.121829) },
       uScreenUvMax: { value: new THREE.Vector2(0.998311, 0.878171) },
+      uIntroCueClick: { value: -1 },
+      uIntroCueVisible: { value: 0 },
     },
     vertexShader: CRT_VERTEX_SHADER,
     fragmentShader: CRT_FRAGMENT_SHADER,
@@ -1936,6 +2832,8 @@ function createCrtScreenMaterial(mediaKey, phase) {
   });
 
   material.userData.mediaKey = mediaKey;
+  material.userData.baseStaticAmount = mediaKey === "static" ? 1 : 0;
+  material.userData.baseInteractiveAmount = mediaKey === "static" ? 0 : 1;
   material.userData.interactionTarget = 0;
   material.userData.socialHoverTarget = 0;
   material.userData.introHoverTarget = 0;
@@ -1957,6 +2855,8 @@ function applyScreenMaterial(
   unitIndex,
 ) {
   const screenMaterial = createCrtScreenMaterial(mediaKey, phase);
+  screenMaterial.userData.rowIndex = rowIndex;
+  screenMaterial.userData.unitIndex = unitIndex;
   const isInteractive = mediaKey !== "static";
 
   const registerScreen = (object, materialIndices) => {
@@ -2000,25 +2900,16 @@ function applyScreenMaterial(
   });
 }
 
-function configureSharedTitleScreens(tvWall) {
+function configureSharedTitleScreens() {
   if (allScreenEntries.length === 0) return;
 
-  const wallBounds = new THREE.Box3().makeEmpty();
   const screenBounds = new THREE.Box3();
-
-  allScreenEntries.forEach((entry) => {
-    screenBounds.setFromObject(entry.mesh);
-    wallBounds.union(screenBounds);
-  });
-
-  const wallWidth = wallBounds.max.x - wallBounds.min.x;
-  const wallHeight = wallBounds.max.y - wallBounds.min.y;
-  if (wallWidth <= 0 || wallHeight <= 0) return;
 
   introLetterScreenEntries.length = 0;
   introLetterScreenEntries.push(
     ...allScreenEntries.filter((entry) => entry.rowIndex === 0 || entry.rowIndex === 1),
   );
+  if (introLetterScreenEntries.length === 0) return;
   introLetterTitleBounds = new THREE.Box3().makeEmpty();
   introLetterScreenEntries.forEach((entry) => {
     screenBounds.setFromObject(entry.mesh);
@@ -2027,8 +2918,9 @@ function configureSharedTitleScreens(tvWall) {
 
   const introBoundsWidth = introLetterTitleBounds.max.x - introLetterTitleBounds.min.x;
   const introBoundsHeight = introLetterTitleBounds.max.y - introLetterTitleBounds.min.y;
-  const introScreenWidth = introBoundsWidth / 5;
-  const introScreenHeight = introBoundsHeight / 2;
+  screenBounds.setFromObject(introLetterScreenEntries[0].mesh);
+  const introScreenWidth = screenBounds.max.x - screenBounds.min.x;
+  const introScreenHeight = screenBounds.max.y - screenBounds.min.y;
   const hoverMarginX =
     introScreenWidth *
     (INTRO_HOVER_OUTER_RANGE / CRT_SCREEN_ASPECT) *
@@ -2063,6 +2955,27 @@ function configureSharedTitleScreens(tvWall) {
   scene.add(introHoverHitArea);
   introHoverHitArea.updateMatrixWorld(true);
 
+  if (introClickHitArea) {
+    scene.remove(introClickHitArea);
+    introClickHitArea.geometry.dispose();
+    introClickHitArea.material.dispose();
+  }
+  introClickHitArea = new THREE.Mesh(
+    new THREE.PlaneGeometry(introBoundsWidth, introBoundsHeight),
+    new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      colorWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  );
+  introClickHitArea.name = "Intro TV block click area";
+  introClickHitArea.position.copy(introHoverHitArea.position);
+  introClickHitArea.position.z += 0.01;
+  scene.add(introClickHitArea);
+  introClickHitArea.updateMatrixWorld(true);
+
   drawSharedTitleTexture(introBoundsWidth / introBoundsHeight);
   drawIntroTitleTexture(introBoundsWidth / introBoundsHeight);
 
@@ -2078,10 +2991,20 @@ function configureSharedTitleScreens(tvWall) {
     entry.material.uniforms.uIntroTitleCanvas.value = letterTextures.regularTexture;
     entry.material.uniforms.uTitleCanvas.value = letterTextures.asciiTexture;
     entry.material.uniforms.uTitleAspect.value = 1;
-    entry.material.uniforms.uIntroGridOffset.value.set(
-      entry.unitIndex * 0.2,
-      entry.rowIndex * 0.5,
+    screenBounds.setFromObject(entry.mesh);
+    const gridOffset = new THREE.Vector2(
+      (screenBounds.min.x - introLetterTitleBounds.min.x) / introBoundsWidth,
+      (screenBounds.min.y - introLetterTitleBounds.min.y) / introBoundsHeight,
     );
+    const gridScale = new THREE.Vector2(
+      (screenBounds.max.x - screenBounds.min.x) / introBoundsWidth,
+      (screenBounds.max.y - screenBounds.min.y) / introBoundsHeight,
+    );
+    entry.introWorldBounds = screenBounds.clone();
+    entry.introGridOffset = gridOffset;
+    entry.introGridScale = gridScale;
+    entry.material.uniforms.uIntroGridOffset.value.copy(gridOffset);
+    entry.material.uniforms.uIntroGridScale.value.copy(gridScale);
     entry.material.userData.introLetterIndex =
       entry.rowIndex === 1 ? entry.unitIndex : entry.unitIndex + 5;
     entry.material.userData.introFadeDelay =
@@ -2089,150 +3012,11 @@ function configureSharedTitleScreens(tvWall) {
       (entry.rowIndex === 0 ? 0.055 : 0) +
       ((entry.unitIndex * 7 + entry.rowIndex * 3) % 5) * 0.004;
   });
-
-  const tvWallBounds = new THREE.Box3().setFromObject(tvWall);
-  const title = "onder balta";
-  const letterHeight = wallHeight * 0.235;
-  const letterGap = letterHeight * 0.025;
-  const wordGap = letterHeight * 0.34;
-  const titleCenterX = (wallBounds.min.x + wallBounds.max.x) * 0.5;
-  const titleCenterY = (wallBounds.min.y + wallBounds.max.y) * 0.5;
-  const letterEntries = [];
-  let titleWidth = 0;
-
-  [...title].forEach((character, characterIndex) => {
-    if (character === " ") {
-      titleWidth += wordGap;
-      return;
-    }
-
-    const canvas = document.createElement("canvas");
-    const letterEntry = {
-      canvas,
-      character,
-      characterIndex,
-      texture: null,
-      mesh: null,
-    };
-    drawFloatingTitleLetter(letterEntry);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.anisotropy = Math.min(
-      renderer.capabilities.getMaxAnisotropy(),
-      8,
-    );
-    letterEntry.texture = texture;
-
-    const letterWidth = letterHeight * (canvas.width / canvas.height);
-    letterEntry.width = letterWidth;
-    titleWidth += letterWidth + letterGap;
-    letterEntries.push(letterEntry);
-  });
-
-  titleWidth -= letterGap;
-  floatingTitleGroup = new THREE.Group();
-  floatingTitleGroup.name = "Floating title signal";
-  floatingTitleGroup.visible = FLOATING_TITLE_ENABLED;
-
-  floatingTitleHitArea = new THREE.Mesh(
-    new THREE.PlaneGeometry(titleWidth + letterHeight * 0.35, letterHeight * 1.55),
-    new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      colorWrite: false,
-    }),
-  );
-  floatingTitleHitArea.position.set(
-    titleCenterX,
-    titleCenterY,
-    tvWallBounds.max.z + 0.28,
-  );
-  floatingTitleGroup.add(floatingTitleHitArea);
-
-  let letterX = titleCenterX - titleWidth * 0.5;
-
-  letterEntries.forEach((entry, visibleIndex) => {
-    const phase = entry.characterIndex * 1.73 + visibleIndex * 0.41;
-    const material = new THREE.MeshBasicMaterial({
-      map: entry.texture,
-      transparent: true,
-      opacity: 0.92,
-      depthTest: true,
-      depthWrite: false,
-      toneMapped: false,
-    });
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(entry.width, letterHeight),
-      material,
-    );
-    const basePosition = new THREE.Vector3(
-      letterX + entry.width * 0.5,
-      titleCenterY + Math.sin(phase * 0.82) * letterHeight * 0.055 +
-        (visibleIndex - (letterEntries.length - 1) * 0.5) * letterHeight * 0.013,
-      tvWallBounds.max.z + 0.2 + Math.sin(phase * 1.31) * 0.055,
-    );
-    const baseRotation = new THREE.Euler(
-      Math.sin(phase * 0.7) * 0.018,
-      Math.sin(phase * 1.17) * 0.045,
-      Math.sin(phase) * 0.036,
-    );
-    const outwardDirection = visibleIndex < letterEntries.length * 0.5 ? -1 : 1;
-    const scatterOffset = new THREE.Vector3(
-      outwardDirection * (0.16 + (visibleIndex % 3) * 0.09),
-      Math.sin(phase * 2.13) * 0.24,
-      0.12 + ((visibleIndex * 7) % 5) * 0.035,
-    );
-    const scatterRotation = new THREE.Euler(
-      Math.sin(phase * 1.43) * 0.12,
-      Math.sin(phase * 0.93) * 0.2,
-      Math.sin(phase * 1.77) * 0.18,
-    );
-
-    mesh.position.copy(basePosition);
-    mesh.rotation.copy(baseRotation);
-    mesh.userData.titleLetter = entry;
-    floatingTitleGroup.add(mesh);
-
-    Object.assign(entry, {
-      mesh,
-      material,
-      phase,
-      basePosition,
-      baseRotation,
-      scatterOffset,
-      scatterRotation,
-    });
-    floatingTitleLetters.push(entry);
-    letterX += entry.width + letterGap;
-
-    if (entry.characterIndex === 4) letterX += wordGap;
-  });
-
-  scene.add(floatingTitleGroup);
-}
-
-function updateTitleTransferTarget() {
-  if (!FLOATING_TITLE_ENABLED || !floatingTitleHitArea) {
-    titleTransferTarget = 0;
-    return;
-  }
-
-  raycaster.setFromCamera(pointerNdc, camera);
-  const pointerIsOverTitle = raycaster.intersectObject(
-    floatingTitleHitArea,
-    false,
-  ).length > 0;
-
-  titleTransferTarget = pointerIsOverTitle && !focusedScreen ? 1 : 0;
 }
 
 function beginIntroSequence(
   elapsedTime = performance.now() * 0.001,
-  pointerHit = getIntroPointerHit(),
+  pointerHit = getIntroClickPointerHit(),
 ) {
   if (
     introStage !== "waiting" ||
@@ -2251,7 +3035,115 @@ function beginIntroSequence(
   setHoveredScreen(null);
 }
 
-function getIntroPointerHit() {
+function updateIntroCueState(elapsedTime, pointerHit = null) {
+  if (introStage !== "waiting") {
+    introCueIdleStartedAt = null;
+  } else if (introCueIdleStartedAt === null) {
+    introCueIdleStartedAt = elapsedTime;
+  }
+
+  const cueElapsed = introCueIdleStartedAt === null
+    ? 0
+    : elapsedTime - introCueIdleStartedAt - INTRO_CUE_IDLE_DELAY;
+  const cueVisibility =
+    introStage === "waiting" && !pointerHit && cueElapsed >= 0
+      ? smoothProgress(cueElapsed / INTRO_CUE_REVEAL_DURATION)
+      : 0;
+  const cueRoute = [
+    { unitIndex: 0, rowIndex: 1 },
+    { unitIndex: 3, rowIndex: 1 },
+    { unitIndex: 4, rowIndex: 0 },
+    { unitIndex: 1, rowIndex: 0 },
+  ];
+  const segmentDuration = 1.25;
+  const cueAnimationTime = Math.max(0, cueElapsed);
+  const routeProgress = reducedMotionQuery.matches
+    ? 0
+    : (cueAnimationTime % (segmentDuration * cueRoute.length)) / segmentDuration;
+  const segmentIndex = Math.floor(routeProgress) % cueRoute.length;
+  const segmentProgress = routeProgress - Math.floor(routeProgress);
+  const currentTarget = cueRoute[segmentIndex];
+  const nextTarget = cueRoute[(segmentIndex + 1) % cueRoute.length];
+  const rawTravelProgress = THREE.MathUtils.clamp(segmentProgress / 0.68, 0, 1);
+  const travelProgress = reducedMotionQuery.matches
+    ? 0
+    : rawTravelProgress * rawTravelProgress * (3 - 2 * rawTravelProgress);
+  const getCuePosition = ({ unitIndex, rowIndex }) => {
+    const entry = introLetterScreenEntries.find((screenEntry) => (
+      screenEntry.unitIndex === unitIndex && screenEntry.rowIndex === rowIndex
+    ));
+    if (!entry?.introGridOffset || !entry?.introGridScale) {
+      return new THREE.Vector2(0.5, 0.5);
+    }
+    return entry.introGridOffset.clone().addScaledVector(
+      entry.introGridScale,
+      0.5,
+    );
+  };
+  const currentPosition = getCuePosition(currentTarget);
+  const nextPosition = getCuePosition(nextTarget);
+  const currentX = currentPosition.x;
+  const currentY = currentPosition.y;
+  const nextX = nextPosition.x;
+  const nextY = nextPosition.y;
+  const cueX = THREE.MathUtils.lerp(currentX, nextX, travelProgress);
+  const cueY = THREE.MathUtils.lerp(currentY, nextY, travelProgress);
+  const clickIsActive =
+    !reducedMotionQuery.matches &&
+    segmentProgress >= 0.72 &&
+    segmentProgress < 0.92;
+  const clickProgress = clickIsActive
+    ? (segmentProgress - 0.72) / 0.2
+    : -1;
+
+  crtScreenMaterials.forEach((material) => {
+    material.uniforms.uIntroCuePosition.value.set(cueX, cueY);
+    material.uniforms.uIntroCueClick.value = clickProgress;
+    material.uniforms.uIntroCueVisible.value = cueVisibility;
+  });
+}
+
+function syncIntroClickHint(pointerHit) {
+  const shouldShowClickHint = introStage === "waiting" && Boolean(pointerHit);
+  if (shouldShowClickHint) viewCursor.textContent = getUiCopy().click;
+  roomStage.classList.toggle("is-screen-hovered", shouldShowClickHint);
+  viewCursor.classList.toggle("is-visible", shouldShowClickHint);
+}
+
+function createIntroPointerHit(point, matchedEntry = null) {
+  if (!point || !introLetterTitleBounds) return null;
+
+  const boundsWidth = introLetterTitleBounds.max.x - introLetterTitleBounds.min.x;
+  const boundsHeight = introLetterTitleBounds.max.y - introLetterTitleBounds.min.y;
+  if (boundsWidth <= 0 || boundsHeight <= 0) return null;
+
+  const globalUv = new THREE.Vector2(
+    (point.x - introLetterTitleBounds.min.x) / boundsWidth,
+    (point.y - introLetterTitleBounds.min.y) / boundsHeight,
+  );
+  const entry = matchedEntry ?? introLetterScreenEntries.reduce(
+    (closest, screenEntry) => {
+      const bounds = screenEntry.introWorldBounds;
+      if (!bounds) return closest;
+      const centerX = (bounds.min.x + bounds.max.x) * 0.5;
+      const centerY = (bounds.min.y + bounds.max.y) * 0.5;
+      const distance = Math.hypot(point.x - centerX, point.y - centerY);
+      return !closest || distance < closest.distance
+        ? { entry: screenEntry, distance }
+        : closest;
+    },
+    null,
+  )?.entry ?? null;
+  const entryOffset = entry?.introGridOffset ?? new THREE.Vector2();
+  const entryScale = entry?.introGridScale ?? new THREE.Vector2(1, 1);
+  const localUv = new THREE.Vector2(
+    (globalUv.x - entryOffset.x) / Math.max(entryScale.x, 0.0001),
+    (globalUv.y - entryOffset.y) / Math.max(entryScale.y, 0.0001),
+  );
+  return { entry, localUv, globalUv };
+}
+
+function getIntroHoverPointerHit() {
   if (
     introLetterScreenEntries.length === 0 ||
     !introLetterTitleBounds ||
@@ -2262,29 +3154,27 @@ function getIntroPointerHit() {
   const intersection = raycaster.intersectObject(introHoverHitArea, false)[0];
   if (!intersection?.point) return null;
 
-  const boundsWidth = introLetterTitleBounds.max.x - introLetterTitleBounds.min.x;
-  const boundsHeight = introLetterTitleBounds.max.y - introLetterTitleBounds.min.y;
-  if (boundsWidth <= 0 || boundsHeight <= 0) return null;
+  return createIntroPointerHit(intersection.point);
+}
 
-  const globalUv = new THREE.Vector2(
-    (intersection.point.x - introLetterTitleBounds.min.x) / boundsWidth,
-    (intersection.point.y - introLetterTitleBounds.min.y) / boundsHeight,
-  );
-  const unitIndex = THREE.MathUtils.clamp(Math.floor(globalUv.x * 5), 0, 4);
-  const rowIndex = THREE.MathUtils.clamp(Math.floor(globalUv.y * 2), 0, 1);
-  const entry = introLetterScreenEntries.find(
-    (screenEntry) =>
-      screenEntry.unitIndex === unitIndex && screenEntry.rowIndex === rowIndex,
-  ) ?? null;
-  const localUv = new THREE.Vector2(
-    globalUv.x * 5 - unitIndex,
-    globalUv.y * 2 - rowIndex,
-  );
-  return { entry, localUv, globalUv };
+function getIntroClickPointerHit() {
+  if (
+    introLetterScreenEntries.length === 0 ||
+    !introLetterTitleBounds ||
+    !introClickHitArea
+  ) {
+    return null;
+  }
+
+  raycaster.setFromCamera(pointerNdc, camera);
+  const intersection = raycaster.intersectObject(introClickHitArea, false)[0];
+  if (!intersection?.point) return null;
+
+  return createIntroPointerHit(intersection.point);
 }
 
 function isPointerOverIntroTitle() {
-  return Boolean(getIntroPointerHit());
+  return Boolean(getIntroClickPointerHit());
 }
 
 function smoothProgress(value) {
@@ -2390,25 +3280,62 @@ function updateSiteHeaderVisibility() {
   siteHeader.classList.toggle("is-visible", shouldShowHeader);
   siteHeader.setAttribute("aria-hidden", String(!shouldShowHeader));
   siteHeader.inert = !shouldShowHeader;
+
+  if (shouldShowHeader) {
+    if (!mobileLayoutActive) {
+      headerWordmarkAnimationStartedAt = performance.now();
+      headerWordmarkAnimationComplete = false;
+    }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        drawHeaderAsciiWordmark(performance.now(), true);
+      });
+    });
+
+    if (!aboutWindowHasAutoOpened && aboutWindowAutoOpenTimer === null) {
+      aboutWindowHasAutoOpened = true;
+      aboutWindowAutoOpenTimer = window.setTimeout(() => {
+        aboutWindowAutoOpenTimer = null;
+        aboutWindowRequestedOpen = true;
+        syncAboutWindowVisibility();
+      }, 560);
+    }
+  }
+
+  if (!shouldShowHeader && !mobileLayoutActive) {
+    headerWordmarkAnimationStartedAt = null;
+    headerWordmarkAnimationComplete = false;
+  }
+
+  syncAboutWindowVisibility();
 }
 
 function updateIntroSequence(elapsedTime) {
   if (introLetterScreenEntries.length === 0) return;
 
-  const pointerHit = introStage === "waiting" ? getIntroPointerHit() : null;
+  const hoverPointerHit = introStage === "waiting"
+    ? getIntroHoverPointerHit()
+    : null;
+  const clickPointerHit = introStage === "waiting"
+    ? getIntroClickPointerHit()
+    : null;
+  if (introStage !== "done") syncIntroClickHint(clickPointerHit);
+  updateIntroCueState(elapsedTime, clickPointerHit);
   introLetterScreenEntries.forEach((entry) => {
     entry.material.userData.introHoverTarget = 0;
     entry.material.userData.introIdlePatternTarget =
       introStage === "waiting" ? 1 : 0;
   });
-  if (pointerHit) {
+  if (hoverPointerHit) {
     introLetterScreenEntries.forEach((entry) => {
-      const gridOffsetX = entry.unitIndex * 0.2;
-      const gridOffsetY = entry.rowIndex * 0.5;
+      const gridOffset = entry.introGridOffset ?? new THREE.Vector2();
+      const gridScale = entry.introGridScale ?? new THREE.Vector2(1, 1);
       entry.material.userData.introHoverTarget = 1;
       entry.material.uniforms.uIntroPointerUv.value.set(
-        (pointerHit.globalUv.x - gridOffsetX) / 0.2,
-        (pointerHit.globalUv.y - gridOffsetY) / 0.5,
+        (hoverPointerHit.globalUv.x - gridOffset.x) /
+          Math.max(gridScale.x, 0.0001),
+        (hoverPointerHit.globalUv.y - gridOffset.y) /
+          Math.max(gridScale.y, 0.0001),
       );
     });
   }
@@ -2417,13 +3344,18 @@ function updateIntroSequence(elapsedTime) {
   let titleOnScreens = 0;
   let asciiFadeElapsed = null;
   let introWaveProgress = 0;
+  let topRowShutdownProgress = 0;
 
   if (introStage === "handoff") {
-    const progress = smoothProgress(
+    const rawProgress = THREE.MathUtils.clamp(
       (elapsedTime - introStageStartedAt) / INTRO_HANDOFF_DURATION,
+      0,
+      1,
     );
+    const progress = smoothProgress(rawProgress);
     regularTitleOnScreens = 1;
     introWaveProgress = progress;
+    topRowShutdownProgress = rawProgress;
 
     if (elapsedTime - introStageStartedAt >= INTRO_HANDOFF_DURATION) {
       introStage = "fade";
@@ -2433,10 +3365,14 @@ function updateIntroSequence(elapsedTime) {
     asciiFadeElapsed = elapsedTime - introStageStartedAt;
     titleOnScreens = 1;
     introWaveProgress = 1;
+    topRowShutdownProgress = 1;
 
     if (asciiFadeElapsed >= INTRO_FADE_DURATION) {
       introStage = "powering";
       introStageStartedAt = elapsedTime;
+      crtScreenMaterials.forEach((material) => {
+        material.uniforms.uPowerAmount.value = 0;
+      });
     }
   } else if (introStage === "powering") {
     const powerElapsed = elapsedTime - introStageStartedAt;
@@ -2461,8 +3397,24 @@ function updateIntroSequence(elapsedTime) {
           GRAYSCALE_FADE_DURATION,
       )
     : 0;
+  const introShowsTopRowAsStatic =
+    introStage === "waiting" ||
+    introStage === "handoff" ||
+    introStage === "fade";
+  const socialRevealElapsed =
+    introStage === "powering" || introStage === "done"
+      ? elapsedTime - introStageStartedAt
+      : null;
 
   crtScreenMaterials.forEach((material) => {
+    const isIntroTopScreen = material.userData.rowIndex === 2;
+    material.uniforms.uStaticAmount.value = introShowsTopRowAsStatic
+      ? Number(isIntroTopScreen)
+      : material.userData.baseStaticAmount;
+    material.uniforms.uInteractiveAmount.value =
+      introShowsTopRowAsStatic && isIntroTopScreen
+        ? 0
+        : material.userData.baseInteractiveAmount;
     const isIntroLetterScreen = introLetterScreenEntries.some(
       (entry) => entry.material === material,
     );
@@ -2484,16 +3436,49 @@ function updateIntroSequence(elapsedTime) {
       ? introWaveProgress
       : 0;
     material.uniforms.uGrayscaleReveal.value = grayscaleReveal;
+    const isSocialScreen = Boolean(SOCIAL_LINKS[material.userData.mediaKey]);
+    material.uniforms.uSocialRevealProgress.value =
+      !isSocialScreen || mobileLayoutActive
+        ? 1
+        : socialRevealElapsed === null
+          ? 0
+          : smoothProgress(
+              (
+                socialRevealElapsed -
+                material.userData.bootDelay -
+                SOCIAL_ICON_REVEAL_DELAY
+              ) / SOCIAL_ICON_REVEAL_DURATION,
+            );
     if (introStage !== "powering" && introStage !== "done") {
-      material.uniforms.uPowerAmount.value = 0;
+      if (isIntroTopScreen) {
+        const shutdownStart = 0.18 + material.userData.unitIndex * 0.05;
+        const shutdownAmount = smoothProgress(
+          (topRowShutdownProgress - shutdownStart) / 0.38,
+        );
+        material.uniforms.uPowerAmount.value = 1 - shutdownAmount;
+      } else {
+        material.uniforms.uPowerAmount.value = 0;
+      }
     } else if (introStage === "done") {
       material.uniforms.uPowerAmount.value = 1;
     }
   });
 }
 
+function updateViewCursorLabel() {
+  if (!hoveredScreen) return;
+
+  const hoveredSocial = SOCIAL_LINKS[hoveredScreen.mediaKey];
+  const hoveredExternal = EXTERNAL_SCREEN_LINKS[hoveredScreen.mediaKey];
+  viewCursor.textContent =
+    hoveredSocial?.label ?? hoveredExternal?.label ?? getUiCopy().view;
+}
+
 function setHoveredScreen(nextScreen) {
-  if (hoveredScreen === nextScreen) return;
+  if (hoveredScreen === nextScreen) {
+    updateViewCursorLabel();
+    return;
+  }
 
   if (
     hoveredScreen &&
@@ -2512,10 +3497,7 @@ function setHoveredScreen(nextScreen) {
   }
 
   const hasHover = Boolean(hoveredScreen);
-  const hoveredSocial = hoveredScreen && SOCIAL_LINKS[hoveredScreen.mediaKey];
-  const hoveredExternal = hoveredScreen &&
-    EXTERNAL_SCREEN_LINKS[hoveredScreen.mediaKey];
-  viewCursor.textContent = hoveredSocial?.label ?? hoveredExternal?.label ?? "view";
+  updateViewCursorLabel();
   roomStage.classList.toggle("is-screen-hovered", hasHover);
   viewCursor.classList.toggle("is-visible", hasHover);
 }
@@ -2564,6 +3546,12 @@ function updateHoveredScreen() {
 
 function updateProjectPanelSideOffset(deltaTime, snap = false) {
   if (!focusedScreen || focusTarget === 0) return;
+  if (mobileLayoutActive) {
+    projectPanel.style.removeProperty("--project-side-offset");
+    return;
+  }
+
+  const viewport = getStageViewport();
 
   camera.updateMatrixWorld(true);
   focusedScreenBounds.setFromObject(focusedScreen.mesh);
@@ -2574,7 +3562,7 @@ function updateProjectPanelSideOffset(deltaTime, snap = false) {
     [focusedScreenBounds.min.y, focusedScreenBounds.max.y].forEach((y) => {
       [focusedScreenBounds.min.z, focusedScreenBounds.max.z].forEach((z) => {
         projectedScreenCorner.set(x, y, z).project(camera);
-        const screenX = (projectedScreenCorner.x * 0.5 + 0.5) * window.innerWidth;
+        const screenX = (projectedScreenCorner.x * 0.5 + 0.5) * viewport.width;
         projectedMinX = Math.min(projectedMinX, screenX);
         projectedMaxX = Math.max(projectedMaxX, screenX);
       });
@@ -2585,12 +3573,15 @@ function updateProjectPanelSideOffset(deltaTime, snap = false) {
 
   const panelOnLeft = projectPanel.classList.contains("is-left");
   const mirroredScreenGap = panelOnLeft
-    ? window.innerWidth - projectedMaxX
+    ? viewport.width - projectedMaxX
     : projectedMinX;
+  const uiEdge = Number.parseFloat(
+    window.getComputedStyle(roomStage).getPropertyValue("--ui-edge"),
+  ) || 24;
   const targetOffset = THREE.MathUtils.clamp(
     mirroredScreenGap,
-    24,
-    window.innerWidth * 0.46,
+    uiEdge,
+    viewport.width * 0.46,
   );
 
   if (snap || projectPanelSideOffset === null) {
@@ -2609,8 +3600,9 @@ function updateProjectPanelSideOffset(deltaTime, snap = false) {
 }
 
 function showProjectPanel(project, panelOnLeft, mediaKey) {
-  projectMeta.textContent = project.meta;
-  projectTitle.textContent = project.title;
+  const copy = getUiCopy();
+  projectMeta.textContent = formatForOnderFont(project.meta);
+  projectTitle.textContent = formatForOnderFont(project.title);
   projectDescription.textContent = project.description;
   projectPanel.classList.toggle("is-left", panelOnLeft);
   roomStage.classList.toggle("is-panel-left", panelOnLeft);
@@ -2631,9 +3623,11 @@ function showProjectPanel(project, panelOnLeft, mediaKey) {
     projectPreviewVideo.hidden = true;
     projectPreviewImage.hidden = false;
     projectPreviewImage.src = firstImage.src;
-    projectPreviewImage.alt = firstImage.alt ?? `${project.title} preview`;
-    projectPreviewLabel.textContent = gallery.length > 1 ? "view gallery" : "view";
-    projectPreview.setAttribute("aria-label", `View ${project.title}`);
+    projectPreviewImage.alt = firstImage.alt ?? copy.previewAlt(project.title);
+    projectPreviewLabel.textContent = gallery.length > 1
+      ? copy.viewGallery
+      : copy.view;
+    projectPreview.setAttribute("aria-label", copy.viewProject(project.title));
   } else if (hasVideo) {
     projectPreviewImage.hidden = true;
     projectPreviewVideo.hidden = false;
@@ -2644,17 +3638,97 @@ function showProjectPanel(project, panelOnLeft, mediaKey) {
       projectPreviewVideo.load();
     }
     projectPreviewVideo.play().catch(() => {});
-    projectPreviewLabel.textContent = "watch";
-    projectPreview.setAttribute("aria-label", `Watch ${project.title}`);
+    projectPreviewLabel.textContent = copy.watch;
+    projectPreview.setAttribute("aria-label", copy.watchProject(project.title));
   }
 
   if (project.url) {
     projectLink.href = project.url;
+    projectLink.textContent = project.linkLabel ?? copy.visitProject;
     projectLink.hidden = false;
   } else {
     projectLink.hidden = true;
     projectLink.removeAttribute("href");
   }
+
+  fitProjectTitle();
+}
+
+function fitProjectTitle() {
+  if (!projectPanel.classList.contains("is-visible")) return;
+
+  const actualTitle = projectTitle.textContent;
+  projectTitle.style.fontSize = "";
+  projectTitle.textContent = "delivery guy simulator";
+
+  const maximumFontSize = Number.parseFloat(
+    window.getComputedStyle(projectTitle).fontSize,
+  );
+  const availableWidth = projectTitle.clientWidth;
+  if (!Number.isFinite(maximumFontSize) || availableWidth <= 0) {
+    projectTitle.textContent = actualTitle;
+    return;
+  }
+
+  let smallestSize = 8;
+  let largestSize = maximumFontSize;
+  for (let step = 0; step < 18; step += 1) {
+    const candidateSize = (smallestSize + largestSize) * 0.5;
+    projectTitle.style.fontSize = `${candidateSize}px`;
+    if (projectTitle.scrollWidth <= availableWidth) {
+      smallestSize = candidateSize;
+    } else {
+      largestSize = candidateSize;
+    }
+  }
+
+  projectTitle.style.fontSize = `${Math.floor(smallestSize * 100) / 100}px`;
+  projectTitle.textContent = actualTitle;
+}
+
+function focusProjectScreen(entry) {
+  const project = getLocalizedProject(entry.mediaKey);
+  if (!project || focusedScreen) return;
+
+  setHoveredScreen(null);
+  focusedScreen = entry;
+  focusTarget = 1;
+  projectPanelSideOffset = null;
+  entry.material.userData.interactionTarget = 1;
+
+  new THREE.Box3()
+    .setFromObject(entry.mesh)
+    .getCenter(interactionWorldPosition);
+
+  const tvOnLeft = interactionWorldPosition.x <= 0;
+  if (mobileLayoutActive) {
+    focusCameraPosition.set(
+      interactionWorldPosition.x,
+      interactionWorldPosition.y + 0.18,
+      interactionWorldPosition.z + 3.08,
+    );
+    focusLookTarget.set(
+      interactionWorldPosition.x,
+      interactionWorldPosition.y - 0.82,
+      interactionWorldPosition.z,
+    );
+  } else {
+    focusCameraPosition.set(
+      interactionWorldPosition.x,
+      interactionWorldPosition.y,
+      interactionWorldPosition.z + 2.95,
+    );
+    focusLookTarget.set(
+      interactionWorldPosition.x + (tvOnLeft ? 0.95 : -0.95),
+      interactionWorldPosition.y,
+      interactionWorldPosition.z,
+    );
+  }
+
+  crtScreenMaterials.forEach((material) => {
+    material.userData.dimTarget = material === entry.material ? 0 : 1;
+  });
+  showProjectPanel(project, mobileLayoutActive ? false : !tvOnLeft, entry.mediaKey);
 }
 
 function selectScreen(entry) {
@@ -2670,35 +3744,7 @@ function selectScreen(entry) {
     return;
   }
 
-  const project = TV_PROJECTS[entry.mediaKey];
-  if (!project || focusedScreen) return;
-
-  setHoveredScreen(null);
-  focusedScreen = entry;
-  focusTarget = 1;
-  projectPanelSideOffset = null;
-  entry.material.userData.interactionTarget = 1;
-
-  new THREE.Box3()
-    .setFromObject(entry.mesh)
-    .getCenter(interactionWorldPosition);
-
-  const tvOnLeft = interactionWorldPosition.x <= 0;
-  focusCameraPosition.set(
-    interactionWorldPosition.x,
-    interactionWorldPosition.y,
-    interactionWorldPosition.z + 2.95,
-  );
-  focusLookTarget.set(
-    interactionWorldPosition.x + (tvOnLeft ? 0.95 : -0.95),
-    interactionWorldPosition.y,
-    interactionWorldPosition.z,
-  );
-
-  crtScreenMaterials.forEach((material) => {
-    material.userData.dimTarget = material === entry.material ? 0 : 1;
-  });
-  showProjectPanel(project, !tvOnLeft, entry.mediaKey);
+  focusProjectScreen(entry);
 }
 
 function setCleanViewOrigin() {
@@ -2732,7 +3778,7 @@ function getProjectGallery(project, media) {
     return [
       {
         src: media.src,
-        alt: `${project?.title ?? "project"} image`,
+        alt: getUiCopy().imageAlt(project?.title ?? getUiCopy().media),
       },
     ];
   }
@@ -2749,7 +3795,7 @@ function showCleanGalleryItem(index) {
   const item = cleanGalleryItems[cleanGalleryIndex];
 
   cleanImage.classList.add("is-changing");
-  cleanImage.alt = item.alt ?? `${cleanViewTitle.textContent} image`;
+  cleanImage.alt = item.alt ?? getUiCopy().imageAlt(cleanViewTitle.textContent);
   cleanImage.src = item.src;
   cleanGalleryCount.textContent = `${cleanGalleryIndex + 1} / ${cleanGalleryItems.length}`;
 
@@ -2764,14 +3810,14 @@ function openCleanView() {
 
   const mediaKey = focusedScreen.mediaKey;
   const media = TV_SCREEN_MEDIA[mediaKey];
-  const project = TV_PROJECTS[mediaKey];
+  const project = getLocalizedProject(mediaKey);
   const gallery = getProjectGallery(project, media);
   if (gallery.length === 0 && media?.type !== "video") return;
 
   setHoveredScreen(null);
   projectPreviewVideo.pause();
   setCleanViewOrigin();
-  cleanViewTitle.textContent = project?.title ?? "media";
+  cleanViewTitle.textContent = project?.title ?? getUiCopy().media;
 
   if (gallery.length > 0) {
     cleanViewMode = "gallery";
@@ -2814,6 +3860,18 @@ function openCleanView() {
   roomStage.classList.add("is-clean-view-open");
   if (cleanViewMode === "video") cleanVideo.play().catch(() => {});
   cleanViewClose.focus({ preventScroll: true });
+}
+
+function handleProjectPreviewClick() {
+  if (!focusedScreen) return;
+
+  const project = getLocalizedProject(focusedScreen.mediaKey);
+  if (project?.previewUrl) {
+    window.open(project.previewUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  openCleanView();
 }
 
 function closeCleanView({ restoreFocus = true } = {}) {
@@ -2869,7 +3927,8 @@ function closeProject() {
   roomStage.classList.remove("is-panel-left");
 }
 
-canvas.addEventListener("click", () => {
+canvas.addEventListener("click", (event) => {
+  syncPointerFromEvent(event);
   if (introStage === "waiting") {
     if (isPointerOverIntroTitle()) beginIntroSequence();
     return;
@@ -2882,12 +3941,13 @@ canvas.addEventListener("click", () => {
     return;
   }
 
+  updateHoveredScreen();
   if (!focusedScreen && hoveredScreen) {
     selectScreen(hoveredScreen);
   }
 });
 projectClose.addEventListener("click", closeProject);
-projectPreview.addEventListener("click", openCleanView);
+projectPreview.addEventListener("click", handleProjectPreviewClick);
 cleanViewClose.addEventListener("click", () => closeCleanView());
 cleanView.addEventListener("click", (event) => {
   if (event.target === cleanView) closeCleanView();
@@ -2944,6 +4004,103 @@ function startScreenVideos() {
 }
 
 const tvLoader = new GLTFLoader();
+const tvUnitsByKey = new Map();
+let tvWallGroup = null;
+let tvTemplateSize = null;
+
+function getTvUnitKey(rowIndex, unitIndex) {
+  return `${rowIndex}:${unitIndex}`;
+}
+
+function getActiveTvLayoutRows() {
+  if (mobileLayoutActive) return TV_MOBILE_WALL_ROWS;
+
+  return TV_DESKTOP_WALL_ROWS.map(({ offsetX, scales }, rowIndex) => ({
+    offsetX,
+    entries: scales.map((scale, unitIndex) => ({
+      rowIndex,
+      unitIndex,
+      scale,
+    })),
+  }));
+}
+
+function applyTvWallLayout({ refreshLights = false } = {}) {
+  if (!tvWallGroup || !tvTemplateSize) return;
+
+  const horizontalGap = mobileLayoutActive ? -0.012 : TV_HORIZONTAL_GAP;
+  const verticalGap = mobileLayoutActive ? -0.045 : TV_VERTICAL_GAP;
+  let rowBottom = 0;
+
+  getActiveTvLayoutRows().forEach(({
+    offsetX,
+    entries,
+    columns = null,
+  }, layoutRowIndex) => {
+    const rowUnits = entries.map((layoutEntry) => {
+      const tvUnit = tvUnitsByKey.get(
+        getTvUnitKey(layoutEntry.rowIndex, layoutEntry.unitIndex),
+      );
+      return { ...layoutEntry, tvUnit };
+    }).filter(({ tvUnit }) => Boolean(tvUnit));
+    const usesFixedColumns = Number.isInteger(columns) && columns > 0;
+    const columnUnitWidth = usesFixedColumns
+      ? tvTemplateSize.x * Math.max(...rowUnits.map(({ scale }) => scale))
+      : 0;
+    const rowWidth = usesFixedColumns
+      ? columnUnitWidth * columns + Math.max(0, columns - 1) * horizontalGap
+      : rowUnits.reduce(
+          (width, { scale }) => width + tvTemplateSize.x * scale,
+          Math.max(0, rowUnits.length - 1) * horizontalGap,
+        );
+    const rowHeight = rowUnits.reduce(
+      (height, { scale }) => Math.max(height, tvTemplateSize.y * scale),
+      0,
+    );
+    let cursorX = offsetX - rowWidth * 0.5;
+
+    rowUnits.forEach(({
+      tvUnit,
+      scale,
+      rowIndex,
+      unitIndex,
+      columnIndex = null,
+    }, layoutColumnIndex) => {
+      const unitWidth = tvTemplateSize.x * scale;
+      const resolvedColumnIndex = Number.isInteger(columnIndex)
+        ? columnIndex
+        : layoutColumnIndex;
+      const unitCenterX = usesFixedColumns
+        ? offsetX - rowWidth * 0.5 +
+          resolvedColumnIndex * (columnUnitWidth + horizontalGap) +
+          columnUnitWidth * 0.5
+        : cursorX + unitWidth * 0.5;
+      tvUnit.scale.setScalar(scale);
+      tvUnit.position.set(
+        unitCenterX,
+        rowBottom,
+        TV_WALL_Z,
+      );
+      tvUnit.userData.layoutRowIndex = layoutRowIndex;
+      tvUnit.userData.layoutColumnIndex = resolvedColumnIndex;
+      tvUnit.userData.contentRowIndex = rowIndex;
+      tvUnit.userData.contentUnitIndex = unitIndex;
+      if (!usesFixedColumns) cursorX += unitWidth + horizontalGap;
+    });
+
+    rowBottom += rowHeight + verticalGap;
+  });
+
+  tvWallGroup.updateMatrixWorld(true);
+  configureSharedTitleScreens();
+
+  const wallBounds = new THREE.Box3().setFromObject(tvWallGroup);
+  const wallCenter = wallBounds.getCenter(new THREE.Vector3());
+  tvGlowLight.position.set(wallCenter.x, wallCenter.y, TV_WALL_Z + 1.45);
+
+  if (refreshLights) configureScreenGlowLights();
+  else syncScreenGlowLightPositions();
+}
 
 tvLoader.load(
   "assets/models/crt-tv-timothy-ahene.glb",
@@ -2992,19 +4149,15 @@ tvLoader.load(
     const templateBounds = new THREE.Box3().setFromObject(tvTemplate);
     const templateSize = templateBounds.getSize(new THREE.Vector3());
 
-    const tvWall = new THREE.Group();
-    let rowBottom = 0;
+    tvTemplateSize = templateSize;
+    tvWallGroup = new THREE.Group();
+    tvWallGroup.name = mobileLayoutActive
+      ? "Portrait CRT television wall"
+      : "Desktop CRT television wall";
 
-    TV_WALL_ROWS.forEach(({ offsetX, scales }, rowIndex) => {
-      const rowUnits = [];
-      let rowWidth = 0;
-      let rowHeight = 0;
-
-      scales.forEach((unitScale, unitIndex) => {
+    TV_SCREEN_LAYOUT.forEach((row, rowIndex) => {
+      row.forEach((mediaKey, unitIndex) => {
         const tvUnit = tvTemplate.clone(true);
-        const unitWidth = templateSize.x * unitScale;
-        const unitHeight = templateSize.y * unitScale;
-        const mediaKey = TV_SCREEN_LAYOUT[rowIndex]?.[unitIndex] ?? "static";
 
         applyScreenMaterial(
           tvUnit,
@@ -3013,32 +4166,13 @@ tvLoader.load(
           rowIndex,
           unitIndex,
         );
-
-        tvUnit.scale.setScalar(unitScale);
-        tvUnit.position.set(
-          rowWidth + unitWidth / 2,
-          rowBottom,
-          TV_WALL_Z,
-        );
-
-        rowUnits.push(tvUnit);
-        rowWidth += unitWidth + TV_HORIZONTAL_GAP;
-        rowHeight = Math.max(rowHeight, unitHeight);
+        tvUnitsByKey.set(getTvUnitKey(rowIndex, unitIndex), tvUnit);
+        tvWallGroup.add(tvUnit);
       });
-
-      rowWidth -= TV_HORIZONTAL_GAP;
-
-      rowUnits.forEach((tvUnit) => {
-        tvUnit.position.x += offsetX - rowWidth / 2;
-        tvWall.add(tvUnit);
-      });
-
-      rowBottom += rowHeight + TV_VERTICAL_GAP;
     });
 
-    scene.add(tvWall);
-    tvWall.updateMatrixWorld(true);
-    configureSharedTitleScreens(tvWall);
+    scene.add(tvWallGroup);
+    applyTvWallLayout();
     configureScreenGlowLights();
     startScreenVideos();
     render();
@@ -3061,7 +4195,11 @@ function render() {
     smoothedPointer.lerp(pointerTarget, followEase);
   }
 
-  const motionScale = reducedMotionQuery.matches ? 0.18 : 1;
+  const motionScale = reducedMotionQuery.matches
+    ? 0.18
+    : mobileLayoutActive
+      ? 0.42
+      : 1;
   const irregularDrift =
     Math.sin(elapsedTime * 0.23 + 1.3) *
     Math.sin(elapsedTime * 0.67 + 0.4);
@@ -3092,27 +4230,50 @@ function render() {
   ) * motionScale;
 
   const introCameraAmount = getIntroCameraAmount(elapsedTime);
+  const defaultCameraHeight = mobileLayoutActive
+    ? MOBILE_DEFAULT_CAMERA_HEIGHT
+    : EYE_HEIGHT;
+  const introCameraHeight = mobileLayoutActive
+    ? MOBILE_INTRO_CAMERA_HEIGHT
+    : INTRO_CAMERA_HEIGHT;
+  const defaultCameraZ = mobileLayoutActive
+    ? MOBILE_DEFAULT_CAMERA_Z
+    : DEFAULT_CAMERA_Z;
+  const introCameraZ = mobileLayoutActive
+    ? MOBILE_INTRO_CAMERA_Z
+    : INTRO_CAMERA_Z;
   const introPointerDamping = THREE.MathUtils.lerp(
     1,
-    0.56,
+    mobileLayoutActive ? 0.3 : 0.56,
     introCameraAmount,
   );
   const activeCameraHeight = THREE.MathUtils.lerp(
-    EYE_HEIGHT,
-    INTRO_CAMERA_HEIGHT,
+    defaultCameraHeight,
+    introCameraHeight,
+    introCameraAmount,
+  );
+  const activeCameraZ = THREE.MathUtils.lerp(
+    defaultCameraZ,
+    introCameraZ,
     introCameraAmount,
   );
 
   homeCameraPosition.set(
-    (smoothedPointer.x * 0.035 + handheldX) * introPointerDamping,
+    handheldX * introPointerDamping,
     activeCameraHeight +
-      (smoothedPointer.y * 0.018 + handheldY) * introPointerDamping,
-    handheldZ + INTRO_CAMERA_Z * introCameraAmount,
+      handheldY * introPointerDamping,
+    handheldZ + activeCameraZ,
   );
   homeLookTarget.set(
-    (smoothedPointer.x * 0.52 + handheldLookX) * introPointerDamping,
+    (
+      smoothedPointer.x * (mobileLayoutActive ? 0.045 : 0.14) +
+      handheldLookX
+    ) * introPointerDamping,
     activeCameraHeight +
-      (smoothedPointer.y * 0.27 + handheldLookY) * introPointerDamping,
+      (
+        smoothedPointer.y * (mobileLayoutActive ? 0.025 : 0.075) +
+        handheldLookY
+      ) * introPointerDamping,
     -ROOM_DEPTH / 2,
   );
 
@@ -3165,42 +4326,10 @@ function render() {
   ) * motionScale * THREE.MathUtils.lerp(1, 0.35, smoothFocus);
 
   updateProjectPanelSideOffset(deltaTime);
-  updateTitleTransferTarget();
   updateHoveredScreen();
 
   const materialEase = 1 - Math.exp(-deltaTime * 10);
   const socialHoverEase = 1 - Math.exp(-deltaTime * 4.2);
-  titleTransferAmount += (
-    titleTransferTarget - titleTransferAmount
-  ) * materialEase;
-  const smoothTitleTransfer =
-    titleTransferAmount * titleTransferAmount * (3 - 2 * titleTransferAmount);
-
-  floatingTitleLetters.forEach((entry, letterIndex) => {
-    const idleMotion = reducedMotionQuery.matches ? 0 : 1;
-    const quietFloatY = Math.sin(elapsedTime * 0.54 + entry.phase) * 0.009 * idleMotion;
-    const quietFloatZ = Math.sin(elapsedTime * 0.41 + entry.phase * 1.4) * 0.008 * idleMotion;
-    const glitchGate = Math.sin(elapsedTime * 31 + entry.phase * 8.1) > 0.72 ? 1 : 0;
-    const horizontalGlitch = glitchGate * smoothTitleTransfer *
-      Math.sin(elapsedTime * 53 + letterIndex) * 0.045 * idleMotion;
-
-    entry.mesh.position.copy(entry.basePosition);
-    entry.mesh.position.addScaledVector(entry.scatterOffset, smoothTitleTransfer);
-    entry.mesh.position.x += horizontalGlitch;
-    entry.mesh.position.y += quietFloatY;
-    entry.mesh.position.z += quietFloatZ;
-    entry.mesh.rotation.set(
-      entry.baseRotation.x + entry.scatterRotation.x * smoothTitleTransfer,
-      entry.baseRotation.y + entry.scatterRotation.y * smoothTitleTransfer,
-      entry.baseRotation.z + entry.scatterRotation.z * smoothTitleTransfer,
-    );
-
-    const glitchOpacity = glitchGate && smoothTitleTransfer > 0.08 ? 0.58 : 1;
-    entry.material.opacity =
-      (0.92 - smoothTitleTransfer * 0.26) *
-      glitchOpacity *
-      (1 - smoothFocus);
-  });
 
   crtScreenMaterials.forEach((material) => {
     material.uniforms.uTime.value = elapsedTime;
@@ -3225,6 +4354,13 @@ function render() {
   updateIntroSequence(elapsedTime);
   updateCeilingFlicker(elapsedTime, deltaTime);
   updateSiteHeaderVisibility();
+  if (
+    siteHeaderVisible &&
+    !mobileLayoutActive &&
+    !headerWordmarkAnimationComplete
+  ) {
+    drawHeaderAsciiWordmark(elapsedTime * 1000);
+  }
   updateScreenGlowLights(elapsedTime, deltaTime);
 
   const lightEntry = focusTarget > 0 ? focusedScreen : hoveredScreen;
@@ -3246,17 +4382,73 @@ function render() {
 }
 
 function handleResize() {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+  const nextMobileLayout = FORCE_MOBILE_PREVIEW || MOBILE_LAYOUT_QUERY.matches;
+  const layoutChanged = nextMobileLayout !== mobileLayoutActive;
+
+  if (layoutChanged) {
+    if (focusedScreen) closeProject();
+    mobileLayoutActive = nextMobileLayout;
+    document.documentElement.classList.toggle(
+      "is-mobile-layout",
+      mobileLayoutActive,
+    );
+    aboutWindow.style.removeProperty("left");
+    aboutWindow.style.removeProperty("top");
+    projectPanel.style.removeProperty("--project-side-offset");
+    camera.fov = mobileLayoutActive ? 52 : 60;
+    const shadowSize = mobileLayoutActive ? 1024 : 2048;
+    keyLight.shadow.mapSize.set(shadowSize, shadowSize);
+    keyLight.shadow.map?.dispose();
+    keyLight.shadow.map = null;
+    ceilingFixtures.forEach(({ housing, panel }) => {
+      housing.visible = !mobileLayoutActive;
+      panel.visible = !mobileLayoutActive;
+    });
+    crtScreenMaterials.forEach((material) => {
+      material.uniforms.uMobileLayout.value = Number(mobileLayoutActive);
+      material.uniforms.uSocialAmount.value =
+        SOCIAL_LINKS[material.userData.mediaKey] && !mobileLayoutActive
+          ? 1
+          : 0;
+    });
+    introLetterTextureCache.forEach(drawIntroLetterTextureSet);
+    Object.keys(SOCIAL_LINKS).forEach(drawSocialScreenTexture);
+    headerWordmarkAnimationStartedAt =
+      !mobileLayoutActive && siteHeaderVisible ? performance.now() : null;
+    headerWordmarkAnimationComplete = false;
+    drawHeaderAsciiWordmark(performance.now(), true);
+    applyTvWallLayout({ refreshLights: true });
+  }
+
+  const { width, height } = getStageViewport();
 
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(getRendererPixelRatio());
   renderer.setSize(width, height, false);
   projectPanelSideOffset = null;
+  clampAboutWindowPosition();
+  fitProjectTitle();
   render();
 }
 
 window.addEventListener("resize", handleResize);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    activeScreenVideos.forEach((video) => video.pause());
+    projectPreviewVideo.pause();
+    if (cleanViewMode === "video") cleanVideo.pause();
+    return;
+  }
+
+  if (introStage === "done") startScreenVideos();
+  if (
+    projectPanel.classList.contains("is-visible") &&
+    !projectPreviewVideo.hidden
+  ) {
+    projectPreviewVideo.play().catch(() => {});
+  }
+});
 
 renderer.setAnimationLoop(render);

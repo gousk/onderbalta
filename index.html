@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>onder balta — 3D space</title>
-  <meta name="description" content="A three-dimensional portfolio space by onder balta.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>onder balta - game developer</title>
+  <meta id="metaDescription" name="description" content="A three-dimensional portfolio space by onder balta.">
   <meta name="theme-color" content="#f2f2ef">
   <link rel="icon" type="image/png" href="assets/optimized-media/browser-icon.png">
   <link rel="apple-touch-icon" href="assets/optimized-media/browser-icon.png">
@@ -30,35 +30,93 @@
         role="img"
         aria-label="onder balta"
       ></canvas>
+      <nav id="primaryNav" class="header-nav" aria-label="Primary navigation">
+        <button id="homeButton" class="header-nav-item is-current" type="button" aria-current="page">
+          home
+        </button>
+        <button id="aboutMeButton" class="header-nav-item" type="button">
+          about me
+        </button>
+        <button
+          id="languageSwitch"
+          class="language-switch"
+          type="button"
+          aria-label="Switch language to Turkish"
+        >
+          <span id="languageEnglish" class="language-option is-active">en</span>
+          <span class="language-divider" aria-hidden="true">/</span>
+          <span id="languageTurkish" class="language-option">tr</span>
+        </button>
+      </nav>
     </header>
+    <aside
+      id="aboutWindow"
+      class="about-window"
+      role="dialog"
+      aria-labelledby="aboutWindowTitle"
+      aria-hidden="true"
+      inert
+    >
+      <div id="aboutWindowBar" class="about-window-bar">
+        <span id="aboutWindowTitle">about_me.txt</span>
+        <button
+          id="aboutWindowClose"
+          class="about-window-close"
+          type="button"
+          aria-label="Close about window"
+        >
+          ×
+        </button>
+      </div>
+      <div class="header-info">
+        <p
+          id="headerInfoText"
+              data-text="Hey, Im Önder. I am an information systems engineering graduate and a game developer interested in technical art and stylized graphics. Currently developing our own game, Delivery Guy Simulator, as bicycle club. If you find it interesting, please check it out and consider adding it to your wishlist."
+              aria-label="Hey, Im Önder. I am an information systems engineering graduate and a game developer interested in technical art and stylized graphics. Currently developing our own game, Delivery Guy Simulator, as bicycle club. If you find it interesting, please check it out and consider adding it to your wishlist."
+        ></p>
+        <button id="aboutGameButton" class="about-game-button" type="button">
+          show delivery guy simulator
+        </button>
+      </div>
+    </aside>
     <aside id="projectPanel" class="project-panel" aria-hidden="true" inert>
-      <button id="projectClose" class="project-close" type="button">
-        back
-      </button>
-      <p id="projectMeta" class="project-meta"></p>
-      <h2 id="projectTitle" class="project-title"></h2>
-      <p id="projectDescription" class="project-description"></p>
-      <button id="projectPreview" class="project-preview" type="button" hidden>
-        <video
-          id="projectPreviewVideo"
-          muted
-          loop
-          playsinline
-          preload="metadata"
+      <div class="project-window-bar">
+        <span id="projectWindowTitle">project_view.exe</span>
+        <button
+          id="projectClose"
+          class="project-close"
+          type="button"
+          aria-label="Close project view"
+        >
+          ×
+        </button>
+      </div>
+      <div class="project-window-content">
+        <p id="projectMeta" class="project-meta"></p>
+        <h2 id="projectTitle" class="project-title"></h2>
+        <p id="projectDescription" class="project-description"></p>
+        <button id="projectPreview" class="project-preview" type="button" hidden>
+          <video
+            id="projectPreviewVideo"
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            hidden
+          ></video>
+          <img id="projectPreviewImage" alt="" hidden>
+          <span id="projectPreviewLabel" class="project-preview-label"></span>
+        </button>
+        <a
+          id="projectLink"
+          class="project-link"
+          target="_blank"
+          rel="noreferrer"
           hidden
-        ></video>
-        <img id="projectPreviewImage" alt="" hidden>
-        <span id="projectPreviewLabel" class="project-preview-label"></span>
-      </button>
-      <a
-        id="projectLink"
-        class="project-link"
-        target="_blank"
-        rel="noreferrer"
-        hidden
-      >
-        visit project
-      </a>
+        >
+          visit project
+        </a>
+      </div>
     </aside>
     <section
       id="cleanView"

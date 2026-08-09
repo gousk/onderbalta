@@ -1,49 +1,28 @@
 # onder balta
 
-This is the current front-end for my personal site.
+The current front end for my personal portfolio.
 
-It is a static site built with plain HTML, CSS, and JavaScript. The main page uses a video-driven ASCII hero, followed by a gallery of posts. Each post opens in an overlay and can show different types of content depending on the item: video, image, carousel, website preview, or embedded game build.
+It is a static site built with HTML, CSS, JavaScript, and Three.js. The main
+page presents a responsive CRT television wall inside a 3D concrete room. Its
+project screens open focused views with supporting information, media, and
+external links.
 
-## What is in the project
+## Project structure
 
-- `index.html`
-  Main page structure, overlay markup, hidden source video, and social links.
+- `index.html` contains the page structure and interface markup.
+- `styles.css` contains the desktop and mobile layouts.
+- `script.js` contains the Three.js scene, CRT shaders, interactions, project
+  data, and language switching.
+- `server.js` provides the local development server.
+- `assets/` contains the production fonts, images, videos, textures, and 3D
+  model used by the site.
 
-- `styles.css`
-  All visual styling, layout, gallery grid, overlay styles, and responsive behavior.
+## Run locally
 
-- `script.js`
-  ASCII rendering logic, gallery rendering, post data, overlay behavior, carousel handling, and media/game embedding.
-
-- `server.js`
-  Small local server for running the site without `file://` issues.
-
-- `assets/`
-  Local assets such as fonts and icon files.
-
-## Media
-
-Cloud-hosted media has been removed temporarily. Missing images, videos, audio, and 3D assets currently use local placeholders so the site can load while the original files are restored.
-
-When restoring media, keep source files outside the CDN as a separate archive, place raw local recovery files under `assets/media/`, generate production-ready files under `assets/optimized-media/`, then update the `mediaAssets` object in `script.js`.
-
-## Running locally
-
-Serve the project locally instead of opening `index.html` directly.
-
-```powershell
-cd C:\Users\onder\Documents\GitHub\onderbalta.com
+```bash
 node server.js
 ```
 
-Then open:
+Then open `http://localhost:5500`.
 
-```text
-http://localhost:5500
-```
-
-## Notes
-
-- This is not a framework-based app.
-- A large part of the site content is driven directly from the post data inside `script.js`.
-- Some embedded game content depends on third-party hosting behavior, so not every external build can be embedded reliably without hosting it separately.
+Use `http://localhost:5500/?mobile=1` to force the mobile layout on desktop.
