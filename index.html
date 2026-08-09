@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>onder balta - game developer</title>
   <meta id="metaDescription" name="description" content="A three-dimensional portfolio space by onder balta.">
-  <meta name="theme-color" content="#f2f2ef">
+  <meta name="theme-color" content="#030403">
   <link rel="icon" type="image/png" href="assets/optimized-media/browser-icon.png">
   <link rel="apple-touch-icon" href="assets/optimized-media/browser-icon.png">
   <link rel="stylesheet" href="styles.css">
@@ -18,7 +18,37 @@
       role="img"
       aria-label="An empty white room viewed from its center"
     ></canvas>
-    <div id="loadingScreen" class="loading-screen" aria-hidden="true"></div>
+    <div
+      id="loadingScreen"
+      class="loading-screen"
+      role="status"
+      aria-live="polite"
+      aria-hidden="false"
+    >
+      <div class="loading-window" aria-label="Loading 3D portfolio">
+        <div class="loading-window-bar">
+          <span>system_boot.exe</span>
+          <span class="loading-window-control" aria-hidden="true">×</span>
+        </div>
+        <div class="loading-window-content">
+          <p id="loadingStatus" class="loading-status">initializing display</p>
+          <div
+            class="loading-progress-track"
+            role="progressbar"
+            aria-label="Loading progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <span id="loadingProgressBar" class="loading-progress-bar"></span>
+          </div>
+          <div class="loading-readout" aria-hidden="true">
+            <span id="loadingPercent">00%</span>
+            <span id="loadingActivity">please wait</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <p id="webglFallback" class="webgl-fallback" hidden>
       This 3D space requires WebGL to be enabled in your browser.
     </p>

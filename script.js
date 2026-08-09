@@ -6,6 +6,11 @@ const canvas = document.querySelector("#roomCanvas");
 const roomStage = document.querySelector(".room-stage");
 const metaDescription = document.querySelector("#metaDescription");
 const loadingScreen = document.querySelector("#loadingScreen");
+const loadingStatus = document.querySelector("#loadingStatus");
+const loadingProgressTrack = document.querySelector(".loading-progress-track");
+const loadingProgressBar = document.querySelector("#loadingProgressBar");
+const loadingPercent = document.querySelector("#loadingPercent");
+const loadingActivity = document.querySelector("#loadingActivity");
 const webglFallback = document.querySelector("#webglFallback");
 const viewCursor = document.querySelector("#viewCursor");
 const siteHeader = document.querySelector("#siteHeader");
@@ -481,7 +486,9 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 RectAreaLightUniformsLib.init();
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x171819);
+const roomBackgroundColor = new THREE.Color(0x171819);
+const bootBackgroundColor = new THREE.Color(0x020302);
+scene.background = bootBackgroundColor.clone();
 
 const camera = new THREE.PerspectiveCamera(
   mobileLayoutActive ? 52 : 60,
@@ -505,9 +512,12 @@ const focusCameraPosition = new THREE.Vector3();
 const focusLookTarget = new THREE.Vector3();
 const movingFocusCameraPosition = new THREE.Vector3();
 const movingFocusLookTarget = new THREE.Vector3();
+const mobileFocusProjectionCamera = camera.clone();
+const mobileFocusBoundsSize = new THREE.Vector3();
 const finalLookTarget = new THREE.Vector3();
 const interactionWorldPosition = new THREE.Vector3();
 const focusedScreenBounds = new THREE.Box3();
+const mobileFocusReferenceBounds = new THREE.Box3();
 const projectedScreenCorner = new THREE.Vector3();
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 let headerInfoHasTyped = false;
@@ -693,6 +703,14 @@ aboutWindowBar.addEventListener("pointerup", finishAboutWindowDrag);
 aboutWindowBar.addEventListener("pointercancel", finishAboutWindowDrag);
 
 const FOCUS_RELEASE_THRESHOLD = 0.03;
+const DESKTOP_FOCUS_OUTWARD_LOOK_OFFSET = 1.12;
+const MOBILE_FOCUS_BASE_DISTANCE = 3.08;
+const MOBILE_FOCUS_REFERENCE_MEDIA_KEY = "scene02";
+const MOBILE_FOCUS_EXTRA_LIFT = {
+  bicycleVideo: -28,
+  nullGame: -15,
+  deliveryGuy: -10,
+};
 let hoveredScreen = null;
 let focusedScreen = null;
 let focusAmount = 0;
@@ -842,6 +860,7 @@ function resetPointerTarget() {
 }
 
 window.addEventListener("pointermove", handlePointerMove, { passive: true });
+window.addEventListener("pointerover", handlePointerMove, { passive: true });
 canvas.addEventListener("pointerdown", syncPointerFromEvent, { passive: true });
 document.documentElement.addEventListener("mouseleave", resetPointerTarget);
 [siteHeader, aboutWindow, projectPanel, cleanView].forEach((element) => {
@@ -977,13 +996,14 @@ createSurface(
   true,
 );
 
-const ambientLight = new THREE.HemisphereLight(0xcfd6da, 0x6f6962, 0.24);
+const AMBIENT_LIGHT_BASE_INTENSITY = 0.24;
+const ambientLight = new THREE.HemisphereLight(0xcfd6da, 0x6f6962, 0);
 scene.add(ambientLight);
 
 const KEY_LIGHT_BASE_INTENSITY = 82;
 const keyLight = new THREE.SpotLight(
   0xffffff,
-  KEY_LIGHT_BASE_INTENSITY,
+  0,
   18,
   Math.PI / 2.8,
   0.86,
@@ -1009,8 +1029,10 @@ const ceilingPanelMaterial = new THREE.MeshBasicMaterial({
   toneMapped: false,
 });
 const ceilingPanelBaseColor = ceilingPanelMaterial.color.clone();
+ceilingPanelMaterial.color.setScalar(0);
 const ceilingFixtures = [];
-let ceilingLightPower = 1;
+let ceilingLightPower = 0;
+let roomLightLevel = 0.4;
 const ceilingHousingMaterial = new THREE.MeshStandardMaterial({
   color: 0x292b2b,
   roughness: 0.78,
@@ -1038,7 +1060,7 @@ function createCeilingFixture(z, intensity) {
 
   const areaLight = new THREE.RectAreaLight(
     0xffffff,
-    intensity,
+    0,
     3.35,
     0.48,
   );
@@ -1057,7 +1079,8 @@ createCeilingFixture(3.8, 2.1);
 createCeilingFixture(-1.5, 2.8);
 createCeilingFixture(-6.7, 2.35);
 
-const tvGlowLight = new THREE.PointLight(0x91b6c8, 3.2, 5.5, 2);
+const TV_GLOW_BASE_INTENSITY = 3.2;
+const tvGlowLight = new THREE.PointLight(0x91b6c8, 0, 5.5, 2);
 tvGlowLight.position.set(0, 2.25, TV_WALL_Z + 1.45);
 scene.add(tvGlowLight);
 
@@ -1067,11 +1090,14 @@ scene.add(interactionLight);
 
 const activeScreenVideos = [];
 const screenVideoByMediaKey = new Map();
+let screenVideosUnlocked = false;
+let screenVideoRetryArmed = false;
 const screenTextureCache = new Map();
 const screenMediaAspectCache = new Map();
 const crtScreenMaterials = [];
 const screenGlowEntries = [];
 const sampledScreenLightCache = new Map();
+const greenFilterLightColor = new THREE.Color(0x789b7f);
 const screenLightSampleCanvas = document.createElement("canvas");
 screenLightSampleCanvas.width = 12;
 screenLightSampleCanvas.height = 12;
@@ -1080,16 +1106,19 @@ const screenLightSampleContext = screenLightSampleCanvas.getContext("2d", {
 });
 let nextScreenLightSampleAt = 0;
 
-const sharedTitleCanvas = document.createElement("canvas");
-const sharedTitleContext = sharedTitleCanvas.getContext("2d");
 const INTRO_HANDOFF_DURATION = 0.92;
 const INTRO_FADE_DURATION = 0.9;
 const INTRO_POWER_DURATION = 1.15;
+const LOADING_OVERLAY_MIN_DURATION = 1.2;
+const BOOT_LIGHT_DURATION = 1.72;
+const BOOT_SCREEN_LIGHT_OVERLAP_AT = 0.12;
+const BOOT_TITLE_SCREEN_OVERLAP_DELAY = 0.18;
+const BOOT_SCREEN_POWER_DURATION = 0.52;
+const BOOT_SCREEN_STAGGER = 0.1;
+const BOOT_TITLE_DURATION = 1.86;
 const SOCIAL_ICON_REVEAL_DELAY = 0.18;
 const SOCIAL_ICON_REVEAL_DURATION = 1.72;
 const INTRO_CAMERA_PULL_DURATION = INTRO_HANDOFF_DURATION + INTRO_FADE_DURATION;
-const GRAYSCALE_FADE_DELAY = 0.34;
-const GRAYSCALE_FADE_DURATION = 0.82;
 const INTRO_CUE_IDLE_DELAY = 4.2;
 const INTRO_CUE_REVEAL_DURATION = 0.28;
 const CRT_SCREEN_ASPECT = 1.3126972362;
@@ -1100,256 +1129,26 @@ const MOBILE_DEFAULT_CAMERA_Z = -0.35;
 const MOBILE_INTRO_CAMERA_Z = -1.16;
 const MOBILE_DEFAULT_CAMERA_HEIGHT = 3.18;
 const MOBILE_INTRO_CAMERA_HEIGHT = 2.72;
-let sharedTitleWallAspect = 1.6;
-let sharedTitleTexture;
-let introTitleTexture;
 let introLetterTitleBounds = null;
 let introHoverHitArea = null;
 let introClickHitArea = null;
 let introStage = "waiting";
 let introStageStartedAt = 0;
 let introSequenceStartedAt = 0;
-let introCompletedAt = 0;
 let introCueIdleStartedAt = null;
 let siteHeaderVisible = false;
+let siteAssetsReady = false;
+let siteModelReady = false;
+let siteFontReady = !document.fonts;
+let siteBootStage = "loading";
+let siteBootStageStartedAt = performance.now() * 0.001;
+let siteBootSequenceStartedAt = 0;
+let siteBootScreensStartedAt = 0;
+let siteBootTitleStartedAt = 0;
+let siteBootLoadingProgress = 0;
+let siteBootLightAmount = 0;
+let siteBootTitleProgress = 0;
 const introWaveOrigin = new THREE.Vector2(0.5, 0.5);
-
-function getIntroTitleLayout(context, canvasWidth, canvasHeight) {
-  const preferredFontSize = canvasHeight * 0.43;
-  context.font = `500 ${preferredFontSize}px "Onder Medium", sans-serif`;
-  const widestLine = Math.max(
-    context.measureText("onder").width,
-    context.measureText("balta").width,
-  );
-  const fontSize = preferredFontSize * Math.min(
-    1,
-    (canvasWidth * 0.86) / widestLine,
-  );
-
-  return {
-    fontSize,
-    lines: [
-      { text: "onder", y: canvasHeight * 0.27 },
-      { text: "balta", y: canvasHeight * 0.73 },
-    ],
-  };
-}
-
-function drawIntroTvLetters(context, canvasWidth, canvasHeight, withGlow = false) {
-  if (!introLetterTitleBounds || introLetterScreenEntries.length === 0) {
-    return false;
-  }
-
-  const boundsWidth = introLetterTitleBounds.max.x - introLetterTitleBounds.min.x;
-  const boundsHeight = introLetterTitleBounds.max.y - introLetterTitleBounds.min.y;
-  if (boundsWidth <= 0 || boundsHeight <= 0) return false;
-
-  const fontSize = canvasHeight * 0.34;
-  const screenBounds = new THREE.Box3();
-  const screenCenter = new THREE.Vector3();
-  context.save();
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.font = `500 ${fontSize}px "Onder Medium", sans-serif`;
-  context.fillStyle = "#ffffff";
-  context.shadowColor = withGlow ? "rgba(255, 255, 255, 0.76)" : "transparent";
-  context.shadowBlur = withGlow ? Math.max(18, canvasHeight * 0.022) : 0;
-
-  introLetterScreenEntries.forEach((entry) => {
-    const word = entry.rowIndex === 1 ? "onder" : "balta";
-    const character = word[entry.unitIndex];
-    if (!character) return;
-
-    screenBounds.setFromObject(entry.mesh);
-    screenBounds.getCenter(screenCenter);
-    const normalizedX = (screenCenter.x - introLetterTitleBounds.min.x) / boundsWidth;
-    const normalizedY = (screenCenter.y - introLetterTitleBounds.min.y) / boundsHeight;
-    context.fillText(
-      character,
-      normalizedX * canvasWidth,
-      (1 - normalizedY) * canvasHeight,
-    );
-  });
-  context.restore();
-  return true;
-}
-
-function drawSharedTitleTexture(wallAspect = sharedTitleWallAspect) {
-  sharedTitleWallAspect = wallAspect;
-  const canvasWidth = 2048;
-  const canvasHeight = THREE.MathUtils.clamp(
-    Math.round(canvasWidth / wallAspect),
-    960,
-    1600,
-  );
-
-  sharedTitleCanvas.width = canvasWidth;
-  sharedTitleCanvas.height = canvasHeight;
-  sharedTitleContext.clearRect(0, 0, canvasWidth, canvasHeight);
-
-  const maskCanvas = document.createElement("canvas");
-  maskCanvas.width = canvasWidth;
-  maskCanvas.height = canvasHeight;
-  const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
-  maskContext.clearRect(0, 0, canvasWidth, canvasHeight);
-  if (!drawIntroTvLetters(maskContext, canvasWidth, canvasHeight)) {
-    const titleLayout = getIntroTitleLayout(maskContext, canvasWidth, canvasHeight);
-    maskContext.textAlign = "center";
-    maskContext.textBaseline = "middle";
-    maskContext.font = `500 ${titleLayout.fontSize}px "Onder Medium", sans-serif`;
-    maskContext.fillStyle = "#ffffff";
-    titleLayout.lines.forEach(({ text, y }) => {
-      maskContext.fillText(text, canvasWidth * 0.5, y);
-    });
-  }
-
-  const maskPixels = maskContext.getImageData(
-    0,
-    0,
-    canvasWidth,
-    canvasHeight,
-  ).data;
-  const characters = ".`',:;~-+=*#%@";
-  const accentCharacters = [".", "`", "'", ":", ";"];
-  const cellSize = Math.max(10, Math.round(canvasHeight / 80));
-  const characterAccents = [];
-  sharedTitleContext.textAlign = "center";
-  sharedTitleContext.textBaseline = "middle";
-  sharedTitleContext.font = `700 ${cellSize * 0.88}px Menlo, Monaco, monospace`;
-  sharedTitleContext.shadowColor = "rgba(255, 255, 255, 0.52)";
-  sharedTitleContext.shadowBlur = 5;
-
-  for (let y = cellSize * 0.5; y < canvasHeight; y += cellSize) {
-    for (let x = cellSize * 0.5; x < canvasWidth; x += cellSize) {
-      const sampleOffset = cellSize * 0.3;
-      const samples = [
-        [x, y],
-        [x - sampleOffset, y - sampleOffset],
-        [x + sampleOffset, y - sampleOffset],
-        [x - sampleOffset, y + sampleOffset],
-        [x + sampleOffset, y + sampleOffset],
-      ];
-      let coverage = 0;
-      samples.forEach(([sampleX, sampleY]) => {
-        const pixelX = Math.max(0, Math.min(canvasWidth - 1, Math.round(sampleX)));
-        const pixelY = Math.max(0, Math.min(canvasHeight - 1, Math.round(sampleY)));
-        coverage += maskPixels[(pixelY * canvasWidth + pixelX) * 4 + 3] / 255;
-      });
-      coverage /= samples.length;
-      if (coverage < 0.1) continue;
-
-      const noise = ((x * 17 + y * 31) % 29) / 28;
-      const textureWave =
-        0.5 +
-        Math.sin(x * 0.037 + y * 0.021) * 0.22 +
-        Math.sin(x * 0.013 - y * 0.043) * 0.18;
-      const tonalValue = THREE.MathUtils.clamp(
-        coverage * 0.62 + textureWave * 0.25 + noise * 0.13,
-        0,
-        1,
-      );
-      const characterIndex = Math.min(
-        characters.length - 1,
-        Math.floor(tonalValue * characters.length),
-      );
-      const brightness = THREE.MathUtils.clamp(
-        0.5 + coverage * 0.35 + textureWave * 0.15,
-        0.48,
-        1,
-      );
-      sharedTitleContext.fillStyle = `rgba(255, 255, 255, ${brightness})`;
-      sharedTitleContext.fillText(characters[characterIndex], x, y);
-
-      if (coverage > 0.5 && noise > 0.64) {
-        characterAccents.push({
-          character: accentCharacters[(characterIndex + Math.round(noise * 7)) % accentCharacters.length],
-          x: x + (noise - 0.5) * cellSize * 0.7,
-          y: y + (textureWave - 0.5) * cellSize * 0.65,
-          opacity: 0.2 + noise * 0.22,
-        });
-      }
-    }
-  }
-
-  sharedTitleContext.font = `600 ${cellSize * 0.52}px Menlo, Monaco, monospace`;
-  sharedTitleContext.shadowBlur = 2;
-  characterAccents.forEach(({ character, x, y, opacity }) => {
-    sharedTitleContext.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-    sharedTitleContext.fillText(character, x, y);
-  });
-  sharedTitleContext.shadowBlur = 0;
-
-  if (sharedTitleTexture) {
-    sharedTitleTexture.needsUpdate = true;
-    render();
-  }
-}
-
-drawSharedTitleTexture();
-sharedTitleTexture = new THREE.CanvasTexture(sharedTitleCanvas);
-sharedTitleTexture.colorSpace = THREE.SRGBColorSpace;
-sharedTitleTexture.minFilter = THREE.LinearMipmapLinearFilter;
-sharedTitleTexture.magFilter = THREE.LinearFilter;
-sharedTitleTexture.anisotropy = Math.min(
-  renderer.capabilities.getMaxAnisotropy(),
-  8,
-);
-
-const introTitleCanvas = document.createElement("canvas");
-const introTitleContext = introTitleCanvas.getContext("2d");
-
-function drawIntroTitleTexture(wallAspect = sharedTitleWallAspect) {
-  const canvasWidth = 2048;
-  const canvasHeight = THREE.MathUtils.clamp(
-    Math.round(canvasWidth / wallAspect),
-    960,
-    1600,
-  );
-  if (
-    introTitleCanvas.width !== canvasWidth ||
-    introTitleCanvas.height !== canvasHeight
-  ) {
-    introTitleCanvas.width = canvasWidth;
-    introTitleCanvas.height = canvasHeight;
-  }
-  introTitleContext.clearRect(0, 0, introTitleCanvas.width, introTitleCanvas.height);
-  const drewTvLetters = drawIntroTvLetters(
-    introTitleContext,
-    introTitleCanvas.width,
-    introTitleCanvas.height,
-    true,
-  );
-
-  if (!drewTvLetters) {
-    const titleLayout = getIntroTitleLayout(
-      introTitleContext,
-      introTitleCanvas.width,
-      introTitleCanvas.height,
-    );
-    introTitleContext.textAlign = "center";
-    introTitleContext.textBaseline = "middle";
-    introTitleContext.font = `500 ${titleLayout.fontSize}px "Onder Medium", sans-serif`;
-    introTitleContext.fillStyle = "#ffffff";
-    introTitleContext.shadowColor = "rgba(255, 255, 255, 0.76)";
-    introTitleContext.shadowBlur = Math.max(24, introTitleCanvas.height * 0.025);
-    titleLayout.lines.forEach(({ text, y }) => {
-      introTitleContext.fillText(text, introTitleCanvas.width * 0.5, y);
-    });
-    introTitleContext.shadowBlur = 0;
-  }
-
-  if (introTitleTexture) introTitleTexture.needsUpdate = true;
-}
-
-drawIntroTitleTexture();
-introTitleTexture = new THREE.CanvasTexture(introTitleCanvas);
-introTitleTexture.colorSpace = THREE.SRGBColorSpace;
-introTitleTexture.minFilter = THREE.LinearMipmapLinearFilter;
-introTitleTexture.magFilter = THREE.LinearFilter;
-introTitleTexture.anisotropy = Math.min(
-  renderer.capabilities.getMaxAnisotropy(),
-  8,
-);
 
 const introCueSpriteTexture = new THREE.TextureLoader().load(
   "assets/optimized-media/chicago95-arrow-cursor.png",
@@ -1395,7 +1194,7 @@ function drawIntroLetterTextureSet(letterSet) {
   const maskPixels = maskContext.getImageData(0, 0, width, height).data;
   const asciiContext = asciiCanvas.getContext("2d");
   const characters = ".`',:;~-+=*#%@";
-  const cellSize = mobileLayoutActive ? 28 : 16;
+  const cellSize = mobileLayoutActive ? 25 : 16;
   asciiContext.clearRect(0, 0, width, height);
   asciiContext.textAlign = "center";
   asciiContext.textBaseline = "middle";
@@ -1482,19 +1281,78 @@ function getIntroLetterTextureSet(character) {
 
 const socialScreenCanvases = new Map();
 const socialScreenTextures = new Map();
+const socialPixelScreenCanvases = new Map();
+const socialPixelScreenTextures = new Map();
 const socialAsciiScreenCanvases = new Map();
 const socialAsciiScreenTextures = new Map();
 const socialIconImages = new Map();
 const SOCIAL_ASCII_CHARACTERS = ".`',:;~-+=*#%@";
+const SOCIAL_BACKDROP_CHARACTERS = ".:;~-+=*#";
+const socialBackdropCanvas = document.createElement("canvas");
+socialBackdropCanvas.width = 800;
+socialBackdropCanvas.height = 800;
+const socialBackdropContext = socialBackdropCanvas.getContext("2d");
+socialBackdropContext.fillStyle = "#020303";
+socialBackdropContext.fillRect(
+  0,
+  0,
+  socialBackdropCanvas.width,
+  socialBackdropCanvas.height,
+);
+const socialBackdropColumns = 38;
+const socialBackdropCell = socialBackdropCanvas.width / socialBackdropColumns;
+socialBackdropContext.font =
+  `700 ${socialBackdropCell * 0.78}px Menlo, Monaco, monospace`;
+socialBackdropContext.textAlign = "center";
+socialBackdropContext.textBaseline = "middle";
+for (
+  let row = 0, y = socialBackdropCell * 0.5;
+  y < socialBackdropCanvas.height;
+  row += 1, y += socialBackdropCell
+) {
+  for (
+    let column = 0, x = socialBackdropCell * 0.5;
+    x < socialBackdropCanvas.width;
+    column += 1, x += socialBackdropCell
+  ) {
+    const wave =
+      0.5 +
+      Math.sin(column * 0.41 + row * 0.23) * 0.2 +
+      Math.sin(column * 0.13 - row * 0.37) * 0.16;
+    const noise = Math.abs(
+      Math.sin(column * 12.9898 + row * 78.233) * 43758.5453,
+    ) % 1;
+    const tone = THREE.MathUtils.clamp(wave * 0.72 + noise * 0.28, 0, 1);
+    const characterIndex = Math.min(
+      SOCIAL_BACKDROP_CHARACTERS.length - 1,
+      Math.floor(tone * SOCIAL_BACKDROP_CHARACTERS.length),
+    );
+    socialBackdropContext.fillStyle =
+      `rgba(226, 233, 228, ${0.38 + tone * 0.42})`;
+    socialBackdropContext.fillText(
+      SOCIAL_BACKDROP_CHARACTERS[characterIndex],
+      x,
+      y,
+    );
+  }
+}
+const socialBackdropTexture = new THREE.CanvasTexture(socialBackdropCanvas);
+socialBackdropTexture.colorSpace = THREE.SRGBColorSpace;
+socialBackdropTexture.minFilter = THREE.LinearMipmapLinearFilter;
+socialBackdropTexture.magFilter = THREE.LinearFilter;
+socialBackdropTexture.anisotropy = Math.min(
+  renderer.capabilities.getMaxAnisotropy(),
+  8,
+);
 
-function drawSocialIconMask(mediaKey, maskCanvas) {
+function drawSocialIconMask(mediaKey, maskCanvas, sizeMultiplier = 1) {
   const social = SOCIAL_LINKS[mediaKey];
   const maskContext = maskCanvas.getContext("2d", { willReadFrequently: true });
   maskContext.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
   maskContext.fillStyle = "#ffffff";
 
   const iconSize = Math.min(maskCanvas.width, maskCanvas.height) *
-    (mobileLayoutActive ? 0.24 : 0.36);
+    0.36 * sizeMultiplier;
   const iconX = (maskCanvas.width - iconSize) * 0.5;
   const iconY = (maskCanvas.height - iconSize) * 0.5;
 
@@ -1526,13 +1384,15 @@ function drawSocialIconMask(mediaKey, maskCanvas) {
 
 function drawSocialScreenTexture(mediaKey) {
   const social = SOCIAL_LINKS[mediaKey];
-  const pixelCanvas = socialScreenCanvases.get(mediaKey);
+  const solidCanvas = socialScreenCanvases.get(mediaKey);
+  const pixelCanvas = socialPixelScreenCanvases.get(mediaKey);
   const asciiCanvas = socialAsciiScreenCanvases.get(mediaKey);
-  if (!social || !pixelCanvas || !asciiCanvas) return;
+  if (!social || !solidCanvas || !pixelCanvas || !asciiCanvas) return;
 
+  const solidContext = solidCanvas.getContext("2d");
   const pixelContext = pixelCanvas.getContext("2d");
   const asciiContext = asciiCanvas.getContext("2d");
-  [pixelContext, asciiContext].forEach((context) => {
+  [solidContext, pixelContext, asciiContext].forEach((context) => {
     context.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
     context.fillStyle = "#020303";
     context.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height);
@@ -1541,16 +1401,26 @@ function drawSocialScreenTexture(mediaKey) {
   const maskCanvas = document.createElement("canvas");
   maskCanvas.width = pixelCanvas.width;
   maskCanvas.height = pixelCanvas.height;
+  const solidMaskCanvas = document.createElement("canvas");
+  solidMaskCanvas.width = solidCanvas.width;
+  solidMaskCanvas.height = solidCanvas.height;
   if (drawSocialIconMask(mediaKey, maskCanvas)) {
-    if (mobileLayoutActive) {
-      pixelContext.save();
-      pixelContext.shadowColor = "rgba(255, 255, 255, 0.72)";
-      pixelContext.shadowBlur = 16;
-      pixelContext.drawImage(maskCanvas, 0, 0);
-      pixelContext.restore();
+    drawSocialIconMask(
+      mediaKey,
+      solidMaskCanvas,
+      mobileLayoutActive ? 0.75 : 1,
+    );
+    solidContext.save();
+    solidContext.shadowColor = "rgba(255, 255, 255, 0.64)";
+    solidContext.shadowBlur = mobileLayoutActive ? 16 : 8;
+    solidContext.drawImage(solidMaskCanvas, 0, 0);
+    solidContext.restore();
 
-      const pixelTexture = socialScreenTextures.get(mediaKey);
+    if (mobileLayoutActive) {
+      const solidTexture = socialScreenTextures.get(mediaKey);
+      const pixelTexture = socialPixelScreenTextures.get(mediaKey);
       const asciiTexture = socialAsciiScreenTextures.get(mediaKey);
+      if (solidTexture) solidTexture.needsUpdate = true;
       if (pixelTexture) pixelTexture.needsUpdate = true;
       if (asciiTexture) asciiTexture.needsUpdate = true;
       return;
@@ -1624,8 +1494,10 @@ function drawSocialScreenTexture(mediaKey) {
     asciiContext.shadowBlur = 0;
   }
 
-  const pixelTexture = socialScreenTextures.get(mediaKey);
+  const solidTexture = socialScreenTextures.get(mediaKey);
+  const pixelTexture = socialPixelScreenTextures.get(mediaKey);
   const asciiTexture = socialAsciiScreenTextures.get(mediaKey);
+  if (solidTexture) solidTexture.needsUpdate = true;
   if (pixelTexture) pixelTexture.needsUpdate = true;
   if (asciiTexture) asciiTexture.needsUpdate = true;
 }
@@ -1634,21 +1506,27 @@ Object.keys(SOCIAL_LINKS).forEach((mediaKey) => {
   const socialCanvas = document.createElement("canvas");
   socialCanvas.width = 800;
   socialCanvas.height = 800;
+  const socialPixelCanvas = document.createElement("canvas");
+  socialPixelCanvas.width = 800;
+  socialPixelCanvas.height = 800;
   const socialAsciiCanvas = document.createElement("canvas");
   socialAsciiCanvas.width = 800;
   socialAsciiCanvas.height = 800;
   socialScreenCanvases.set(mediaKey, socialCanvas);
+  socialPixelScreenCanvases.set(mediaKey, socialPixelCanvas);
   socialAsciiScreenCanvases.set(mediaKey, socialAsciiCanvas);
 
   const socialTexture = new THREE.CanvasTexture(socialCanvas);
+  const socialPixelTexture = new THREE.CanvasTexture(socialPixelCanvas);
   const socialAsciiTexture = new THREE.CanvasTexture(socialAsciiCanvas);
-  [socialTexture, socialAsciiTexture].forEach((texture) => {
+  [socialTexture, socialPixelTexture, socialAsciiTexture].forEach((texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
   });
   socialScreenTextures.set(mediaKey, socialTexture);
+  socialPixelScreenTextures.set(mediaKey, socialPixelTexture);
   socialAsciiScreenTextures.set(mediaKey, socialAsciiTexture);
   screenMediaAspectCache.set(mediaKey, socialCanvas.width / socialCanvas.height);
   drawSocialScreenTexture(mediaKey);
@@ -1842,12 +1720,15 @@ function drawHeaderAsciiWordmark(animationTime = performance.now(), refreshMask 
 drawHeaderAsciiWordmark();
 
 document.fonts?.load('500 160px "Onder Medium"').then(() => {
-  drawSharedTitleTexture();
-  drawIntroTitleTexture();
   introLetterTextureCache.forEach(drawIntroLetterTextureSet);
   Object.keys(SOCIAL_LINKS).forEach(drawSocialScreenTexture);
   drawHeaderAsciiWordmark(performance.now(), true);
   fitProjectTitle();
+  siteFontReady = true;
+  siteAssetsReady = siteModelReady && siteFontReady;
+}).catch(() => {
+  siteFontReady = true;
+  siteAssetsReady = siteModelReady && siteFontReady;
 });
 
 const blankScreenTexture = new THREE.DataTexture(
@@ -1877,13 +1758,17 @@ function createScreenVideoTexture(mediaKey, src) {
   video.muted = true;
   video.defaultMuted = true;
   video.loop = true;
-  video.autoplay = true;
+  video.autoplay = false;
   video.playsInline = true;
   video.preload = "auto";
   video.setAttribute("muted", "");
   video.setAttribute("playsinline", "");
   video.addEventListener("loadedmetadata", () => {
     updateScreenMediaAspect(mediaKey, video.videoWidth / video.videoHeight);
+  });
+  video.addEventListener("canplay", () => {
+    if (!screenVideosUnlocked || !video.paused) return;
+    video.play().catch(() => {});
   });
   activeScreenVideos.push(video);
   screenVideoByMediaKey.set(mediaKey, video);
@@ -2085,7 +1970,7 @@ function updateScreenGlowLights(elapsedTime, deltaTime) {
       luminance: 0.2,
     };
     const hoverAmount = material.uniforms.uHoverAmount.value;
-    const grayscaleReveal = material.uniforms.uGrayscaleReveal.value;
+    const greenFilterReveal = material.uniforms.uGreenFilterReveal.value;
     const powerAmount = material.uniforms.uPowerAmount.value;
     const titleAmount = Math.max(
       material.uniforms.uIntroTitleOnScreenAmount.value,
@@ -2093,19 +1978,20 @@ function updateScreenGlowLights(elapsedTime, deltaTime) {
     );
     const dimAmount = material.uniforms.uDimAmount.value;
     const isStatic = material.uniforms.uStaticAmount.value > 0.5;
+    const isSocial = Boolean(SOCIAL_LINKS[entry.mediaKey]);
 
     if (titleAmount > 0.01) {
       targetColor.set(0xdde3e6);
     } else if (isStatic) {
       targetColor.copy(sample.color);
     } else {
-      const filteredColorAmount = THREE.MathUtils.lerp(
-        1,
-        0.8,
-        grayscaleReveal,
-      );
-      const contentColorAmount = Math.max(hoverAmount, filteredColorAmount);
-      targetColor.set(0xd3d7d8).lerp(sample.color, contentColorAmount);
+      const colorReveal = THREE.MathUtils.smoothstep(hoverAmount, 0.04, 0.96);
+      const greenFilterAmount = isSocial
+        ? 0
+        : greenFilterReveal * (1 - colorReveal);
+      targetColor
+        .copy(sample.color)
+        .lerp(greenFilterLightColor, greenFilterAmount);
     }
 
     light.color.lerp(targetColor, colorEase);
@@ -2140,6 +2026,8 @@ const CRT_VERTEX_SHADER = `
 
 const CRT_FRAGMENT_SHADER = `
     uniform sampler2D uMedia;
+    uniform sampler2D uSocialBackdropCanvas;
+    uniform sampler2D uSocialPixelCanvas;
     uniform sampler2D uSocialAsciiCanvas;
     uniform sampler2D uTitleCanvas;
     uniform sampler2D uIntroTitleCanvas;
@@ -2156,7 +2044,7 @@ const CRT_FRAGMENT_SHADER = `
     uniform float uSocialRevealProgress;
     uniform float uSocialHoverActive;
     uniform float uHoverAmount;
-    uniform float uGrayscaleReveal;
+    uniform float uGreenFilterReveal;
     uniform float uInteractiveAmount;
     uniform float uDimAmount;
     uniform float uPowerAmount;
@@ -2164,7 +2052,7 @@ const CRT_FRAGMENT_SHADER = `
     uniform float uTitleOnScreenAmount;
     uniform float uTitleFadeProgress;
     uniform float uIntroHoverAmount;
-    uniform float uIntroIdlePatternAmount;
+    uniform float uIntroBootProgress;
     uniform float uIntroWaveProgress;
     uniform vec4 uTitleUvRect;
     uniform vec2 uIntroPointerUv;
@@ -2302,7 +2190,15 @@ const CRT_FRAGMENT_SHADER = `
             )
           );
           vec3 originalAsciiGreen = vec3(112.0, 211.0, 122.0) / 255.0;
-          color = originalAsciiGreen * (character * 0.92 + glow * 0.12);
+          float asciiFilterAmount =
+            uGreenFilterReveal *
+            (1.0 - smoothstep(0.04, 0.96, uHoverAmount));
+          vec3 asciiSourceColor = mix(
+            originalAsciiGreen,
+            vec3(1.0),
+            asciiFilterAmount
+          );
+          color = asciiSourceColor * (character * 1.02 + glow * 0.16);
         } else {
           float colorSeparation = (
             0.0022 + distanceFromCenter * 0.003
@@ -2347,96 +2243,132 @@ const CRT_FRAGMENT_SHADER = `
       float socialCharacterNoise = random(
         socialCharacterCell + vec2(uPhase * 4.13, uPhase * 6.71)
       );
-      float socialPatternCoordinate = fract(
-        socialCellScreenUv.x * 0.82 +
-        socialCellScreenUv.y * 0.38 -
-        uTime * 0.075 +
-        uPhase * 0.027
+      float socialHoverProgress = clamp(uSocialHoverActive, 0.0, 1.0);
+      float socialHoverEase = socialHoverProgress * socialHoverProgress *
+        (3.0 - 2.0 * socialHoverProgress);
+      float socialLayerScale = mix(0.75, 0.88, socialHoverEase);
+      vec2 socialLayerUv = clamp(
+        (mediaUv - 0.5) / socialLayerScale + 0.5,
+        vec2(0.001),
+        vec2(0.999)
       );
-      float socialPatternBand = 1.0 - smoothstep(
-        0.04,
-        0.32,
-        abs(socialPatternCoordinate - 0.5)
-      );
-      float socialPatternTexture =
-        0.78 +
-        0.14 * sin(
-          socialCharacterCell.x * 0.31 +
-          socialCharacterCell.y * 0.47 +
-          uTime * 0.32
-        );
-      float socialPatternField = clamp(
-        0.81 +
-        socialPatternBand * 0.07 +
-        (socialPatternTexture - 0.78) * 0.18,
-        0.79,
-        0.9
-      );
-      float socialAsciiField = mix(
-        socialPatternField,
-        1.0,
-        smoothstep(0.0, 1.0, uSocialHoverActive)
-      );
-      float socialConversionThreshold = 0.04 + socialCharacterNoise * 0.92;
-      float socialAsciiMix =
-        step(socialConversionThreshold, socialAsciiField) *
-        uSocialAmount *
-        (1.0 - uStaticAmount);
       float socialColorSeparation = 0.0016 + distanceFromCenter * 0.0024;
       vec2 socialRedUv = clamp(
-        mediaUv + vec2(socialColorSeparation, 0.0),
+        socialLayerUv + vec2(socialColorSeparation, 0.0),
         vec2(0.001),
         vec2(0.999)
       );
       vec2 socialBlueUv = clamp(
-        mediaUv - vec2(socialColorSeparation, 0.0),
+        socialLayerUv - vec2(socialColorSeparation, 0.0),
         vec2(0.001),
         vec2(0.999)
       );
-      vec3 socialAsciiColor = vec3(
-        texture2D(uSocialAsciiCanvas, socialRedUv).r,
-        texture2D(uSocialAsciiCanvas, mediaUv).g,
-        texture2D(uSocialAsciiCanvas, socialBlueUv).b
+      vec3 socialAsciiColor = min(
+        vec3(
+          texture2D(uSocialAsciiCanvas, socialRedUv).r,
+          texture2D(uSocialAsciiCanvas, socialLayerUv).g,
+          texture2D(uSocialAsciiCanvas, socialBlueUv).b
+        ) * 1.28,
+        vec3(1.35)
       );
-      vec3 socialPixelColor = color;
-      vec3 socialFinalColor = mix(
-        socialPixelColor,
-        socialAsciiColor,
-        socialAsciiMix
+      vec3 socialPixelColor = vec3(
+        texture2D(uSocialPixelCanvas, socialRedUv).r,
+        texture2D(uSocialPixelCanvas, socialLayerUv).g,
+        texture2D(uSocialPixelCanvas, socialBlueUv).b
+      );
+      vec3 socialSolidColor = vec3(
+        texture2D(uMedia, socialRedUv).r,
+        texture2D(uMedia, socialLayerUv).g,
+        texture2D(uMedia, socialBlueUv).b
       );
       float socialRevealProgress = clamp(uSocialRevealProgress, 0.0, 1.0);
-      float socialAsciiAppear = smoothstep(
-        0.0,
-        0.34,
+      float socialPixelRise = smoothstep(
+        0.02,
+        0.5,
         socialRevealProgress
       );
-      float socialPixelRise = smoothstep(
-        0.2,
-        0.68,
+      float socialIntroAsciiDissolve = smoothstep(
+        0.28,
+        0.9,
         socialRevealProgress
       );
       float socialFinalReveal = smoothstep(
-        0.64,
+        0.82,
         1.0,
         socialRevealProgress
       );
-      float socialAsciiRevealMask =
-        step(socialCharacterNoise * 0.88, socialAsciiAppear) *
-        (1.0 - socialFinalReveal);
       float socialBottomUpPosition = 1.0 - socialCellScreenUv.y;
       float socialPixelThreshold = socialBottomUpPosition +
-        (socialCharacterNoise - 0.5) * 0.16;
-      float socialPixelRevealMask =
-        step(socialPixelThreshold, socialPixelRise) *
-        (1.0 - socialFinalReveal);
-      vec3 socialAnimatedColor = max(
-        socialAsciiColor * socialAsciiRevealMask,
-        socialPixelColor * socialPixelRevealMask
+        (socialCharacterNoise - 0.5) * 0.18 +
+        sin(socialCellScreenUv.x * 14.0 + uPhase) * 0.045;
+      float socialPixelRevealMask = step(
+        socialPixelThreshold,
+        socialPixelRise
       );
-      socialAnimatedColor = mix(
-        socialAnimatedColor,
-        socialFinalColor,
+      float socialIntroDissolveMask = smoothstep(
+        socialCharacterNoise - 0.1,
+        socialCharacterNoise + 0.1,
+        socialIntroAsciiDissolve
+      );
+      vec3 socialIntroColor = mix(
+        socialPixelColor * socialPixelRevealMask,
+        socialAsciiColor * socialPixelRevealMask,
+        socialIntroDissolveMask
+      );
+      float socialAsciiToPixelProgress = smoothstep(
+        0.12,
+        0.62,
+        socialHoverEase
+      );
+      float socialAsciiToPixelMask = smoothstep(
+        socialCharacterNoise - 0.08,
+        socialCharacterNoise + 0.08,
+        socialAsciiToPixelProgress
+      ) * smoothstep(0.0, 0.08, socialAsciiToPixelProgress);
+      vec3 socialHoverColor = mix(
+        socialAsciiColor,
+        socialPixelColor,
+        socialAsciiToPixelMask
+      );
+      float socialSolidifyProgress = smoothstep(
+        0.46,
+        0.86,
+        socialHoverEase
+      );
+      socialHoverColor = mix(
+        socialHoverColor,
+        socialSolidColor,
+        socialSolidifyProgress
+      );
+      vec3 socialAnimatedColor = mix(
+        socialIntroColor,
+        socialHoverColor,
         socialFinalReveal
+      );
+      vec2 socialBackdropCell = floor(socialStableUv * vec2(38.0));
+      float socialBackdropNoise = random(
+        socialBackdropCell + vec2(uPhase * 5.31, uPhase * 8.17)
+      );
+      float socialBackdropRevealProgress = smoothstep(
+        0.03,
+        0.62,
+        socialRevealProgress
+      );
+      float socialBackdropRevealMask = smoothstep(
+        socialBackdropNoise - 0.09,
+        socialBackdropNoise + 0.09,
+        socialBackdropRevealProgress
+      ) * smoothstep(0.0, 0.06, socialBackdropRevealProgress);
+      vec3 socialBackdropColor = texture2D(
+        uSocialBackdropCanvas,
+        mediaUv
+      ).rgb *
+        0.52 *
+        socialBackdropRevealMask *
+        (0.95 + sin(uTime * 0.31 + uPhase) * 0.05);
+      socialAnimatedColor = max(
+        socialAnimatedColor,
+        socialBackdropColor
       );
       color = mix(
         color,
@@ -2445,24 +2377,46 @@ const CRT_FRAGMENT_SHADER = `
           (1.0 - uMobileLayout) *
           (1.0 - uStaticAmount)
       );
+      color = max(
+        color,
+        socialBackdropColor *
+          uSocialAmount *
+          uMobileLayout *
+          (1.0 - uStaticAmount) *
+          0.82
+      );
 
-      // Grade the source image before the CRT pass so scanlines, rolling
-      // luminance, noise and phosphor glow remain visible above the filter.
-      float grayscaleLuminance = dot(
+      // Reduce project media to luminance first, then remap that single value
+      // through a green phosphor ramp. Source hues never mix into the tint.
+      float greenFilterLuminance = dot(
         max(color, vec3(0.0)),
         vec3(0.2126, 0.7152, 0.0722)
       );
-      float grayscaleContrast = clamp(
-        (grayscaleLuminance - 0.5) * 1.12 + 0.56,
+      float greenFilterContrast = clamp(
+        (greenFilterLuminance - 0.5) * 1.08 + 0.52,
         0.0,
         1.0
       );
+      vec3 greenFilterShadow = vec3(0.01, 0.018, 0.012);
+      vec3 greenFilterMid = vec3(0.12, 0.34, 0.16);
+      vec3 greenFilterHighlight = vec3(0.56, 0.76, 0.58);
+      vec3 greenFilteredColor = mix(
+        greenFilterShadow,
+        greenFilterMid,
+        smoothstep(0.0, 0.62, greenFilterContrast)
+      );
+      greenFilteredColor = mix(
+        greenFilteredColor,
+        greenFilterHighlight,
+        smoothstep(0.46, 1.0, greenFilterContrast)
+      );
       float colorReveal = smoothstep(0.04, 0.96, uHoverAmount);
-      float grayscaleAmount =
+      float greenFilterAmount =
         (1.0 - uStaticAmount) *
-        uGrayscaleReveal *
-        mix(0.20, 0.0, colorReveal);
-      color = mix(color, vec3(grayscaleContrast), grayscaleAmount);
+        (1.0 - uSocialAmount) *
+        uGreenFilterReveal *
+        (1.0 - colorReveal);
+      color = mix(color, greenFilteredColor, greenFilterAmount);
 
       float scanlineMotion = uTime * 2.6;
       float scanlineStrength = mix(0.12, 0.055, uHoverAmount);
@@ -2525,6 +2479,27 @@ const CRT_FRAGMENT_SHADER = `
       color = color * powerMask * step(0.001, powerAmount) +
         vec3(0.52, 0.61, 0.64) * ignitionLine * 0.42;
 
+      float introBackdropTitleAmount = max(
+        uIntroTitleOnScreenAmount,
+        uTitleOnScreenAmount *
+          (1.0 - smoothstep(0.18, 0.92, uTitleFadeProgress))
+      );
+      float introBackdropReveal = smoothstep(
+        0.08,
+        0.46,
+        uIntroBootProgress
+      );
+      vec3 introBackdropColor = texture2D(
+        uSocialBackdropCanvas,
+        clamp(jitteredUv, vec2(0.001), vec2(0.999))
+      ).rgb;
+      introBackdropColor *=
+        0.34 *
+        introBackdropReveal *
+        introBackdropTitleAmount *
+        (0.94 + sin(uTime * 0.27 + uPhase) * 0.06);
+      color = max(color, introBackdropColor);
+
       vec2 titleLocalUv = jitteredUv;
       vec2 stableTitleLocalUv = screenUv;
       if (uTitleAspect > uScreenAspect) {
@@ -2581,7 +2556,7 @@ const CRT_FRAGMENT_SHADER = `
         titleSample.a,
         max(titleRedSample.a, titleBlueSample.a)
       );
-      float titleCharacterColumns = mix(50.0, 28.0, uMobileLayout);
+      float titleCharacterColumns = mix(50.0, 32.0, uMobileLayout);
       vec2 titleCharacterCell = floor(
         stableTitleLocalUv * vec2(titleCharacterColumns)
       );
@@ -2597,106 +2572,167 @@ const CRT_FRAGMENT_SHADER = `
         titleCellScreenUv.y =
           (titleCharacterUv.y - 0.5) / titleVisibleHeight + 0.5;
       }
-      float titleCharacterNoise = random(
-        titleCharacterCell + vec2(uPhase * 3.17, uPhase * 7.31)
-      );
       float introHoverDistance = length(
         (titleCellScreenUv - uIntroPointerUv) * vec2(uScreenAspect, 1.0)
       );
-      float introHoverNoise = random(
-        titleCharacterCell + vec2(uPhase * 8.17 + 19.4, uPhase * 2.63 + 5.8)
+      float introHoverCharacterNoise = random(
+        titleCharacterCell + vec2(uPhase * 4.17, 12.8)
       );
-      float introHoverPattern = clamp(
-        0.48 +
-        0.16 * sin(titleCharacterCell.x * 0.57 + titleCharacterCell.y * 0.83) +
-        0.12 * sin(titleCharacterCell.x * 1.19 - titleCharacterCell.y * 0.41) +
-        0.14 * (introHoverNoise - 0.5),
-        0.22,
-        0.82
+      float introHoverFalloff = exp(
+        -pow(introHoverDistance / 0.24, 2.0)
       );
-      float introHoverCore = 1.0 - smoothstep(
-        0.018,
-        0.3,
-        introHoverDistance
+      float introHoverCharacterStrength = mix(
+        0.7,
+        1.0,
+        introHoverCharacterNoise
       );
-      float introHoverDensity = clamp(
-        introHoverPattern + pow(introHoverCore, 1.05) * 0.52,
-        0.22,
-        1.0
-      );
-      float introHoverMask =
-        (1.0 - smoothstep(
-          0.1,
-          ${INTRO_HOVER_OUTER_RANGE.toFixed(2)},
-          introHoverDistance
-        )) *
-        introHoverDensity *
-        uIntroHoverAmount;
+      float introHoverAsciiOff =
+        introHoverFalloff *
+        introHoverCharacterStrength *
+        smoothstep(0.0, 1.0, uIntroHoverAmount);
       vec2 introGlobalUv =
         uIntroGridOffset + titleCellScreenUv * uIntroGridScale;
       vec2 introWaveDelta =
         (introGlobalUv - uIntroWaveOrigin) * vec2(2.5, 1.0);
       float introWaveRadius = uIntroWaveProgress * 2.75;
-      float introWaveMask =
-        (1.0 - smoothstep(
-          introWaveRadius - 0.18,
-          introWaveRadius + 0.18,
-          length(introWaveDelta)
-        )) * smoothstep(0.0, 0.025, uIntroWaveProgress);
-      float introPatternCoordinate = fract(
-        introGlobalUv.x * 0.82 +
-        introGlobalUv.y * 0.38 -
-        uTime * 0.075
+      float introWaveCharacterNoise =
+        (random(titleCharacterCell + vec2(uPhase * 7.53, 29.1)) - 0.5) *
+        0.12;
+      float introWaveDistance =
+        length(introWaveDelta) + introWaveCharacterNoise;
+      float introClickPixelWave =
+        exp(-pow((introWaveDistance - introWaveRadius) / 0.105, 2.0)) *
+        smoothstep(0.0, 0.035, uIntroWaveProgress);
+      float introBootProgress = clamp(uIntroBootProgress, 0.0, 1.0);
+      float introBootAsciiProgress = clamp(
+        introBootProgress / 0.78,
+        0.0,
+        1.0
       );
-      float introPatternDistance = abs(introPatternCoordinate - 0.5);
-      float introPatternBand = 1.0 - smoothstep(
-        0.055,
-        0.25,
-        introPatternDistance
+      vec2 introBootGlobalCell = titleCharacterCell;
+      float introBootAsciiNoise = random(
+        introBootGlobalCell +
+        vec2(uPhase * 2.91 + 38.2, uPhase * 5.47 + 11.6)
       );
-      float introPatternTexture =
+      float introBootAsciiThreshold =
+        0.12 + introBootAsciiNoise * 0.76;
+      float introBootAsciiMask = smoothstep(
+        introBootAsciiThreshold - 0.11,
+        introBootAsciiThreshold + 0.11,
+        introBootAsciiProgress
+      );
+      float introAsciiLayerOpacity = smoothstep(
+        0.0,
+        0.82,
+        introBootAsciiMask
+      );
+      float introTextureNoise = random(
+        titleCharacterCell + vec2(uPhase * 3.71 + 8.2, uPhase * 6.19 + 14.7)
+      );
+      float introTextureFlow =
         0.5 +
-        0.12 * sin(
-          titleCharacterCell.x * 0.31 +
-          titleCharacterCell.y * 0.47 +
-          uTime * 0.32
+        0.5 * sin(
+          introGlobalUv.x * 19.0 -
+          introGlobalUv.y * 13.0 +
+          uTime * 0.38 +
+          introTextureNoise * 6.2831853
         );
-      float introIdlePattern =
-        introPatternBand * introPatternTexture * uIntroIdlePatternAmount;
-      float introAsciiField = max(
-        max(introHoverMask, introWaveMask),
-        introIdlePattern
+      float introStarDistribution = random(
+        titleCharacterCell + vec2(uPhase * 9.13 + 31.4, uPhase * 4.81 + 6.7)
       );
-      float introConversionThreshold = 0.04 + titleCharacterNoise * 0.92;
-      float introAsciiMix = step(
-        introConversionThreshold,
-        introAsciiField
+      float introStarWave =
+        0.5 +
+        0.5 * sin(
+          uTime * mix(1.1, 2.8, introTextureNoise) +
+          introStarDistribution * 18.0 +
+          introGlobalUv.y * 5.0
+        );
+      float introStarPulse =
+        pow(introStarWave, 7.0) *
+        smoothstep(0.24, 0.9, introStarDistribution);
+      float introAsciiTextureOpacity = clamp(
+        0.52 +
+        introTextureNoise * 0.16 +
+        introTextureFlow * 0.15 +
+        introStarPulse * 0.38,
+        0.52,
+        1.0
       );
-      float introRegularAmount =
-        uIntroTitleOnScreenAmount * (1.0 - introAsciiMix);
-      float introAsciiAmount = max(
+      float introClickPixelAmount =
+        uIntroTitleOnScreenAmount * introClickPixelWave;
+      float introFinalAsciiAmount = max(
         uTitleOnScreenAmount,
-        uIntroTitleOnScreenAmount * introAsciiMix
+        uIntroTitleOnScreenAmount * clamp(
+          introAsciiLayerOpacity,
+          0.0,
+          1.0
+        )
+      ) *
+        introAsciiTextureOpacity *
+        (1.0 - introHoverAsciiOff) *
+        (1.0 - introClickPixelAmount * 0.9);
+
+      float introAsciiLuminance = dot(
+        max(titleCrtColor, vec3(0.0)),
+        vec3(0.2126, 0.7152, 0.0722)
       );
-      color = mix(
-        color,
-        introTitleCrtColor,
-        introTitleCrtAlpha * introRegularAmount
+      float introAsciiContrast = clamp(
+        (introAsciiLuminance - 0.5) * 1.08 + 0.52,
+        0.0,
+        1.0
       );
+      vec3 introTitleGreenShadow = vec3(0.004, 0.014, 0.006);
+      vec3 introTitleGreenMid = vec3(0.075, 0.48, 0.14);
+      vec3 introTitleGreenHighlight = vec3(0.58, 1.0, 0.64);
+      vec3 introFinalAsciiGreen = mix(
+        introTitleGreenShadow,
+        introTitleGreenMid,
+        smoothstep(0.0, 0.62, introAsciiContrast)
+      );
+      introFinalAsciiGreen = mix(
+        introFinalAsciiGreen,
+        introTitleGreenHighlight,
+        smoothstep(0.46, 1.0, introAsciiContrast)
+      );
+      float introPatternA =
+        0.5 +
+        0.5 * sin(
+          introGlobalUv.x * 34.0 +
+          sin(introGlobalUv.y * 17.0 - uTime * 0.18) * 2.2
+        );
+      float introPatternB =
+        0.5 +
+        0.5 * sin(
+          introGlobalUv.y * 27.0 -
+          introGlobalUv.x * 8.0 +
+          uTime * 0.12
+        );
+      float introSubtlePattern = smoothstep(
+        0.74,
+        0.92,
+        introPatternA * 0.62 + introPatternB * 0.38
+      );
+      introFinalAsciiGreen *=
+        0.84 + introSubtlePattern * 0.16 + introStarPulse * 0.42;
       float titleDissolveNoise = random(
         titleCharacterCell +
         vec2(uPhase * 5.71 + 13.2, uPhase * 1.83 + 7.4)
       );
-      float titleCharacterDelay = 0.02 + titleDissolveNoise * 0.72;
+      float titleCharacterDelay = 0.09 + titleDissolveNoise * 0.78;
       float titleCharacterVisibility = 1.0 - smoothstep(
-        titleCharacterDelay,
-        titleCharacterDelay + 0.24,
+        titleCharacterDelay - 0.08,
+        titleCharacterDelay + 0.08,
         uTitleFadeProgress
       );
       color = mix(
         color,
-        titleCrtColor,
-        titleCrtAlpha * introAsciiAmount * titleCharacterVisibility
+        introFinalAsciiGreen,
+        titleCrtAlpha * introFinalAsciiAmount * titleCharacterVisibility
+      );
+      color = mix(
+        color,
+        mix(introTitleGreenMid, introTitleGreenHighlight, 0.72),
+        introTitleCrtAlpha * introClickPixelAmount
       );
       vec2 cueGlobalUv = uIntroGridOffset + screenUv * uIntroGridScale;
       vec2 cuePoint = vec2(
@@ -2780,11 +2816,15 @@ function createCrtScreenMaterial(mediaKey, phase) {
     name: "CRTScreenShader",
     uniforms: {
       uMedia: { value: getScreenTexture(mediaKey) },
+      uSocialBackdropCanvas: { value: socialBackdropTexture },
+      uSocialPixelCanvas: {
+        value: socialPixelScreenTextures.get(mediaKey) ?? blankScreenTexture,
+      },
       uSocialAsciiCanvas: {
         value: socialAsciiScreenTextures.get(mediaKey) ?? blankScreenTexture,
       },
-      uTitleCanvas: { value: sharedTitleTexture },
-      uIntroTitleCanvas: { value: introTitleTexture },
+      uTitleCanvas: { value: blankScreenTexture },
+      uIntroTitleCanvas: { value: blankScreenTexture },
       uIntroCueSprite: { value: introCueSpriteTexture },
       uTime: { value: 0 },
       uStaticAmount: { value: mediaKey === "static" ? 1 : 0 },
@@ -2794,17 +2834,17 @@ function createCrtScreenMaterial(mediaKey, phase) {
         value: screenMediaAspectCache.get(mediaKey) ?? 16 / 9,
       },
       uScreenAspect: { value: CRT_SCREEN_ASPECT },
-      uTitleAspect: { value: introTitleCanvas.width / introTitleCanvas.height },
+      uTitleAspect: { value: 1 },
       uAsciiAmount: { value: mediaKey === "bicycleVideo" ? 1 : 0 },
       uSocialAmount: {
-        value: SOCIAL_LINKS[mediaKey] && !mobileLayoutActive ? 1 : 0,
+        value: SOCIAL_LINKS[mediaKey] ? 1 : 0,
       },
       uSocialRevealProgress: {
         value: SOCIAL_LINKS[mediaKey] && !mobileLayoutActive ? 0 : 1,
       },
       uSocialHoverActive: { value: 0 },
       uHoverAmount: { value: 0 },
-      uGrayscaleReveal: { value: 0 },
+      uGreenFilterReveal: { value: 0 },
       uInteractiveAmount: { value: mediaKey === "static" ? 0 : 1 },
       uDimAmount: { value: 0 },
       uPowerAmount: { value: 0 },
@@ -2812,7 +2852,7 @@ function createCrtScreenMaterial(mediaKey, phase) {
       uTitleOnScreenAmount: { value: 0 },
       uTitleFadeProgress: { value: 0 },
       uIntroHoverAmount: { value: 0 },
-      uIntroIdlePatternAmount: { value: 0 },
+      uIntroBootProgress: { value: 0 },
       uIntroWaveProgress: { value: 0 },
       uTitleUvRect: { value: new THREE.Vector4(0, 0, 1, 1) },
       uIntroPointerUv: { value: new THREE.Vector2(0.5, 0.5) },
@@ -2837,7 +2877,6 @@ function createCrtScreenMaterial(mediaKey, phase) {
   material.userData.interactionTarget = 0;
   material.userData.socialHoverTarget = 0;
   material.userData.introHoverTarget = 0;
-  material.userData.introIdlePatternTarget = 0;
   material.userData.dimTarget = 0;
   material.userData.bootDelay = (
     Math.sin(phase * 12.9898 + 4.37) * 43758.5453
@@ -2976,9 +3015,6 @@ function configureSharedTitleScreens() {
   scene.add(introClickHitArea);
   introClickHitArea.updateMatrixWorld(true);
 
-  drawSharedTitleTexture(introBoundsWidth / introBoundsHeight);
-  drawIntroTitleTexture(introBoundsWidth / introBoundsHeight);
-
   allScreenEntries.forEach((entry) => {
     entry.material.uniforms.uTitleUvRect.value.set(0, 0, 1, 1);
 
@@ -3007,10 +3043,6 @@ function configureSharedTitleScreens() {
     entry.material.uniforms.uIntroGridScale.value.copy(gridScale);
     entry.material.userData.introLetterIndex =
       entry.rowIndex === 1 ? entry.unitIndex : entry.unitIndex + 5;
-    entry.material.userData.introFadeDelay =
-      entry.unitIndex * 0.045 +
-      (entry.rowIndex === 0 ? 0.055 : 0) +
-      ((entry.unitIndex * 7 + entry.rowIndex * 3) % 5) * 0.004;
   });
 }
 
@@ -3019,11 +3051,15 @@ function beginIntroSequence(
   pointerHit = getIntroClickPointerHit(),
 ) {
   if (
+    !isSiteBootReady() ||
     introStage !== "waiting" ||
     introLetterScreenEntries.length === 0 ||
     !pointerHit
   ) return;
 
+  // This runs directly inside the user's click, so mobile browsers grant
+  // playback permission before the CRT power-up animation begins.
+  startScreenVideos({ userInitiated: true });
   introWaveOrigin.copy(pointerHit.globalUv);
   crtScreenMaterials.forEach((material) => {
     material.uniforms.uIntroWaveOrigin.value.copy(introWaveOrigin);
@@ -3036,6 +3072,15 @@ function beginIntroSequence(
 }
 
 function updateIntroCueState(elapsedTime, pointerHit = null) {
+  if (!isSiteBootReady()) {
+    introCueIdleStartedAt = null;
+    crtScreenMaterials.forEach((material) => {
+      material.uniforms.uIntroCueClick.value = -1;
+      material.uniforms.uIntroCueVisible.value = 0;
+    });
+    return;
+  }
+
   if (introStage !== "waiting") {
     introCueIdleStartedAt = null;
   } else if (introCueIdleStartedAt === null) {
@@ -3104,7 +3149,8 @@ function updateIntroCueState(elapsedTime, pointerHit = null) {
 }
 
 function syncIntroClickHint(pointerHit) {
-  const shouldShowClickHint = introStage === "waiting" && Boolean(pointerHit);
+  const shouldShowClickHint =
+    isSiteBootReady() && introStage === "waiting" && Boolean(pointerHit);
   if (shouldShowClickHint) viewCursor.textContent = getUiCopy().click;
   roomStage.classList.toggle("is-screen-hovered", shouldShowClickHint);
   viewCursor.classList.toggle("is-visible", shouldShowClickHint);
@@ -3182,6 +3228,149 @@ function smoothProgress(value) {
   return clamped * clamped * (3 - 2 * clamped);
 }
 
+function isSiteBootReady() {
+  return siteBootStage === "ready";
+}
+
+function updateLoadingWindow(progress, elapsedTime) {
+  const percentage = Math.round(THREE.MathUtils.clamp(progress, 0, 1) * 100);
+  loadingProgressBar.style.width = `${percentage}%`;
+  loadingPercent.textContent = `${String(percentage).padStart(2, "0")}%`;
+  loadingProgressTrack.setAttribute("aria-valuenow", String(percentage));
+
+  if (percentage < 28) loadingStatus.textContent = "initializing display";
+  else if (percentage < 54) loadingStatus.textContent = "loading concrete room";
+  else if (percentage < 82) loadingStatus.textContent = "connecting crt array";
+  else if (percentage < 100) loadingStatus.textContent = "warming signal";
+  else loadingStatus.textContent = "display ready";
+
+  const activityDots = ".".repeat(Math.floor(elapsedTime * 2.4) % 4);
+  loadingActivity.textContent = percentage < 100
+    ? `please wait${activityDots}`
+    : "starting";
+}
+
+function updateSiteBootSequence(elapsedTime, deltaTime) {
+  const stageElapsed = Math.max(0, elapsedTime - siteBootStageStartedAt);
+
+  if (siteBootStage === "error") {
+    siteBootLightAmount = 0;
+    siteBootTitleProgress = 0;
+    return;
+  }
+
+  if (siteBootStage === "loading") {
+    const waitingTarget = Math.min(0.88, 0.08 + stageElapsed * 0.24);
+    const targetProgress = siteAssetsReady ? 1 : waitingTarget;
+    const progressSpeed = siteAssetsReady ? 5.2 : 1.8;
+    const progressEase = 1 - Math.exp(-deltaTime * progressSpeed);
+    siteBootLoadingProgress += (
+      targetProgress - siteBootLoadingProgress
+    ) * progressEase;
+    updateLoadingWindow(siteBootLoadingProgress, elapsedTime);
+    siteBootLightAmount = 0;
+    siteBootTitleProgress = 0;
+
+    if (
+      siteAssetsReady &&
+      stageElapsed >= LOADING_OVERLAY_MIN_DURATION &&
+      siteBootLoadingProgress >= 0.985
+    ) {
+      siteBootLoadingProgress = 1;
+      updateLoadingWindow(1, elapsedTime);
+      siteBootStage = "lights";
+      siteBootStageStartedAt = elapsedTime;
+      siteBootSequenceStartedAt = elapsedTime;
+      ceilingLightPower = 0;
+      loadingScreen.classList.add("is-hidden");
+      loadingScreen.setAttribute("aria-hidden", "true");
+    }
+    return;
+  }
+
+  const bootSequenceIsRunning =
+    siteBootStage === "lights" ||
+    siteBootStage === "screens" ||
+    siteBootStage === "title";
+
+  if (bootSequenceIsRunning) {
+    const sequenceElapsed = Math.max(
+      0,
+      elapsedTime - siteBootSequenceStartedAt,
+    );
+    const progress = THREE.MathUtils.clamp(
+      sequenceElapsed / BOOT_LIGHT_DURATION,
+      0,
+      1,
+    );
+    const rise = smoothProgress(progress / 0.72);
+    const dropoutA = Math.exp(-Math.pow((progress - 0.18) / 0.055, 2)) * 0.78;
+    const dropoutB = Math.exp(-Math.pow((progress - 0.39) / 0.07, 2)) * 0.5;
+    const dropoutC = Math.exp(-Math.pow((progress - 0.58) / 0.05, 2)) * 0.36;
+    const hardOutage =
+      smoothProgress((progress - 0.29) / 0.018) *
+      (1 - smoothProgress((progress - 0.345) / 0.025));
+    const flutter =
+      Math.sin(sequenceElapsed * 44 + 0.7) * 0.055 +
+      Math.sin(sequenceElapsed * 77 + 2.4) * 0.025;
+    const dropout = Math.max(dropoutA, dropoutB, dropoutC, hardOutage);
+    siteBootLightAmount = THREE.MathUtils.clamp(
+      rise * (1 - dropout) + flutter * rise * (1 - progress),
+      0,
+      1,
+    );
+    if (
+      siteBootScreensStartedAt === 0 &&
+      progress >= BOOT_SCREEN_LIGHT_OVERLAP_AT
+    ) {
+      siteBootScreensStartedAt = elapsedTime;
+    }
+
+    const screenSequenceElapsed = siteBootScreensStartedAt > 0
+      ? Math.max(0, elapsedTime - siteBootScreensStartedAt)
+      : 0;
+    if (
+      siteBootTitleStartedAt === 0 &&
+      siteBootScreensStartedAt > 0 &&
+      screenSequenceElapsed >= BOOT_TITLE_SCREEN_OVERLAP_DELAY
+    ) {
+      siteBootTitleStartedAt = elapsedTime;
+    }
+
+    if (siteBootTitleStartedAt > 0) {
+      siteBootStage = "title";
+      siteBootTitleProgress = smoothProgress(
+        (elapsedTime - siteBootTitleStartedAt) / BOOT_TITLE_DURATION,
+      );
+    } else if (siteBootScreensStartedAt > 0) {
+      siteBootStage = "screens";
+      siteBootTitleProgress = 0;
+    } else {
+      siteBootStage = "lights";
+      siteBootTitleProgress = 0;
+    }
+
+    const screenSequenceDuration =
+      BOOT_SCREEN_POWER_DURATION + BOOT_SCREEN_STAGGER * 4;
+    const screensComplete =
+      screenSequenceElapsed >= screenSequenceDuration;
+    if (
+      progress >= 1 &&
+      screensComplete &&
+      siteBootTitleProgress >= 1
+    ) {
+      siteBootStage = "ready";
+      siteBootStageStartedAt = elapsedTime;
+      siteBootLightAmount = 1;
+      siteBootTitleProgress = 1;
+    }
+    return;
+  }
+
+  siteBootLightAmount = 1;
+  siteBootTitleProgress = 1;
+}
+
 function getIntroCameraAmount(elapsedTime) {
   if (introStage === "waiting") return 1;
   if (introSequenceStartedAt <= 0) return 0;
@@ -3243,16 +3432,33 @@ function updateCeilingFlicker(elapsedTime, deltaTime) {
   const responseEase = 1 - Math.exp(-deltaTime * responseSpeed);
   ceilingLightPower += (targetPower - ceilingLightPower) * responseEase;
 
+  const roomLightTarget = introStage === "waiting" ? 0.4 : 0.7;
+  const roomLightEase = 1 - Math.exp(-deltaTime * 2.4);
+  roomLightLevel += (roomLightTarget - roomLightLevel) * roomLightEase;
+
   const outageMultiplier = 1 - hardOutageAmount;
+  const bootLightMultiplier = THREE.MathUtils.clamp(siteBootLightAmount, 0, 1);
+  scene.background
+    .copy(bootBackgroundColor)
+    .lerp(roomBackgroundColor, smoothProgress(bootLightMultiplier));
+  ambientLight.intensity =
+    AMBIENT_LIGHT_BASE_INTENSITY * bootLightMultiplier * roomLightLevel;
+  tvGlowLight.intensity =
+    TV_GLOW_BASE_INTENSITY * bootLightMultiplier * roomLightLevel;
   const visiblePanelPower =
-    (0.14 + ceilingLightPower * 0.86) * outageMultiplier;
+    (0.14 + ceilingLightPower * 0.86) *
+    outageMultiplier *
+    bootLightMultiplier *
+    roomLightLevel;
   ceilingPanelMaterial.color
     .copy(ceilingPanelBaseColor)
     .multiplyScalar(visiblePanelPower);
   keyLight.intensity =
     KEY_LIGHT_BASE_INTENSITY *
     (0.16 + ceilingLightPower * 0.84) *
-    outageMultiplier;
+    outageMultiplier *
+    bootLightMultiplier *
+    roomLightLevel;
 
   ceilingFixtures.forEach(({ areaLight, baseIntensity }, fixtureIndex) => {
     const fixtureVariation = flickerIsActive
@@ -3265,7 +3471,9 @@ function updateCeilingFlicker(elapsedTime, deltaTime) {
       baseIntensity *
       (0.1 + ceilingLightPower * 0.9) *
       fixtureVariation *
-      outageMultiplier;
+      outageMultiplier *
+      bootLightMultiplier *
+      roomLightLevel;
   });
 }
 
@@ -3274,57 +3482,80 @@ function updateSiteHeaderVisibility() {
 
   const shouldShowHeader =
     introStage === "done" && focusTarget === 0 && !focusedScreen;
-  if (shouldShowHeader === siteHeaderVisible) return;
+  const visibilityChanged = shouldShowHeader !== siteHeaderVisible;
 
-  siteHeaderVisible = shouldShowHeader;
-  siteHeader.classList.toggle("is-visible", shouldShowHeader);
-  siteHeader.setAttribute("aria-hidden", String(!shouldShowHeader));
-  siteHeader.inert = !shouldShowHeader;
+  if (visibilityChanged) {
+    siteHeaderVisible = shouldShowHeader;
+    siteHeader.classList.toggle("is-visible", shouldShowHeader);
+    siteHeader.setAttribute("aria-hidden", String(!shouldShowHeader));
+    siteHeader.inert = !shouldShowHeader;
 
-  if (shouldShowHeader) {
-    if (!mobileLayoutActive) {
-      headerWordmarkAnimationStartedAt = performance.now();
+    if (shouldShowHeader) {
+      if (!mobileLayoutActive) {
+        headerWordmarkAnimationStartedAt = performance.now();
+        headerWordmarkAnimationComplete = false;
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          drawHeaderAsciiWordmark(performance.now(), true);
+        });
+      });
+    } else if (!mobileLayoutActive) {
+      headerWordmarkAnimationStartedAt = null;
       headerWordmarkAnimationComplete = false;
     }
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        drawHeaderAsciiWordmark(performance.now(), true);
-      });
-    });
 
-    if (!aboutWindowHasAutoOpened && aboutWindowAutoOpenTimer === null) {
-      aboutWindowHasAutoOpened = true;
-      aboutWindowAutoOpenTimer = window.setTimeout(() => {
-        aboutWindowAutoOpenTimer = null;
-        aboutWindowRequestedOpen = true;
-        syncAboutWindowVisibility();
-      }, 560);
+    if (!shouldShowHeader && aboutWindowAutoOpenTimer !== null) {
+      window.clearTimeout(aboutWindowAutoOpenTimer);
+      aboutWindowAutoOpenTimer = null;
     }
+
+    syncAboutWindowVisibility();
   }
 
-  if (!shouldShowHeader && !mobileLayoutActive) {
-    headerWordmarkAnimationStartedAt = null;
-    headerWordmarkAnimationComplete = false;
-  }
+  const headerAnimationComplete =
+    mobileLayoutActive || headerWordmarkAnimationComplete;
+  const socialAnimationsComplete =
+    mobileLayoutActive ||
+    crtScreenMaterials
+      .filter((material) => SOCIAL_LINKS[material.userData.mediaKey])
+      .every(
+        (material) =>
+          material.uniforms.uSocialRevealProgress.value >= 0.999,
+      );
 
-  syncAboutWindowVisibility();
+  if (
+    shouldShowHeader &&
+    headerAnimationComplete &&
+    socialAnimationsComplete &&
+    !aboutWindowHasAutoOpened &&
+    aboutWindowAutoOpenTimer === null
+  ) {
+    aboutWindowHasAutoOpened = true;
+    aboutWindowAutoOpenTimer = window.setTimeout(() => {
+      aboutWindowAutoOpenTimer = null;
+      if (!siteHeaderVisible) return;
+      aboutWindowRequestedOpen = true;
+      syncAboutWindowVisibility();
+    }, 140);
+  }
 }
 
 function updateIntroSequence(elapsedTime) {
   if (introLetterScreenEntries.length === 0) return;
 
-  const hoverPointerHit = introStage === "waiting"
+  const bootReady = isSiteBootReady();
+  const introIsInteractive = bootReady && introStage === "waiting";
+  const hoverPointerHit = introIsInteractive
     ? getIntroHoverPointerHit()
     : null;
-  const clickPointerHit = introStage === "waiting"
+  const clickPointerHit = introIsInteractive
     ? getIntroClickPointerHit()
     : null;
   if (introStage !== "done") syncIntroClickHint(clickPointerHit);
   updateIntroCueState(elapsedTime, clickPointerHit);
   introLetterScreenEntries.forEach((entry) => {
     entry.material.userData.introHoverTarget = 0;
-    entry.material.userData.introIdlePatternTarget =
-      introStage === "waiting" ? 1 : 0;
   });
   if (hoverPointerHit) {
     introLetterScreenEntries.forEach((entry) => {
@@ -3340,7 +3571,10 @@ function updateIntroSequence(elapsedTime) {
     });
   }
 
-  let regularTitleOnScreens = introStage === "waiting" ? 1 : 0;
+  const bootShowsTitle =
+    siteBootStage === "title" || siteBootStage === "ready";
+  let regularTitleOnScreens =
+    introStage === "waiting" && bootShowsTitle ? 1 : 0;
   let titleOnScreens = 0;
   let asciiFadeElapsed = null;
   let introWaveProgress = 0;
@@ -3387,16 +3621,12 @@ function updateIntroSequence(elapsedTime) {
 
     if (powerElapsed >= INTRO_POWER_DURATION) {
       introStage = "done";
-      introCompletedAt = elapsedTime;
+      startScreenVideos();
     }
   }
 
-  const grayscaleReveal = introStage === "done"
-    ? smoothProgress(
-        (elapsedTime - introCompletedAt - GRAYSCALE_FADE_DELAY) /
-          GRAYSCALE_FADE_DURATION,
-      )
-    : 0;
+  const greenFilterReveal =
+    introStage === "powering" || introStage === "done" ? 1 : 0;
   const introShowsTopRowAsStatic =
     introStage === "waiting" ||
     introStage === "handoff" ||
@@ -3405,6 +3635,13 @@ function updateIntroSequence(elapsedTime) {
     introStage === "powering" || introStage === "done"
       ? elapsedTime - introStageStartedAt
       : null;
+  const bootScreenElapsed = Math.max(
+    0,
+    siteBootScreensStartedAt > 0
+      ? elapsedTime - siteBootScreensStartedAt
+      : 0,
+  );
+  const siteBootIsRunning = !bootReady && introStage === "waiting";
 
   crtScreenMaterials.forEach((material) => {
     const isIntroTopScreen = material.userData.rowIndex === 2;
@@ -3423,19 +3660,21 @@ function updateIntroSequence(elapsedTime) {
       : 0;
     let characterFadeProgress = 0;
     if (isIntroLetterScreen && asciiFadeElapsed !== null) {
-      const fadeDelay = material.userData.introFadeDelay ?? 0;
       characterFadeProgress = smoothProgress(
-        (asciiFadeElapsed - fadeDelay * 0.25) / 0.78,
+        asciiFadeElapsed / 0.78,
       );
     }
     material.uniforms.uTitleOnScreenAmount.value = isIntroLetterScreen
       ? titleOnScreens
       : 0;
     material.uniforms.uTitleFadeProgress.value = characterFadeProgress;
+    material.uniforms.uIntroBootProgress.value = isIntroLetterScreen
+      ? siteBootTitleProgress
+      : 1;
     material.uniforms.uIntroWaveProgress.value = isIntroLetterScreen
       ? introWaveProgress
       : 0;
-    material.uniforms.uGrayscaleReveal.value = grayscaleReveal;
+    material.uniforms.uGreenFilterReveal.value = greenFilterReveal;
     const isSocialScreen = Boolean(SOCIAL_LINKS[material.userData.mediaKey]);
     material.uniforms.uSocialRevealProgress.value =
       !isSocialScreen || mobileLayoutActive
@@ -3449,7 +3688,28 @@ function updateIntroSequence(elapsedTime) {
                 SOCIAL_ICON_REVEAL_DELAY
               ) / SOCIAL_ICON_REVEAL_DURATION,
             );
-    if (introStage !== "powering" && introStage !== "done") {
+    if (siteBootIsRunning) {
+      if (
+        (
+          siteBootStage === "lights" ||
+          siteBootStage === "screens" ||
+          siteBootStage === "title"
+        ) &&
+        siteBootScreensStartedAt > 0 &&
+        isIntroTopScreen
+      ) {
+        const screenBootDelay =
+          material.userData.unitIndex * BOOT_SCREEN_STAGGER;
+        material.uniforms.uPowerAmount.value = smoothProgress(
+          (bootScreenElapsed - screenBootDelay) /
+            BOOT_SCREEN_POWER_DURATION,
+        );
+      } else if (siteBootStage === "title") {
+        material.uniforms.uPowerAmount.value = 0;
+      } else {
+        material.uniforms.uPowerAmount.value = 0;
+      }
+    } else if (introStage !== "powering" && introStage !== "done") {
       if (isIntroTopScreen) {
         const shutdownStart = 0.18 + material.userData.unitIndex * 0.05;
         const shutdownAmount = smoothProgress(
@@ -3542,6 +3802,113 @@ function updateHoveredScreen() {
   }
 
   setHoveredScreen(validEntry ?? null);
+}
+
+function getMobileFocusDistance(entry) {
+  focusedScreenBounds.setFromObject(entry.mesh);
+  focusedScreenBounds.getSize(mobileFocusBoundsSize);
+
+  const referenceEntry = allScreenEntries.find(
+    ({ mediaKey }) => mediaKey === MOBILE_FOCUS_REFERENCE_MEDIA_KEY,
+  );
+  if (!referenceEntry) return MOBILE_FOCUS_BASE_DISTANCE;
+
+  mobileFocusReferenceBounds.setFromObject(referenceEntry.mesh);
+  const referenceHeight = mobileFocusReferenceBounds.getSize(
+    projectedScreenCorner,
+  ).y;
+  if (referenceHeight <= 0 || mobileFocusBoundsSize.y <= 0) {
+    return MOBILE_FOCUS_BASE_DISTANCE;
+  }
+
+  return MOBILE_FOCUS_BASE_DISTANCE * (
+    mobileFocusBoundsSize.y / referenceHeight
+  );
+}
+
+function configureMobileFocusTargets(entry) {
+  focusedScreenBounds
+    .setFromObject(entry.mesh)
+    .getCenter(interactionWorldPosition);
+
+  focusCameraPosition.set(
+    interactionWorldPosition.x,
+    interactionWorldPosition.y + 0.18,
+    interactionWorldPosition.z + getMobileFocusDistance(entry),
+  );
+  focusLookTarget.set(
+    interactionWorldPosition.x,
+    interactionWorldPosition.y - 0.82,
+    interactionWorldPosition.z,
+  );
+}
+
+function getProjectedFocusBoundsBottom(viewport, lookTargetYOffset = 0) {
+  mobileFocusProjectionCamera.copy(camera);
+  mobileFocusProjectionCamera.position.copy(focusCameraPosition);
+  mobileFocusProjectionCamera.lookAt(
+    focusLookTarget.x,
+    focusLookTarget.y + lookTargetYOffset,
+    focusLookTarget.z,
+  );
+  mobileFocusProjectionCamera.updateMatrixWorld(true);
+
+  focusedScreenBounds.setFromObject(focusedScreen.mesh);
+  let projectedMaxY = -Infinity;
+
+  [focusedScreenBounds.min.x, focusedScreenBounds.max.x].forEach((x) => {
+    [focusedScreenBounds.min.y, focusedScreenBounds.max.y].forEach((y) => {
+      [focusedScreenBounds.min.z, focusedScreenBounds.max.z].forEach((z) => {
+        projectedScreenCorner
+          .set(x, y, z)
+          .project(mobileFocusProjectionCamera);
+        const screenY = (-projectedScreenCorner.y * 0.5 + 0.5) * viewport.height;
+        projectedMaxY = Math.max(projectedMaxY, screenY);
+      });
+    });
+  });
+
+  return projectedMaxY;
+}
+
+function alignMobileFocusWithProjectPanel() {
+  if (
+    !mobileLayoutActive ||
+    !focusedScreen ||
+    !projectPanel.classList.contains("is-visible")
+  ) {
+    return;
+  }
+
+  const viewport = getStageViewport();
+  const panelTop = projectPanel.offsetTop;
+  if (!Number.isFinite(panelTop) || projectPanel.offsetHeight <= 0) return;
+
+  const desiredGap = THREE.MathUtils.clamp(
+    viewport.height * 0.12,
+    84,
+    108,
+  );
+  const extraLift = MOBILE_FOCUS_EXTRA_LIFT[focusedScreen.mediaKey] ?? 0;
+  const desiredBottom = panelTop - desiredGap - extraLift;
+  let lowerLookOffset = -2.4;
+  let upperLookOffset = 2.4;
+  let resolvedLookOffset = 0;
+
+  for (let step = 0; step < 20; step += 1) {
+    resolvedLookOffset = (lowerLookOffset + upperLookOffset) * 0.5;
+    const candidateBottom = getProjectedFocusBoundsBottom(
+      viewport,
+      resolvedLookOffset,
+    );
+    if (candidateBottom < desiredBottom) {
+      lowerLookOffset = resolvedLookOffset;
+    } else {
+      upperLookOffset = resolvedLookOffset;
+    }
+  }
+
+  focusLookTarget.y += resolvedLookOffset;
 }
 
 function updateProjectPanelSideOffset(deltaTime, snap = false) {
@@ -3652,6 +4019,10 @@ function showProjectPanel(project, panelOnLeft, mediaKey) {
   }
 
   fitProjectTitle();
+  if (mobileLayoutActive && focusedScreen) {
+    configureMobileFocusTargets(focusedScreen);
+    alignMobileFocusWithProjectPanel();
+  }
 }
 
 function fitProjectTitle() {
@@ -3702,16 +4073,7 @@ function focusProjectScreen(entry) {
 
   const tvOnLeft = interactionWorldPosition.x <= 0;
   if (mobileLayoutActive) {
-    focusCameraPosition.set(
-      interactionWorldPosition.x,
-      interactionWorldPosition.y + 0.18,
-      interactionWorldPosition.z + 3.08,
-    );
-    focusLookTarget.set(
-      interactionWorldPosition.x,
-      interactionWorldPosition.y - 0.82,
-      interactionWorldPosition.z,
-    );
+    configureMobileFocusTargets(entry);
   } else {
     focusCameraPosition.set(
       interactionWorldPosition.x,
@@ -3719,7 +4081,11 @@ function focusProjectScreen(entry) {
       interactionWorldPosition.z + 2.95,
     );
     focusLookTarget.set(
-      interactionWorldPosition.x + (tvOnLeft ? 0.95 : -0.95),
+      interactionWorldPosition.x + (
+        tvOnLeft
+          ? DESKTOP_FOCUS_OUTWARD_LOOK_OFFSET
+          : -DESKTOP_FOCUS_OUTWARD_LOOK_OFFSET
+      ),
       interactionWorldPosition.y,
       interactionWorldPosition.z,
     );
@@ -3985,20 +4351,22 @@ window.addEventListener("keydown", (event) => {
   closeProject();
 });
 
-function startScreenVideos() {
-  let waitingForInteraction = false;
-
-  const retryPlayback = () => {
-    activeScreenVideos.forEach((video) => {
-      video.play().catch(() => {});
-    });
-  };
+function startScreenVideos({ userInitiated = false } = {}) {
+  if (userInitiated) screenVideosUnlocked = true;
+  if (!screenVideosUnlocked) return;
 
   activeScreenVideos.forEach((video) => {
     video.play().catch(() => {
-      if (waitingForInteraction) return;
-      waitingForInteraction = true;
-      window.addEventListener("pointerdown", retryPlayback, { once: true });
+      if (screenVideoRetryArmed) return;
+      screenVideoRetryArmed = true;
+      window.addEventListener(
+        "pointerdown",
+        () => {
+          screenVideoRetryArmed = false;
+          startScreenVideos({ userInitiated: true });
+        },
+        { once: true },
+      );
     });
   });
 }
@@ -4174,14 +4542,17 @@ tvLoader.load(
     scene.add(tvWallGroup);
     applyTvWallLayout();
     configureScreenGlowLights();
-    startScreenVideos();
+    siteModelReady = true;
+    siteAssetsReady = siteModelReady && siteFontReady;
     render();
-    requestAnimationFrame(() => loadingScreen.classList.add("is-hidden"));
   },
   undefined,
   (error) => {
     console.error("CRT TV model could not be loaded.", error);
-    requestAnimationFrame(() => loadingScreen.classList.add("is-hidden"));
+    siteBootStage = "error";
+    loadingScreen.classList.add("is-error");
+    loadingStatus.textContent = "crt wall failed to initialize";
+    loadingActivity.textContent = "reload required";
   },
 );
 
@@ -4329,7 +4700,8 @@ function render() {
   updateHoveredScreen();
 
   const materialEase = 1 - Math.exp(-deltaTime * 10);
-  const socialHoverEase = 1 - Math.exp(-deltaTime * 4.2);
+  const socialHoverEase = 1 - Math.exp(-deltaTime * 2.25);
+  const introHoverEase = 1 - Math.exp(-deltaTime * 3.6);
 
   crtScreenMaterials.forEach((material) => {
     material.uniforms.uTime.value = elapsedTime;
@@ -4341,16 +4713,28 @@ function render() {
       material.userData.socialHoverTarget -
       material.uniforms.uSocialHoverActive.value
     ) * socialHoverEase;
-    material.uniforms.uIntroHoverAmount.value =
-      material.userData.introHoverTarget;
-    material.uniforms.uIntroIdlePatternAmount.value =
-      material.userData.introIdlePatternTarget;
+    if (
+      material.userData.socialHoverTarget === 0 &&
+      material.uniforms.uSocialHoverActive.value < 0.035
+    ) {
+      material.uniforms.uSocialHoverActive.value = 0;
+    } else if (
+      material.userData.socialHoverTarget === 1 &&
+      material.uniforms.uSocialHoverActive.value > 0.965
+    ) {
+      material.uniforms.uSocialHoverActive.value = 1;
+    }
+    material.uniforms.uIntroHoverAmount.value += (
+      material.userData.introHoverTarget -
+      material.uniforms.uIntroHoverAmount.value
+    ) * introHoverEase;
     material.uniforms.uDimAmount.value += (
       material.userData.dimTarget - material.uniforms.uDimAmount.value
     ) * materialEase;
     material.uniforms.uTitleOnScreenAmount.value = 0;
   });
 
+  updateSiteBootSequence(elapsedTime, deltaTime);
   updateIntroSequence(elapsedTime);
   updateCeilingFlicker(elapsedTime, deltaTime);
   updateSiteHeaderVisibility();
@@ -4407,9 +4791,7 @@ function handleResize() {
     crtScreenMaterials.forEach((material) => {
       material.uniforms.uMobileLayout.value = Number(mobileLayoutActive);
       material.uniforms.uSocialAmount.value =
-        SOCIAL_LINKS[material.userData.mediaKey] && !mobileLayoutActive
-          ? 1
-          : 0;
+        SOCIAL_LINKS[material.userData.mediaKey] ? 1 : 0;
     });
     introLetterTextureCache.forEach(drawIntroLetterTextureSet);
     Object.keys(SOCIAL_LINKS).forEach(drawSocialScreenTexture);
@@ -4429,26 +4811,83 @@ function handleResize() {
   projectPanelSideOffset = null;
   clampAboutWindowPosition();
   fitProjectTitle();
+  if (mobileLayoutActive && focusedScreen) {
+    configureMobileFocusTargets(focusedScreen);
+    alignMobileFocusWithProjectPanel();
+  }
   render();
 }
 
 window.addEventListener("resize", handleResize);
 
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    activeScreenVideos.forEach((video) => video.pause());
-    projectPreviewVideo.pause();
-    if (cleanViewMode === "video") cleanVideo.pause();
+let mediaResumeFrameId = null;
+let mediaResumeTimeoutId = null;
+
+function resumeVisibleVideos() {
+  if (document.hidden) return;
+
+  if (introStage === "done") startScreenVideos();
+
+  const cleanViewVisible = cleanView.classList.contains("is-visible");
+  if (cleanViewVisible && cleanViewMode === "video") {
+    cleanVideo.play().catch(() => {});
     return;
   }
 
-  if (introStage === "done") startScreenVideos();
   if (
     projectPanel.classList.contains("is-visible") &&
     !projectPreviewVideo.hidden
   ) {
     projectPreviewVideo.play().catch(() => {});
   }
+}
+
+function queueVideoResume() {
+  if (document.hidden) return;
+
+  if (mediaResumeFrameId !== null) {
+    cancelAnimationFrame(mediaResumeFrameId);
+  }
+  if (mediaResumeTimeoutId !== null) {
+    clearTimeout(mediaResumeTimeoutId);
+  }
+
+  resumeVisibleVideos();
+  mediaResumeFrameId = requestAnimationFrame(() => {
+    mediaResumeFrameId = null;
+    resumeVisibleVideos();
+  });
+  mediaResumeTimeoutId = window.setTimeout(() => {
+    mediaResumeTimeoutId = null;
+    resumeVisibleVideos();
+  }, 180);
+}
+
+function pauseVisibleVideos() {
+  if (mediaResumeFrameId !== null) {
+    cancelAnimationFrame(mediaResumeFrameId);
+    mediaResumeFrameId = null;
+  }
+  if (mediaResumeTimeoutId !== null) {
+    clearTimeout(mediaResumeTimeoutId);
+    mediaResumeTimeoutId = null;
+  }
+
+  activeScreenVideos.forEach((video) => video.pause());
+  projectPreviewVideo.pause();
+  if (cleanViewMode === "video") cleanVideo.pause();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    pauseVisibleVideos();
+    return;
+  }
+
+  queueVideoResume();
 });
+
+window.addEventListener("focus", queueVideoResume);
+window.addEventListener("pageshow", queueVideoResume);
 
 renderer.setAnimationLoop(render);
