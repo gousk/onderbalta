@@ -877,9 +877,17 @@ const smoothWhiteMaterial = new THREE.MeshStandardMaterial({
 });
 
 const concreteTextureLoader = new THREE.TextureLoader();
+const concreteTextureCopies = new Map();
+const concreteTextureLoads = [];
 
-function loadConcreteTexture(src, colorSpace = THREE.NoColorSpace) {
-  const texture = concreteTextureLoader.load(src, render);
+function loadConcreteTexture(src, colorSpace = THREE.NoColorSpace, fallback = "#ffffff") {
+  // Keep every surface renderable even while the network is unavailable.
+  const placeholder = document.createElement("canvas");
+  placeholder.width = placeholder.height = 1;
+  const context = placeholder.getContext("2d");
+  context.fillStyle = fallback;
+  context.fillRect(0, 0, 1, 1);
+  const texture = new THREE.Texture(placeholder);
   texture.colorSpace = colorSpace;
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
@@ -887,18 +895,52 @@ function loadConcreteTexture(src, colorSpace = THREE.NoColorSpace) {
     renderer.capabilities.getMaxAnisotropy(),
     8,
   );
+  texture.needsUpdate = true;
+  const copies = new Set([texture]);
+  concreteTextureCopies.set(texture, copies);
+  concreteTextureLoads.push(new Promise((resolve) => {
+    function attemptLoad(attempt) {
+      let finished = false;
+      const timeout = window.setTimeout(() => finish(null), 12000);
+      function finish(loadedTexture) {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        if (loadedTexture) {
+          // The placeholder has different dimensions. Reallocate GPU storage
+          // instead of uploading a large image into its existing 1x1 allocation.
+          copies.forEach((copy) => {
+            copy.dispose();
+            copy.source = loadedTexture.source;
+            copy.needsUpdate = true;
+          });
+          resolve();
+        } else if (attempt < 3) {
+          window.setTimeout(() => attemptLoad(attempt + 1), attempt * 500);
+        } else {
+          console.warn(`Concrete texture unavailable; using neutral fallback: ${src}`);
+          resolve();
+        }
+      }
+      const url = attempt === 1 ? src : `${src}?retry=${attempt}`;
+      concreteTextureLoader.load(url, finish, undefined, () => finish(null));
+    }
+    attemptLoad(1);
+  }));
   return texture;
 }
 
 const concreteColorTexture = loadConcreteTexture(
-  "assets/optimized-media/concrete-layers-02-diff-4k.jpg",
+  "assets/optimized-media/concrete-color-2k.jpg",
   THREE.SRGBColorSpace,
 );
 const concreteNormalTexture = loadConcreteTexture(
-  "assets/optimized-media/concrete-layers-02-normal-gl-2k.jpg",
+  "assets/optimized-media/concrete-normal-2k.jpg",
+  THREE.NoColorSpace,
+  "#8080ff",
 );
 const concreteRoughnessTexture = loadConcreteTexture(
-  "assets/optimized-media/concrete-layers-02-rough-2k.jpg",
+  "assets/optimized-media/concrete-roughness-2k.jpg",
 );
 const CONCRETE_TILE_SIZE = 6;
 
@@ -906,6 +948,9 @@ function createConcreteMaterial(width, height) {
   const colorTexture = concreteColorTexture.clone();
   const normalTexture = concreteNormalTexture.clone();
   const roughnessTexture = concreteRoughnessTexture.clone();
+  concreteTextureCopies.get(concreteColorTexture).add(colorTexture);
+  concreteTextureCopies.get(concreteNormalTexture).add(normalTexture);
+  concreteTextureCopies.get(concreteRoughnessTexture).add(roughnessTexture);
   const repeatX = width / CONCRETE_TILE_SIZE;
   const repeatY = height / CONCRETE_TILE_SIZE;
 
@@ -1140,6 +1185,11 @@ let siteHeaderVisible = false;
 let siteAssetsReady = false;
 let siteModelReady = false;
 let siteFontReady = !document.fonts;
+let siteConcreteReady = false;
+Promise.all(concreteTextureLoads).then(() => {
+  siteConcreteReady = true;
+  siteAssetsReady = siteModelReady && siteFontReady && siteConcreteReady;
+});
 let siteBootStage = "loading";
 let siteBootStageStartedAt = performance.now() * 0.001;
 let siteBootSequenceStartedAt = 0;
@@ -1725,10 +1775,10 @@ document.fonts?.load('500 160px "Onder Medium"').then(() => {
   drawHeaderAsciiWordmark(performance.now(), true);
   fitProjectTitle();
   siteFontReady = true;
-  siteAssetsReady = siteModelReady && siteFontReady;
+  siteAssetsReady = siteModelReady && siteFontReady && siteConcreteReady;
 }).catch(() => {
   siteFontReady = true;
-  siteAssetsReady = siteModelReady && siteFontReady;
+  siteAssetsReady = siteModelReady && siteFontReady && siteConcreteReady;
 });
 
 const blankScreenTexture = new THREE.DataTexture(
@@ -4543,7 +4593,7 @@ tvLoader.load(
     applyTvWallLayout();
     configureScreenGlowLights();
     siteModelReady = true;
-    siteAssetsReady = siteModelReady && siteFontReady;
+    siteAssetsReady = siteModelReady && siteFontReady && siteConcreteReady;
     render();
   },
   undefined,

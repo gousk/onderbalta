@@ -26,3 +26,9 @@ node server.js
 Then open `http://localhost:5500`.
 
 Use `http://localhost:5500/?mobile=1` to force the mobile layout on desktop.
+
+## Verify texture loading
+
+Run `node --test tests/concrete-loading.test.cjs` to check successful loads,
+connection retries, permanent failures, and timeouts. Room startup waits for the
+concrete textures; after three failed attempts it uses neutral fallback maps.
