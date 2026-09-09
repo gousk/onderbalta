@@ -54,5 +54,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`ASCII video site running at http://localhost:${port}`);
+  console.log(`Site running at http://localhost:${port}`);
 });

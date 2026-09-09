@@ -1,34 +1,19 @@
-# onder balta
+# Önder Balta — yeni site
 
-The current front end for my personal portfolio.
+`site-redesign-v2` üzerinde yeni tasarım için boş HTML, CSS ve JavaScript başlangıcı.
 
-It is a static site built with HTML, CSS, JavaScript, and Three.js. The main
-page presents a responsive CRT television wall inside a 3D concrete room. Its
-project screens open focused views with supporting information, media, and
-external links.
+## Yerelde çalıştırma
 
-## Project structure
-
-- `index.html` contains the page structure and interface markup.
-- `styles.css` contains the desktop and mobile layouts.
-- `script.js` contains the Three.js scene, CRT shaders, interactions, project
-  data, and language switching.
-- `server.js` provides the local development server.
-- `assets/` contains the production fonts, images, videos, textures, and 3D
-  model used by the site.
-
-## Run locally
-
-```bash
+```sh
 node server.js
 ```
 
-Then open `http://localhost:5500`.
+Tarayıcıda http://localhost:5500 adresini aç. Sayfa tasarım eklenene kadar boştur.
+Sunucuyu durdurmak için terminalde Control + C kullan.
 
-Use `http://localhost:5500/?mobile=1` to force the mobile layout on desktop.
+- `index.html`: sayfanın yapısı
+- `styles.css`: sayfanın görünümü
+- `script.js`: etkileşimler
+- `server.js`: yerel geliştirme sunucusu
 
-## Verify texture loading
-
-Run `node --test tests/concrete-loading.test.cjs` to check successful loads,
-connection retries, permanent failures, and timeouts. Room startup waits for the
-concrete textures; after three failed attempts it uses neutral fallback maps.
+Önceki site Git geçmişinde ve diğer branch’lerde korunur.
