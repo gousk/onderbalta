@@ -1,0 +1,62 @@
+[
+  {
+    "id": "GIF_EARTH",
+    "height": 91,
+    "gap": 0,
+    "y": 0,
+    "angle": -5,
+    "hue": 0,
+    "saturation": 70,
+    "contrast": 135,
+    "brightness": 135,
+    "resolution": 75
+  },
+  {
+    "id": "Y2K_GLASS_N",
+    "height": 60,
+    "gap": -12,
+    "y": 21,
+    "angle": -5,
+    "hue": -48,
+    "saturation": 0,
+    "contrast": 120,
+    "brightness": 100,
+    "resolution": 35
+  },
+  {
+    "id": "Y2K_GLASS_D",
+    "height": 83,
+    "gap": -8,
+    "y": 4,
+    "angle": 2,
+    "hue": 1,
+    "saturation": 0,
+    "contrast": 120,
+    "brightness": 120,
+    "resolution": 25
+  },
+  {
+    "id": "Y2K_GLASS_E",
+    "height": 68,
+    "gap": -9,
+    "y": 21,
+    "angle": 5,
+    "hue": 0,
+    "saturation": 0,
+    "contrast": 120,
+    "brightness": 100,
+    "resolution": 25
+  },
+  {
+    "id": "Y2K_GLASS_R",
+    "height": 67,
+    "gap": -12,
+    "y": 24,
+    "angle": 0,
+    "hue": -41,
+    "saturation": 0,
+    "contrast": 120,
+    "brightness": 100,
+    "resolution": 25
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "O_14",
+    "height": 60,
+    "gap": 0,
+    "y": 10,
+    "angle": -5,
+    "hue": 125,
+    "saturation": 300,
+    "contrast": 100,
+    "brightness": 100,
+    "resolution": 75
+  },
+  {
+    "id": "N_17",
+    "height": 54,
+    "gap": -14,
+    "y": 9,
+    "angle": 2,
+    "hue": -22,
+    "saturation": 300,
+    "contrast": 100,
+    "brightness": 100,
+    "resolution": 75
+  },
+  {
+    "id": "D_18",
+    "height": 77,
+    "gap": -18,
+    "y": -6,
+    "angle": -18,
+    "hue": -11,
+    "saturation": 300,
+    "contrast": 100,
+    "brightness": 120,
+    "resolution": 80
+  },
+  {
+    "id": "TECH_IE_GLOSSY",
+    "height": 68,
+    "gap": -26,
+    "y": 15,
+    "angle": 5,
+    "hue": 0,
+    "saturation": 100,
+    "contrast": 100,
+    "brightness": 100,
+    "resolution": 100
+  },
+  {
+    "id": "R_18",
+    "height": 63,
+    "gap": -22,
+    "y": 4,
+    "angle": -11,
+    "hue": 25,
+    "saturation": 300,
+    "contrast": 100,
+    "brightness": 100,
+    "resolution": 75
+  }
+]

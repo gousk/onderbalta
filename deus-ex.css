@@ -1,0 +1,221 @@
+@font-face { font-family: 'dx interface'; src: url('assets/y2k-fonts/oxanium.ttf') format('truetype'); font-style: normal; font-weight: 200 800; font-display: swap; }
+.theme-toggle { position: fixed; right: 48px; bottom: 8px; z-index: 30; padding: 3px 7px; font: 12px Arial,sans-serif; cursor: pointer; color: #222; background: #c0c0c0; border: 1px outset #eee; }
+.theme-toggle:focus-visible { outline: 2px solid #aaaaff; outline-offset: 3px; }
+:root[data-theme="deus-ex"] { color-scheme: dark; color: #d6d6d6; font-family: 'dx interface', monospace; }
+[data-theme="deus-ex"] body { font-weight: 500; }
+[data-theme="deus-ex"] a { color: #ededed; }
+[data-theme="deus-ex"] a:hover { color: #fff; }
+[data-theme="deus-ex"] a:focus-visible { outline-color: #bbbaff; }
+/* Double metal rails, rather than the blue in-game HUD skin. */
+[data-theme="deus-ex"] .window {
+  position: relative; isolation: isolate;
+  padding: 38px 8px 8px;
+  border: 2px solid; border-color: #c4c4c4 #242424 #161616 #a0a0a0;
+  border-radius: 9px 7px 0 0;
+  background: #303030 url('assets/deus-ex/circuit-panel.svg') center top / 640px 480px repeat;
+  box-shadow: inset 2px 0 #535353, inset 4px 0 #080808, inset -2px 0 #777, inset -4px 0 #090909, inset 0 2px #777, 1px 1px #000;
+}
+[data-theme="deus-ex"] .window::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: repeating-linear-gradient(0deg, #00000015 0 1px, transparent 1px 3px);
+}
+/* The raised nameplate has a silver diagonal shoulder and a violet inset. */
+[data-theme="deus-ex"] .title-bar {
+  position: absolute; left: -2px; top: -2px; width: min(72%, 350px); height: 34px;
+  padding: 4px 30px 4px 12px; margin: 0; z-index: 1;
+  font-family: 'dx interface', monospace; font-size: 20px; font-weight: 700;
+  line-height: 26px; color: #f1f1f1; text-shadow: 1px 1px #0c0928;
+  border-radius: 13px 0 0 0;
+  background: linear-gradient(#ddd 0 2px, #797979 2px 4px, #555 4px);
+  clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 100%, 0 100%);
+  isolation: isolate;
+}
+[data-theme="deus-ex"] .title-bar::before {
+  content: ''; position: absolute; z-index: -1; inset: 4px 36px 3px 4px;
+  border-radius: 12px 10px 11px 9px;
+  background: linear-gradient(#06060e 0%, #111129 48%, #18154d 80%, #39358a 95%, #626195 100%);
+  box-shadow: inset 0 1px #aaaab3, inset 2px 0 #24234c, 0 1px #111;
+}
+
+[data-theme="deus-ex"] .window-body {
+  background: #161616b8; color: #dedede;
+  border: 1px solid #080808;
+  box-shadow: inset 1px 1px #77777740, 1px 1px #77777740;
+  text-shadow: 1px 1px #000;
+}
+[data-theme="deus-ex"] .about-window .window-body { background-image: none; }
+/* The menu's long grey cut-corner option buttons. */
+[data-theme="deus-ex"] nav a {
+  font-family: 'dx interface', monospace; font-size: 18px; font-weight: 700;
+  color: #dedede; text-shadow: 1px 1px #777;
+  text-decoration: none; text-align: left;
+  border: 2px solid; border-color: #bbb #121212 #0b0b0b #b8b8b8;
+  background: #929292;
+  box-shadow: inset 2px 2px #dedede, inset -2px -2px #555, 0 0 0 1px #050505;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 7px);
+}
+[data-theme="deus-ex"] nav a[aria-current="page"], [data-theme="deus-ex"] nav a:hover {
+  color: #fff; background: #a0a0a0; border-color: #eee #202020 #202020 #eee;
+}
+[data-theme="deus-ex"] .image-well, [data-theme="deus-ex"] .gallery-thumbnail {
+  border-color: #070707 #707070 #707070 #070707; background: #000;
+  box-shadow: 0 0 0 1px #111;
+}
+[data-theme="deus-ex"] .gallery-files {
+  background: #121212b8; border-color: #070707 #666 #666 #070707;
+}
+[data-theme="deus-ex"] .gallery-file figcaption {
+  display: block; text-align: left; padding: 3px 10px;
+  background: linear-gradient(145deg, #555 0%, #252525 80%);
+  border: 2px ridge #aaa;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 5px);
+}
+[data-theme="deus-ex"] .gallery-file:hover figcaption { color: #fff; background: #595959; }
+[data-theme="deus-ex"] .social-links-row, [data-theme="deus-ex"] .links { border-color: #090909; box-shadow: inset 0 1px #77777766; }
+[data-theme="deus-ex"] .social-links-row .links { box-shadow: none; }
+[data-theme="deus-ex"] .background-picker, [data-theme="deus-ex"] .letter-editor-body { background: #252525; color: #ddd; border-color: #aaa #111 #111 #aaa; }
+[data-theme="deus-ex"] button, [data-theme="deus-ex"] select, [data-theme="deus-ex"] input {
+  color: #e4e4e4; background-color: #454545; border-color: #c0c0c0 #171717 #171717 #c0c0c0;
+  font-family: 'dx interface', monospace; accent-color: #aaa;
+}
+[data-theme="deus-ex"] .letter-preview, [data-theme="deus-ex"] .letter-bank { background: #151515; border-color: #777; }
+[data-theme="deus-ex"] .letter-editor button[aria-pressed="true"] { background: #777; outline-color: #ccc; }
+[data-theme="deus-ex"] .picker-toggle { color: #ddd; }
+[data-theme="deus-ex"] .skip { background: #292929; }
+[data-theme="deus-ex"] .letter-editor .title-bar { width: 100%; padding-right: 42px; }
+[data-theme="deus-ex"] .letter-close { line-height: 18px; }
+
+/* The title sits above the body rail; the upper-right rail starts at its shoulder. */
+[data-theme="deus-ex"] .window {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 40px 10px 10px 17px;
+}
+[data-theme="deus-ex"] .window::before {
+  inset: 34px 0 0 9px;
+  z-index: -2;
+  border: 2px solid;
+  border-color: #bdbdbd #494949 #171717 #a0a0a0;
+  border-radius: 0 7px 0 0;
+  /* Only the linework tiles; the metal shading spans the entire panel. */
+  background-image: url('assets/deus-ex/circuit-panel.svg?v=2'), linear-gradient(135deg, #656565, #3c3c3c 25%, #292929 65%, #171717);
+  background-position: left top;
+  background-size: 640px 480px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  box-shadow: inset 1px 1px #707070, inset 3px 3px #101010, inset -1px -1px #808080, inset -3px -3px #090909;
+}
+[data-theme="deus-ex"] .window::after {
+  content: ''; position: absolute; pointer-events: none;
+  left: 0; top: 0; width: min(72%, 350px); height: 110px;
+  z-index: -1;
+  background: url('assets/deus-ex/title-shell.svg') left top / 100% 110px no-repeat;
+}
+[data-theme="deus-ex"] .title-bar {
+  left: 0; top: 0;
+  height: 35px;
+  background: none;
+  border-radius: 0;
+  clip-path: none;
+  box-shadow: none;
+}
+[data-theme="deus-ex"] .title-bar::before {
+  inset: 4px 37px 2px 5px;
+  border-radius: 12px 10px 11px 9px;
+}
+[data-theme="deus-ex"] .letter-editor .title-bar { width: min(72%, 350px); }
+
+[data-theme="deus-ex"] .about-wizard,
+[data-theme="deus-ex"] .social-wizard,
+[data-theme="deus-ex"] .project-wizard { display: none; }
+
+/* Shared nine-slice button: fixed diagonal corners, black gutter, double silver rail. */
+[data-theme="deus-ex"] :is(nav a, .social-links-row a, .gallery-file figcaption, button, select, input[type="number"], .background-picker summary) {
+  border: 3px solid transparent;
+  border-left-width: 8px;
+  border-right-width: 12px;
+  border-image: url('assets/deus-ex/button.svg?v=2') 6 12 12 12 fill / 6px 12px 12px 12px / 0 stretch;
+  border-radius: 0;
+  clip-path: none;
+  box-shadow: none;
+  background: transparent;
+  color: #f0f0f0;
+  font-family: 'dx interface', monospace;
+  font-weight: 650;
+  text-shadow: 1px 1px #777;
+  text-decoration: none;
+  cursor: pointer;
+}
+[data-theme="deus-ex"] nav a { padding: 2px 5px; min-height: 36px; text-align: left; display: flex; align-items: center; }
+[data-theme="deus-ex"] .gallery-file { text-decoration: none; }
+[data-theme="deus-ex"] .gallery-file figcaption { padding: 2px 5px; min-height: 36px; text-align: left; display: flex; align-items: center; }
+[data-theme="deus-ex"] :is(button, select, input[type="number"]) { padding: 0 5px; }
+[data-theme="deus-ex"] .background-picker summary { padding: 0 5px; width: fit-content; }
+[data-theme="deus-ex"] :is(.social-links-row a:hover, nav a:hover, nav a[aria-current="page"], button:hover, button[aria-pressed="true"], .gallery-file:hover figcaption, .gallery-file:focus-visible figcaption) {
+  background: transparent;
+  color: #fff;
+  filter: brightness(1.12);
+}
+[data-theme="deus-ex"] :is(.social-links-row a:active, button:active, nav a:active, .gallery-file:active figcaption) { filter: brightness(.83); }
+[data-theme="deus-ex"] :is(.social-links-row a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, nav a:focus-visible) {
+  outline: 1px dotted #fff; outline-offset: 2px;
+}
+[data-theme="deus-ex"] button:disabled { color: #b6b6b6; filter: brightness(.75); cursor: default; }
+[data-theme="deus-ex"] .letter-editor button[aria-pressed="true"] { background: transparent; outline: 1px dotted #fff; outline-offset: -9px; }
+[data-theme="deus-ex"] .letter-bank button { padding: 0 2px; }
+[data-theme="deus-ex"] .letter-close { border-image-width: 5px; border-width: 5px; padding: 0 3px; line-height: 16px; }
+[data-theme="deus-ex"] .theme-toggle { right: 82px; bottom: 8px; }
+[data-theme="deus-ex"] .picker-toggle { right: 12px; bottom: 8px; }
+[data-theme="deus-ex"] .letter-editor-toggle { bottom: 42px; }
+[data-theme="deus-ex"] .letter-editor { bottom: 80px; }
+
+/* The floating editor must override the theme's ordinary relative-positioned windows. */
+[data-theme="deus-ex"] .window.letter-editor {
+  position: fixed;
+  inset: auto 12px 80px auto;
+  z-index: 40;
+  width: 480px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 92px);
+}
+[data-theme="deus-ex"] .letter-editor .letter-editor-body {
+  min-height: 0;
+  max-height: calc(100dvh - 142px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+[data-theme="deus-ex"] .letter-editor .title-bar {
+  width: 100%;
+  padding-right: 70px;
+  white-space: nowrap;
+}
+[data-theme="deus-ex"] .letter-editor::after { width: 100%; }
+[data-theme="deus-ex"] .letter-editor .letter-close {
+  position: absolute;
+  right: 40px;
+  top: 4px;
+}
+
+/* Centre the glyph line on the inset nameplate, whose centre is 1px below the shell. */
+[data-theme="deus-ex"] .window .title-bar {
+  display: flex;
+  align-items: center;
+  padding-top: 2px;
+  padding-bottom: 0;
+  line-height: 1;
+}
+
+[data-theme="deus-ex"] .about-window .window-body { padding-bottom: 20px; }
+[data-theme="deus-ex"] .social-links-row .links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+[data-theme="deus-ex"] .social-links-row .links li { margin: 0; }
+[data-theme="deus-ex"] .social-links-row a {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 2px 8px;
+}

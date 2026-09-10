@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="36" viewBox="0 0 64 36">
+<!-- Grey menu action: separate left rail, thin top highlight, broad lower-right cut. -->
+<path d="M8 0H64V24L52 36H0V8Z" fill="#080808"/>
+<path d="M7 3H62V24L52 34H2V9Z" fill="#737373"/>
+<path d="M8 2H62V24L52 34H6V8Z" fill="#999999"/>
+<path d="M8 2H62" stroke="#d9d9d9" stroke-width="1"/>
+<path d="M8 3L6 6V33" fill="none" stroke="#d9d9d9"/>
+<path d="M5 5L3 8V34" fill="none" stroke="#090909"/>
+<path d="M2 10V34" stroke="#d0d0d0"/>
+<path d="M62 2V24L52 34H7" fill="none" stroke="#303030"/>
+<path d="M61 3V23L51 33H7" fill="none" stroke="#737373"/>
+</svg>

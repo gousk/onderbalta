@@ -1,0 +1,72 @@
+motherboard.jpg
+source: https://jooinn.com/green-motherboard.html
+image: https://jooinn.com/images/circuit-or-motherboard-1.jpg
+license: cc0, as stated by the source page
+resized to 1200px wide and compressed for the background.
+
+motherboard-1984.jpg
+subject: ibm 5150 motherboard from 1984
+source: https://commons.wikimedia.org/wiki/File:Ibm5150mobo1984black.jpg
+author: oligopolism
+license: cc0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+1280px source thumbnail, recompressed for the background.
+
+motherboard-486.jpg
+source: https://commons.wikimedia.org/wiki/File:JoinData_486_DX_motherboard_at_CHM.jpg
+author: tomwsulcer
+license: cc0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+960px source thumbnail, recompressed for the background.
+
+motherboard-pentium-pro.jpg
+source: https://commons.wikimedia.org/wiki/File:Intel_Pentium_Pro_(Socket_8).jpg
+author: oligopolism
+license: cc0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+960px source thumbnail, recompressed for the background.
+
+motherboard-pentium-ii.jpg
+source: https://commons.wikimedia.org/wiki/File:Pentium_II_400_and_Slot_1_Motherboard_(full_shot).jpg
+author: oligopolism
+license: cc0 1.0 https://creativecommons.org/publicdomain/zero/1.0/
+960px source thumbnail, recompressed for the background.
+
+cutout-alphabet.jpg
+author: karen arnold
+source: https://www.publicdomainpictures.net/en/view-image.php?image=328256&picture=alphabet-letters-from-magazine
+license: cc0 public domain
+letters displayed using css background positions.
+
+name-cutouts/*.png — scanned paper letters by Lettuce, Ransom Text: https://zodiolestes.itch.io/ransomtext
+Free pack permits personal and commercial use. Cropped, reduced resolution and RGB tinted for this site. Originals: O/o1.png, N/nn3.png, D/d1.png, E/E cap02.png, R/r2.png.
+
+
+onder-resourceboy.png — final header collage from Resource Boy Ransom Note Letters. Originals O_14, N_17, D_18, E_05, R_18. User-selected composition and effects from header-settings.json, rendered using the editor drawing code. No generative AI.
+Source: https://resourceboy.com/graphics/ransom-note-letters/
+License: https://resourceboy.com/license/ — website use allowed; repository uploads prohibited. Header asset is gitignored and must be provided separately for deployment.
+
+letter-catalog.js — local-only reduced previews from the same Resource Boy pack for the header editor. Gitignored under the same license.
+
+Tech letter catalog — sourced logos, rasterized and trimmed for the picker. No generative AI.
+Opera O.svg — Opera Software ASA — https://commons.wikimedia.org/wiki/File:Opera_O.svg
+NetscapeLogo 6.png — Netscape Communications — https://commons.wikimedia.org/wiki/File:NetscapeLogo_6.png
+Netscape icon 2007.svg — Netscape Communications — https://commons.wikimedia.org/wiki/File:Netscape_icon_2007.svg
+Dreamcast logo.svg — Sega — https://commons.wikimedia.org/wiki/File:Dreamcast_logo.svg
+Internet Explorer 4 and 5 logo.svg — Microsoft — https://commons.wikimedia.org/wiki/File:Internet_Explorer_4_and_5_logo.svg
+Internet-explorer.png — Microsoft — https://commons.wikimedia.org/wiki/File:Internet-explorer.png
+Rockstar Games Logo.svg — Rockstar / Take-Two — https://commons.wikimedia.org/wiki/File:Rockstar_Games_Logo.svg
+Logo trademarks belong to their respective owners. Cropped variants are labelled in the picker.
+
+TECH_IE_GLOSSY — Microsoft Internet Explorer 7/8 glossy icon, rasterized from https://en.wikipedia.org/wiki/File:Internet_Explorer_7_and_8_logo.svg . Microsoft logo/trademark, not original site artwork.
+Dreamcast swirl option moved from d to o.
+
+TECH_IE_GLOSSY replaced with user-provided Windows-Internet-Explorer-Logo-2006.png. Transparent margins trimmed and resized for the picker; original colors and alpha retained.
+
+Y2K letter catalog — 20 original conventional raster treatments (chrome, blue glass, titanium, violet metal), built with scripts/build-y2k-letters.py. No generative AI.
+Typefaces: Audiowide and Michroma, distributed under the SIL Open Font License; license notices included in assets/y2k-fonts/.
+Sources: https://github.com/google/fonts/tree/main/ofl/audiowide and https://github.com/google/fonts/tree/main/ofl/michroma
+
+GIF letter options — smiley supplied by user; atom 1.gif, ring 1.gif, disco ball.gif and earth.gif downloaded from https://bettysgraphics.neocities.org/objects . Original GIF animations retained; archive source, original creators not identified.
+
+TECH_N64_3D and TECH_N64_FLAT: crops of Nintendo 64 logo, Nintendo. Source https://en.wikipedia.org/wiki/File:Nintendo_64_(logo).svg . SVG style classes inlined for faithful rasterization.
+TECH_RARE_BADGE and TECH_RARE_R: Rareware gold badge and rectangular letter crop. Source https://fr.wikipedia.org/wiki/Fichier:Rareware_Logo.jpg . Original background retained. These are existing trademarked logo assets, not newly generated artwork.
+
+Deus Ex metal menu theme: CSS and circuit-panel.svg drawn to match user-supplied Deus-Ex12242022-012407-31102.jpg reference. Oxanium font by Severin Meyer, SIL OFL, license in y2k-fonts/oxanium-OFL.txt. Font source: https://github.com/google/fonts/tree/main/ofl/oxanium . Font is an approximation, not the original game font.

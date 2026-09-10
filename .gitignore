@@ -1,2 +1,7 @@
 server.local*.log
 assets/media/
+
+# Resource Boy permits website use, but prohibits asset uploads to repositories.
+/assets/onder-resourceboy.png
+
+/assets/letter-catalog.js
